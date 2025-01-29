@@ -12,7 +12,7 @@ We will use pyenv and pipenv to manage installing python and to manage and creat
 3. Restart shell for `PATH` changes to take effect - `exec "$SHELL"`
 
 ## Boostrap to setup virtual env
-1. Add `export PYTHON_VERSION=3.9.6` to your shell and source the file (ex. `source ~/.zshrc`)
+1. Add `export PYTHON_VERSION=3.13.1` to your shell and source the file (ex. `source ~/.zshrc`)
 2. Run `./bootstrap` script - see script for step by step details
 
 1. `pip install --upgrade pip` and `pip install pipenv`
