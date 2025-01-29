@@ -1,14 +1,14 @@
-from flask import Flask, session, abort
+from server import create_app
 
-# Create the Flask app instance
-app = Flask(__name__)
+app = create_app()
 
 def login_required(function):
     def wrapper(*args, **kwargs):
-        if "google_id" not in session:
-            return abort(401)
-        else:
-            return function()
+        return function()
+        # if "google_id" not in session:
+        #     return abort(401)
+        # else:
+        #     return function()
     return wrapper
 
 @app.route("/login")
@@ -27,7 +27,7 @@ def logout():
 
 @app.route('/')
 def index():
-    return 'Hello, Flask!'
+    return 'Hello, Flask!!'
 
 @app.route('/home')
 @login_required
