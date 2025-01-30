@@ -11,7 +11,13 @@ def create_app():
   app.secret_key = "super secret key" # TODO What should this be? W/o you get error on CRUD ops
 
   # Establish db connection
-  app.config["SQLALCHEMY_DATABASE_URI"]  = os.environ.get("DATABASE_URL")
+  # Get the DATABASE_URL from environment variables (Heroku provides this)
+  database_url = os.getenv('DATABASE_URL')
+
+  if database_url and database_url.startswith('postgres://'):
+    # Replace 'postgres://' with 'postgresql://'
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+  app.config["SQLALCHEMY_DATABASE_URI"]  =  database_url
   db.app = app
   db.init_app(app)
 
