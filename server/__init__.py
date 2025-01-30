@@ -8,7 +8,7 @@ from server.database import db
 def create_app():
   # Create the Flask app instance
   app = Flask(__name__)
-  app.secret_key = "super secret key" # TODO What should this be? W/o you get error on CRUD ops
+  app.secret_key = os.getenv('SECRET_KEY')
 
   # Get the DATABASE_URL from environment variables (Heroku provides this for staging/prod)
   database_url = os.getenv('DATABASE_URL')
