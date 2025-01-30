@@ -1,14 +1,13 @@
-from server import create_app
+from flask import session, abort
 
-app = create_app()
+from wsgi import app
 
 def login_required(function):
     def wrapper(*args, **kwargs):
-        return function()
-        # if "google_id" not in session:
-        #     return abort(401)
-        # else:
-        #     return function()
+        if "google_id" not in session:
+            return abort(401)
+        else:
+            return function()
     return wrapper
 
 @app.route("/login")
@@ -33,3 +32,6 @@ def index():
 @login_required
 def home():
     return 'Home!'
+
+if __name__ == '__main__':
+    app.run(debug=True)
