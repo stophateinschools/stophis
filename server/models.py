@@ -1,4 +1,4 @@
-from .database import db
+from server.database import db
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
