@@ -1,6 +1,9 @@
-from server.database import db
+from .database import db
+from sqlalchemy.orm import declarative_base
 
-class IncidentType(db.Model):
+Base = declarative_base()
+
+class IncidentType(Base):
   """A type of incident."""
   __tablename__ = "incident_type"
 

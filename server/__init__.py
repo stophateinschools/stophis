@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -10,7 +11,7 @@ def create_app():
   app.secret_key = "super secret key" # TODO What should this be? W/o you get error on CRUD ops
 
   # Establish db connection
-  app.config["SQLALCHEMY_DATABASE_URI"]  = 'postgresql://postgres@localhost:5432/stophis'
+  app.config["SQLALCHEMY_DATABASE_URI"]  = os.environ.get("DATABASE_URL")
   db.app = app
   db.init_app(app)
 
