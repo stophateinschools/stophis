@@ -1,6 +1,6 @@
-from flask import session, abort
+from flask import session, abort, Blueprint
 
-from wsgi import app
+main = Blueprint('main', __name__)
 
 def login_required(function):
     def wrapper(*args, **kwargs):
@@ -10,28 +10,25 @@ def login_required(function):
             return function()
     return wrapper
 
-@app.route("/login")
+@main.route("/login")
 def login():
     # Forward to google login screen
     pass
 
-@app.route("/callback")
+@main.route("/callback")
 def callback():
     # Recieve data back from google login
     pass
 
-@app.route("/logout")
+@main.route("/logout")
 def logout():
     pass
 
-@app.route('/')
+@main.route('/')
 def index():
     return 'Hello, Flask!!'
 
-@app.route('/home')
+@main.route('/home')
 @login_required
 def home():
     return 'Home!'
-
-if __name__ == '__main__':
-    app.run(debug=True)

@@ -4,6 +4,7 @@ from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from server.models import IncidentType
 from server.database import db
+from server.app import main
 
 def create_app():
   # Create the Flask app instance
@@ -22,6 +23,8 @@ def create_app():
   # Bind app to db instance
   db.init_app(app)
 
+  # Register Blueprints (routes)
+  app.register_blueprint(main)
   admin = Admin(app, name='Stop Hate in Schools')
   admin.add_view(ModelView(IncidentType, db.session))
 
