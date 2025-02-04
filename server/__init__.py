@@ -2,9 +2,10 @@ import os
 from flask import Flask
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from server.models import IncidentType
-from server.database import db
-from server.app import main
+from .models import IncidentType
+from .database import db
+from .app import main
+from .auth import auth
 
 def create_app():
   # Create the Flask app instance
@@ -25,7 +26,8 @@ def create_app():
 
   # Register Blueprints (routes)
   app.register_blueprint(main)
+  app.register_blueprint(auth, url_prefix="/auth")
   admin = Admin(app, name='Stop Hate in Schools')
-  admin.add_view(ModelView(IncidentType, db.session))
+  admin.add_view(ModelView(IncidentType, db.session, category="Incidents"))
 
   return app

@@ -3,6 +3,7 @@ pyenv install -s $PYTHON_VERSION # Install python version (-s skips install if a
 pyenv local $PYTHON_VERSION # Set local app-specific Python version by writing to .python-verison in current dir
 
 pip install --upgrade pip # Install latest pip
+pip install pipenv
 
 pipenv sync -d # Install whatever is in Pipfile.lock
 

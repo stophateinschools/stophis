@@ -61,7 +61,6 @@ def run_migrations_online() -> None:
 
     """
     database_url = os.getenv("DATABASE_URL")
-    print(database_url)
     if not database_url:
         raise ValueError("The DATABASE_URL environment variable is not set.")
     elif database_url and database_url.startswith('postgres://'):

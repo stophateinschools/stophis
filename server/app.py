@@ -1,34 +1,16 @@
-from flask import session, abort, Blueprint
+from flask import Blueprint, render_template
+from flask_dance.contrib.google import google
+from .auth import login_required
 
 main = Blueprint('main', __name__)
 
-def login_required(function):
-    def wrapper(*args, **kwargs):
-        if "google_id" not in session:
-            return abort(401)
-        else:
-            return function()
-    return wrapper
-
-@main.route("/login")
-def login():
-    # Forward to google login screen
-    pass
-
-@main.route("/callback")
-def callback():
-    # Recieve data back from google login
-    pass
-
-@main.route("/logout")
-def logout():
-    pass
-
 @main.route('/')
 def index():
-    return 'Hello, Flask!!'
+    return render_template('index.html')
 
 @main.route('/home')
 @login_required
 def home():
+    resp = google.get("/oauth2/v2/userinfo")
+    print("User home: ", resp.ok, resp.text)
     return 'Home!'

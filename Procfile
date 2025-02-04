@@ -1,2 +1,2 @@
 web: gunicorn wsgi:app
-release: cd server && alembic upgrade head
+release: alembic upgrade head
