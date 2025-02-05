@@ -1,6 +1,15 @@
+from flask_login import UserMixin
+
 from .database import db
 
-class User(db.Model):
+# Association table for the many-to-many relationship
+user_roles = db.Table('user_roles',
+    db.Column("id", db.Integer(), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'), primary_key=True)
+)
+
+class User(UserMixin, db.Model):
   """A user."""
   __tablename__ = "users"
 
@@ -11,13 +20,23 @@ class User(db.Model):
   email = db.Column(db.String(), nullable=False, unique=True)
   profile_picture = db.Column(db.String())
 
+  roles = db.relationship('Role', secondary=user_roles)
+
   def __str__(self):
-    return f"{self.first_name} {self.last_name}: {self.email}"
+    return f"{self.first_name}: {self.email}"
+  
+class Role(db.Model):
+    __tablename__ = "roles"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+
+    def __str__(self):
+        return self.name
   
 def create_user(user):
     existing_user = User.query.filter_by(email=user["email"]).first()
     if existing_user:
-        print('EXISTING USER ', existing_user)
         existing_user.google_id = user["id"]
         existing_user.profile_picture = user["picture"]
     else:
@@ -31,3 +50,5 @@ def create_user(user):
        db.session.add(new_user)
 
     db.session.commit()
+    
+    return existing_user if existing_user else new_user

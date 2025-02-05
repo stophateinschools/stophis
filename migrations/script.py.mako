@@ -10,8 +10,9 @@ import sqlalchemy as sa
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic.
-revision: str = ${repr(up_revision)}
-down_revision: ${repr(down_revision)}
+revision=${repr(up_revision)}
+down_revision=${repr(down_revision)}
+
 
 def upgrade() -> None:
     ${upgrades if upgrades else "pass"}

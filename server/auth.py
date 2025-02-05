@@ -2,18 +2,38 @@ import os
 from flask import redirect, url_for, abort
 from flask_dance.contrib.google import google, make_google_blueprint
 from functools import wraps
+from flask_login import current_user, login_user, logout_user
 import requests
 from .user import User, create_user
-from .database import db
 
-def login_required(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        if not google.authorized:
-            return abort(401)
-        else:
-            return function()
-    return wrapper
+def has_role(roles_required):
+    if current_user:
+        user = User.query.get(current_user.id)
+        # If current user has no roles, don't allow access.
+        if not user.roles:
+            return False
+        # If no specific role required, allow access.
+        if not roles_required:
+            return True
+        
+        current_roles = [role.name.lower() for role in user.roles]
+        for role in roles_required:
+            if role in current_roles:
+                return True
+    return False
+
+def login_required(roles=None):
+    def decorator(function):
+        @wraps(function)
+        def wrapper(*args, **kwargs):
+            if not google.authorized or not current_user.is_authenticated:
+                return redirect(url_for('google.login'))
+            
+            if not has_role(roles):
+                return abort(403)
+            return function(*args, **kwargs)
+        return wrapper
+    return decorator
 
 # Google OAuth Blueprint
 auth = make_google_blueprint(
@@ -25,16 +45,17 @@ auth = make_google_blueprint(
 
 # Route for handling Google callback after authentication
 @auth.route('/authorized')
-@login_required
 def google_authorized_wrapper():
+    print("AUTHORIZED ", google, current_user)
     # Check if the user is authorized
     if not google.authorized:
         return redirect(url_for('google.login'))  # Redirect to Google login if not authorized
 
     resp = google.get("/oauth2/v2/userinfo")
 
-    create_user(resp.json())
-
+    user = create_user(resp.json())
+    login_user(user) # Store user in session with flask-login
+    
     # Redirect to home after successful login
     return redirect(url_for('main.home'))
 
@@ -47,19 +68,18 @@ def google_login_wrapper():
   
 # Logout route
 @auth.route('/logout')
-@login_required
+@login_required()
 def google_logout_wrapper():
     # Revoke the Google OAuth token
     if google.authorized:
-        resp = requests.post(
+        requests.post(
             'https://oauth2.googleapis.com/revoke',
             params={'token': auth.token['access_token']},
             headers={'content-type': 'application/x-www-form-urlencoded'}
         )
-        if resp.status_code == 200:
-            print('Token successfully revoked')
-        else:
-            print('Failed to revoke token')
             
     google.session = None # Logout from Google
+    logout_user() # Remove user from session with flask-login
+
+    # Redirect to login screen after logout
     return redirect(url_for('main.index'))
