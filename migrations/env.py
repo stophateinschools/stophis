@@ -21,6 +21,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from server.database import db
+
 target_metadata = db.Model.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -63,10 +64,10 @@ def run_migrations_online() -> None:
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         raise ValueError("The DATABASE_URL environment variable is not set.")
-    elif database_url and database_url.startswith('postgres://'):
+    elif database_url and database_url.startswith("postgres://"):
         # Replace 'postgres://' with 'postgresql://'
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
     # Update the configuration with the dynamic URL
     config = context.config
     config.set_main_option("sqlalchemy.url", database_url)
@@ -78,9 +79,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
