@@ -28,7 +28,7 @@ class Incident(db.Model):
     reporter = db.relationship("User", back_populates="incidents")
     reported_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
-    ocurred_on = db.Column(DateTime(timezone=True))
+    occurred_on = db.Column(DateTime(timezone=True))
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
 
 

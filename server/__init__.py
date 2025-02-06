@@ -1,7 +1,6 @@
 import os
 from flask import Flask
-from flask_admin import Admin, AdminIndexView
-from flask_admin.contrib.sqla import ModelView
+from flask_admin import Admin
 
 from .admin.index import AdminView
 from .admin.models import IncidentView, UserView
@@ -13,6 +12,7 @@ from .app import main
 from .auth import auth
 from flask_login import LoginManager
 from flask_dance.contrib.google import google
+from flask_admin.contrib.sqla import ModelView
 
 login_manager = LoginManager()
 

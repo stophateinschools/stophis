@@ -5,6 +5,7 @@ from functools import wraps
 from flask_login import current_user, login_user, logout_user
 import requests
 from .user import User, create_user
+from flask_admin.contrib.sqla import ModelView
 
 
 def has_role(roles_required):
@@ -52,7 +53,6 @@ auth = make_google_blueprint(
 # Route for handling Google callback after authentication
 @auth.route("/authorized")
 def google_authorized_wrapper():
-    print("AUTHORIZED ", google, current_user)
     # Check if the user is authorized
     if not google.authorized:
         return redirect(
@@ -65,7 +65,7 @@ def google_authorized_wrapper():
     login_user(user)  # Store user in session with flask-login
 
     # Redirect to home after successful login
-    return redirect(url_for("main.home"))
+    return redirect(url_for("admin.index"))
 
 
 @auth.route("/login")

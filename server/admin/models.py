@@ -1,6 +1,5 @@
-from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
-from markupsafe import Markup
+from flask_admin.contrib.sqla import ModelView
 
 
 class UserView(ModelView):
@@ -15,10 +14,10 @@ class IncidentView(ModelView):
         "details",
         "types",
         "updated_on",
-        "ocurred_on",
+        "occurred_on",
         "reporter",
     ]
-    form_columns = ["summary", "details", "types", "ocurred_on"]
+    form_columns = ["summary", "details", "types", "occurred_on"]
 
     def _render_reporter_link(view, context, model, name):
         # if model.reporter:
