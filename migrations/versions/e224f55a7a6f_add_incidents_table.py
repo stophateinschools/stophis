@@ -52,42 +52,11 @@ def upgrade() -> None:
         type_=sa.Text(),
         existing_nullable=True,
     )
-
-    # Recreate user_roles table with ID primary key
-    op.drop_table("user_roles")
-    op.create_table(
-        "user_roles",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("role_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["role_id"],
-            ["roles.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
+    op.add_column("user_roles", sa.Column("id", sa.Integer(), nullable=False))
 
 
 def downgrade() -> None:
-    op.drop_table("user_roles")
-    op.create_table(
-        "user_roles",
-        sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("role_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["role_id"],
-            ["roles.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
-        ),
-        sa.PrimaryKeyConstraint("user_id", "role_id"),
-    )
+    op.drop_column("user_roles", "id")
     op.alter_column(
         "incident_type",
         "description",
