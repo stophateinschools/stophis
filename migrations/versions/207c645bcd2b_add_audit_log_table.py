@@ -28,7 +28,7 @@ def upgrade() -> None:
         sa.Column("record_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=True),
         sa.Column("timestamp", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("changes", sa.Text(), nullable=False),
+        sa.Column("changes", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["users.id"],

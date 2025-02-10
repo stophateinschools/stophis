@@ -1,10 +1,6 @@
 from flask_login import current_user
 from markupsafe import Markup
-
-from ..audit import AuditModelView
-
-from ..database import db
-
+from flask_admin.contrib.sqla import ModelView
 
 class BaseModelView(ModelView):
     can_view_details = True
@@ -40,8 +36,6 @@ class IncidentView(BaseModelView):
         )
 
     def _render_reporter_link(view, context, model, name):
-        # if model.reporter:
-        #     return Markup('<img src="%s" />' % (model.reporter.profile_picture))
         return model.reporter.first_name
 
     column_formatters = {
