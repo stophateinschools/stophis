@@ -1,6 +1,11 @@
+import enum
 from flask_login import UserMixin
 
 from .database import db
+
+class UserRole(enum.Enum):
+    ADMIN = "Admin"
+    EDITOR = "Editor"
 
 # Association table for the many-to-many relationship
 user_roles = db.Table(
@@ -9,7 +14,6 @@ user_roles = db.Table(
     db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
     db.Column("role_id", db.Integer, db.ForeignKey("roles.id"), primary_key=True),
 )
-
 
 class User(UserMixin, db.Model):
     """A user."""
@@ -34,10 +38,10 @@ class Role(db.Model):
     __tablename__ = "roles"
 
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
+    name = db.Column(db.Enum(UserRole, name="user_role"), nullable=False)
 
     def __str__(self):
-        return self.name
+        return self.name.value
 
 
 def create_user(user):
