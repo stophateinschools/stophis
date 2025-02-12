@@ -1,11 +1,16 @@
-import enum
+from enum import Enum
 from flask_login import UserMixin
 
 from .database import db
 
-class UserRole(enum.Enum):
+
+class UserRole(Enum):
     ADMIN = "Admin"
     EDITOR = "Editor"
+
+    def __str__(self):
+        return self.value
+
 
 # Association table for the many-to-many relationship
 user_roles = db.Table(
@@ -14,6 +19,7 @@ user_roles = db.Table(
     db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
     db.Column("role_id", db.Integer, db.ForeignKey("roles.id"), primary_key=True),
 )
+
 
 class User(UserMixin, db.Model):
     """A user."""
@@ -27,7 +33,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(), nullable=False, unique=True)
     profile_picture = db.Column(db.String())
 
-    roles = db.relationship("Role", secondary=user_roles)
+    roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="reporter")
 
     def __str__(self):
@@ -39,6 +45,8 @@ class Role(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.Enum(UserRole, name="user_role"), nullable=False)
+
+    users = db.relationship("User", secondary="user_roles", back_populates="roles")
 
     def __str__(self):
         return self.name.value

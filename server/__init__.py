@@ -3,7 +3,7 @@ from flask import Flask
 from flask_admin import Admin
 
 from .admin.index import AdminView
-from .admin.models import IncidentView, UserView
+from .admin.models import IncidentView, UserView, BaseModelView, RoleView
 
 from .user import Role, User
 from .models import Incident, IncidentType
@@ -11,8 +11,6 @@ from .database import db
 from .app import main
 from .auth import auth
 from flask_login import LoginManager
-from flask_dance.contrib.google import google
-from flask_admin.contrib.sqla import ModelView
 
 login_manager = LoginManager()
 
@@ -49,10 +47,10 @@ def create_app():
 
     # Incidents
     admin.add_view(IncidentView(Incident, db.session, category="Incidents"))
-    admin.add_view(ModelView(IncidentType, db.session, category="Incidents"))
+    admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents"))
 
     # Users
     admin.add_view(UserView(User, db.session, category="Users"))
-    admin.add_view(ModelView(Role, db.session, category="Users"))
+    admin.add_view(RoleView(Role, db.session, category="Users"))
 
     return app
