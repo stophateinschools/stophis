@@ -19,7 +19,9 @@ def upgrade() -> None:
         "audit_logs",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column(
-            "model_name", sa.Enum("INCIDENT", "USER", name="audit_model"), nullable=False
+            "model_name",
+            sa.Enum("INCIDENT", "USER", name="audit_model"),
+            nullable=False,
         ),
         sa.Column(
             "action",
@@ -36,7 +38,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index('ix_model_name_record_id', 'audit_logs', ['model_name', 'record_id'])
+    op.create_index(
+        "ix_model_name_record_id", "audit_logs", ["model_name", "record_id"]
+    )
 
     # Stick with plural table names
     op.rename_table("incident_type", "incident_types")
@@ -71,7 +75,7 @@ def downgrade() -> None:
         remote_cols=["id"],
     )
 
-    op.drop_index('ix_model_name_record_id', table_name='audit_logs')
+    op.drop_index("ix_model_name_record_id", table_name="audit_logs")
     op.drop_table("audit_logs")
     op.execute("DROP TYPE audit_model")
     op.execute("DROP TYPE audit_action")

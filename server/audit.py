@@ -40,9 +40,7 @@ class AuditLog(db.Model):
     changes = db.Column(db.Text(), nullable=True)
 
     # Create an ndex on model_name and record_id to speed up admin filters
-    __table_args__ = (
-        db.Index('ix_model_name_record_id', 'model_name', 'record_id'),
-    )
+    __table_args__ = (db.Index("ix_model_name_record_id", "model_name", "record_id"),)
 
     def __str__(self):
         return f"<AuditLog {self.model_name.value} {self.action} {self.record_id}>"
@@ -97,6 +95,7 @@ class AuditModelView(BaseModelView):
     """
     Add this as a base view (opposed to ModelView) to models that desire audit logging.
     """
+
     column_list = [
         "audit_log_link",
     ]
@@ -108,9 +107,7 @@ class AuditModelView(BaseModelView):
             f'<a href="/admin/auditlog/?record_id={record_id}&model_name_equals={model_name}">View Audit Logs</a>'
         )
 
-    column_formatters = {
-        "audit_log_link": _audit_log_link
-    }
+    column_formatters = {"audit_log_link": _audit_log_link}
 
 
 class AuditLogView(ModelView):
@@ -126,7 +123,7 @@ class AuditLogView(ModelView):
     )
     column_labels = {"user_id": "User"}
     column_formatters = {
-        "user_id": lambda v,c,m,n: render_model_details_link("user", m.user_id),
+        "user_id": lambda v, c, m, n: render_model_details_link("user", m.user_id),
     }
     column_filters = ("model_name", "record_id", "action")
 
