@@ -18,7 +18,7 @@ class AuditAction(enum.Enum):
 class AuditLog(db.Model):
     """Audit log to track data history."""
 
-    __tablename__ = "audit_log"
+    __tablename__ = "audit_logs"
 
     id = db.Column(db.Integer(), primary_key=True)
     model_name = db.Column(db.String(), nullable=False)

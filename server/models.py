@@ -10,7 +10,7 @@ incident_to_incident_types = db.Table(
     db.Column(
         "incident_type_id",
         db.Integer(),
-        db.ForeignKey("incident_type.id"),
+        db.ForeignKey("incident_types.id"),
         primary_key=True,
     ),
 )
@@ -35,7 +35,7 @@ class Incident(db.Model):
 class IncidentType(db.Model):
     """A type of incident."""
 
-    __tablename__ = "incident_type"
+    __tablename__ = "incident_types"
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False)
