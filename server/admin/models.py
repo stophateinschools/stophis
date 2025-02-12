@@ -2,13 +2,22 @@ from flask_login import current_user
 from flask_admin.contrib.sqla import ModelView
 
 
-class UserView(ModelView):
+class BaseModelView(ModelView):
+    can_view_details = True
+
+
+class RoleView(BaseModelView):
+    can_delete = False
+    column_filters = None
+
+
+class UserView(BaseModelView):
     can_delete = True
     column_list = ["google_id", "first_name", "last_name", "email", "roles"]
     form_columns = ["first_name", "last_name", "email", "roles"]
 
 
-class IncidentView(ModelView):
+class IncidentView(BaseModelView):
     column_list = [
         "summary",
         "details",

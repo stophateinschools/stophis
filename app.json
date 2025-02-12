@@ -1,0 +1,10 @@
+{
+  "name": "Stop Hate in Schools",
+  "environments": {
+    "test": {
+      "scripts": {
+        "test": "tox -- tests"
+      }
+    }
+  }
+}

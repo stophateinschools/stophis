@@ -18,6 +18,9 @@ flask-dance = "==7.1.0"
 wtforms = "==3.1.2"
 flask-login = "==0.6.3"
 black = "==25.1.0"
+pytest = "==8.3.4"
+tox = "==4.24.1"
+cryptography = ">=44.0.1"
 
 [dev-packages]
 

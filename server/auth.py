@@ -18,7 +18,7 @@ def has_role(roles_required):
         if not roles_required:
             return True
 
-        current_roles = [role.name.lower() for role in user.roles]
+        current_roles = [role.value.name for role in user.roles]
         for role in roles_required:
             if role in current_roles:
                 return True
