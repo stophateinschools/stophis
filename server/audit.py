@@ -5,14 +5,23 @@ from flask_login import current_user
 from markupsafe import Markup
 from sqlalchemy import DateTime, event
 from sqlalchemy.orm.attributes import get_history
+
+from .admin.models import BaseModelView
+from .admin.index import render_model_details_link
+
 from .database import db
-import enum
+from enum import Enum
 
 
-class AuditAction(enum.Enum):
+class AuditAction(Enum):
     INSERT = "insert"
     UPDATE = "update"
     DELETE = "delete"
+
+
+class AuditModel(Enum):
+    INCIDENT = "Incident"
+    USER = "User"
 
 
 class AuditLog(db.Model):
@@ -21,7 +30,7 @@ class AuditLog(db.Model):
     __tablename__ = "audit_logs"
 
     id = db.Column(db.Integer(), primary_key=True)
-    model_name = db.Column(db.String(), nullable=False)
+    model_name = db.Column(db.Enum(AuditModel, name="audit_model"), nullable=False)
     action = db.Column(db.Enum(AuditAction, name="audit_action"), nullable=False)
     record_id = db.Column(db.Integer(), nullable=False)
     user_id = db.Column(db.Integer(), db.ForeignKey("users.id"))
@@ -30,14 +39,19 @@ class AuditLog(db.Model):
     )
     changes = db.Column(db.Text(), nullable=True)
 
+    # Create an ndex on model_name and record_id to speed up admin filters
+    __table_args__ = (
+        db.Index('ix_model_name_record_id', 'model_name', 'record_id'),
+    )
+
     def __str__(self):
-        return f"<AuditLog {self.model_name} {self.action} {self.record_id}>"
+        return f"<AuditLog {self.model_name.value} {self.action} {self.record_id}>"
 
 
 def create_audit_log(action, instance, changes=None):
     """Helper function to create and add an audit log entry."""
     audit_log = AuditLog(
-        model_name=instance.__class__.__name__,
+        model_name=AuditModel(instance.__class__.__name__),
         action=action,
         record_id=instance.id,
         user_id=current_user.id if current_user else None,
@@ -79,20 +93,28 @@ def log_audit(session):
 event.listen(db.session, "before_commit", log_audit)
 
 
-class AuditModelView(ModelView):
+class AuditModelView(BaseModelView):
     """
     Add this as a base view (opposed to ModelView) to models that desire audit logging.
     """
-    pass
+    column_list = [
+        "audit_log_link",
+    ]
+
+    def _audit_log_link(view, context, model, name):
+        record_id = model.id
+        model_name = model.__class__.__name__
+        return Markup(
+            f'<a href="/admin/auditlog/?record_id={record_id}&model_name_equals={model_name}">View Audit Logs</a>'
+        )
+
+    column_formatters = {
+        "audit_log_link": _audit_log_link
+    }
 
 
 class AuditLogView(ModelView):
     can_delete = False
-
-    def _user_link(view, context, model, name):
-        return Markup(
-            f'<a href="/admin/user/details?id={model.user_id}">{model.user_id}</a>'
-        )
 
     column_list = (
         "model_name",
@@ -104,7 +126,7 @@ class AuditLogView(ModelView):
     )
     column_labels = {"user_id": "User"}
     column_formatters = {
-        "user_id": _user_link,
+        "user_id": lambda v,c,m,n: render_model_details_link("user", m.user_id),
     }
     column_filters = ("model_name", "record_id", "action")
 
