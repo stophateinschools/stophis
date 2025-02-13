@@ -4,8 +4,8 @@ from flask_admin import Admin
 
 from .audit import AuditLog, AuditLogView
 
-from .admin.index import AdminView
-from .admin.models import IncidentView, UserView, BaseModelView, RoleView
+from .admin.index import AdminView, BaseModelView
+from .admin.models import IncidentView, UserView, RoleView
 
 from .user import Role, User
 from .models import Incident, IncidentType

@@ -1,8 +1,15 @@
 from flask_admin import AdminIndexView, expose
 from flask_login import current_user
 from markupsafe import Markup
+from flask_admin.contrib.sqla import ModelView
 
 from ..auth import login_required
+
+
+class BaseModelView(ModelView):
+    can_view_details = True
+    # Human-readable names for filters in URL parameters
+    named_filter_urls = True
 
 
 def render_model_details_link(model_name, record_id, display_text=None):

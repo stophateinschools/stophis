@@ -6,8 +6,7 @@ from markupsafe import Markup
 from sqlalchemy import DateTime, event
 from sqlalchemy.orm.attributes import get_history
 
-from .admin.models import BaseModelView
-from .admin.index import render_model_details_link
+from .admin.index import BaseModelView, render_model_details_link
 
 from .database import db
 from enum import Enum

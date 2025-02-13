@@ -1,7 +1,7 @@
 """Add audit log table
 
 Revision ID: 207c645bcd2b
-Revises: 016fe35e971d
+Revises: 1a6ddd8935ee
 Create Date: 2025-02-10 12:11:33.486469
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "207c645bcd2b"
-down_revision = "016fe35e971d"
+down_revision = "1a6ddd8935ee"
 
 
 def upgrade() -> None:

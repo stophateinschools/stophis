@@ -1,14 +1,6 @@
 from flask_login import current_user
-from markupsafe import Markup
-from flask_admin.contrib.sqla import ModelView
-from .index import render_model_details_link
+from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
-
-
-class BaseModelView(ModelView):
-    can_view_details = True
-    # Human-readable names for filters in URL parameters
-    named_filter_urls = True
 
 
 class RoleView(BaseModelView):
