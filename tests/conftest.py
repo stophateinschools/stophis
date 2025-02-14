@@ -9,7 +9,7 @@ from server import db
 @pytest.fixture
 def db_session(postgresql):
     print(postgresql)
-    connection = f"postgresql+psycopg2://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
+    connection = f"postgresql+psycopg://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
     
     # Dynamically set the test database URI
     app = Flask(__name__)
