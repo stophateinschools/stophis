@@ -8,7 +8,6 @@ from server import db
 # Fixutre postgresql comes from pytest-postgresql
 @pytest.fixture
 def db_session(postgresql):
-    print(postgresql)
     connection = f"postgresql+psycopg://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
     
     # Dynamically set the test database URI
