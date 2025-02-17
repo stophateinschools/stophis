@@ -1,9 +1,14 @@
 {
   "name": "Stop Hate in Schools",
+  "buildpacks": [{
+      "url": "heroku/python"
+  }],
   "environments": {
     "test": {
+      "addons": ["heroku-postgresql:in-dyno"],
       "scripts": {
         "test": "tox -- tests"
+
       }
     }
   }

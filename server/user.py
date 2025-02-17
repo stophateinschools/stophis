@@ -15,7 +15,7 @@ class UserRole(Enum):
 # Association table for the many-to-many relationship
 user_roles = db.Table(
     "user_roles",
-    db.Column("id", db.Integer(), primary_key=True),
+    db.Column("id", db.Integer(), primary_key=True, autoincrement=True),
     db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
     db.Column("role_id", db.Integer, db.ForeignKey("roles.id"), primary_key=True),
 )
