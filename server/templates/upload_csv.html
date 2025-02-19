@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Manage School District Data</title>
+  </head>
+  <body>
+    <h1>Manage School District Data</h1>
+    <h2>Upload from NCES CSV</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_districts.upload') }}">
+      <input type="file" name="csv_file" accept=".csv" required>
+      <button type="submit">Submit</button>
+    </form>
+    <h2>Sync from Airtable</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_districts.sync') }}">
+      <button type="submit">Sync</button>
+    </form>
+  </body>
+</html>
