@@ -13,6 +13,8 @@
     </form>
     <h2>Sync from Airtable</h2>
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_districts.sync') }}">
+      <label>Airtable ID</label>
+      <input type="text" name="airtable_id" required />
       <button type="submit">Sync</button>
     </form>
   </body>

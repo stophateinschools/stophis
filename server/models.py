@@ -46,7 +46,8 @@ class IncidentType(db.Model):
 
     def __str__(self):
         return f"{self.name}"
-    
+
+
 class SchoolDistrict(db.Model):
     """A school district."""
 
@@ -73,6 +74,7 @@ class SchoolDistrict(db.Model):
     board_url = db.Column(db.String())
     state = db.Column(db.String())
 
+
 class Level(Enum):
     ELEMENTARY = "Elementary"
     HIGH = "High"
@@ -92,8 +94,11 @@ school_types = db.Table(
     "school_to_school_types",
     db.Column("id", db.Integer(), primary_key=True, autoincrement=True),
     db.Column("school_id", db.Integer, db.ForeignKey("schools.id"), primary_key=True),
-    db.Column("type_id", db.Integer, db.ForeignKey("school_types.id"), primary_key=True),
+    db.Column(
+        "type_id", db.Integer, db.ForeignKey("school_types.id"), primary_key=True
+    ),
 )
+
 
 class SchoolType(db.Model):
     __tablename__ = "school_types"
@@ -106,6 +111,7 @@ class SchoolType(db.Model):
     def __str__(self):
         return self.name.value
 
+
 class School(db.Model):
     """A school in a school district."""
 
@@ -113,15 +119,16 @@ class School(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    street  = db.Column(db.String(), nullable=False)
+    street = db.Column(db.String(), nullable=False)
     city = db.Column(db.String(), nullable=False)
     state = db.Column(db.String(), nullable=False)
     postal_code = db.Column(db.String(5), nullable=False)
     latitude = db.Column(db.Float())
     longitude = db.Column(db.Float())
     level = db.Column(db.Enum(Level, name="school_level"))
-    types = db.relationship("SchoolType", secondary=school_types, back_populates="schools")
+    types = db.relationship(
+        "SchoolType", secondary=school_types, back_populates="schools"
+    )
     district_id = db.Column(db.Integer, db.ForeignKey("school_districts.id"))
     district = db.relationship("SchoolDistrict", back_populates="schools")
     incidents = db.relationship("Incident", back_populates="school")
-

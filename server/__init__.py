@@ -59,6 +59,10 @@ def create_app():
 
     admin.add_view(AuditLogView(AuditLog, db.session))
     # Data Management
-    admin.add_view(ManageDataView(name="School District", endpoint="manage_districts", category="Mangage Data"))
+    admin.add_view(
+        ManageDataView(
+            name="School District", endpoint="manage_districts", category="Mangage Data"
+        )
+    )
 
     return app
