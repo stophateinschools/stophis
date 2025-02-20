@@ -2,8 +2,10 @@ import os
 from flask import Flask
 from flask_admin import Admin
 
-from .admin.index import AdminView
-from .admin.models import IncidentView, UserView, BaseModelView, RoleView
+from .audit import AuditLog, AuditLogView
+
+from .admin.index import AdminView, BaseModelView
+from .admin.models import IncidentView, UserView, RoleView
 
 from .user import Role, User
 from .models import Incident, IncidentType
@@ -51,5 +53,7 @@ def create_app():
     # Users
     admin.add_view(UserView(User, db.session, category="Users"))
     admin.add_view(RoleView(Role, db.session, category="Users"))
+
+    admin.add_view(AuditLogView(AuditLog, db.session))
 
     return app
