@@ -61,7 +61,14 @@ def create_app():
     # Data Management
     admin.add_view(
         ManageDataView(
-            name="School District", endpoint="manage_districts", category="Mangage Data"
+            name="School District",
+            endpoint="manage_data/school_district",
+            category="Mangage Data",
+        )
+    )
+    admin.add_view(
+        ManageDataView(
+            name="School", endpoint="manage_data/school", category="Mangage Data"
         )
     )
 

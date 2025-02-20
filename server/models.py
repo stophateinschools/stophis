@@ -118,11 +118,14 @@ class School(db.Model):
     __tablename__ = "schools"
 
     id = db.Column(db.Integer(), primary_key=True)
+    nces_id = db.Column(db.Integer(), unique=True)
     name = db.Column(db.String(), nullable=False)
     street = db.Column(db.String(), nullable=False)
     city = db.Column(db.String(), nullable=False)
     state = db.Column(db.String(), nullable=False)
     postal_code = db.Column(db.String(5), nullable=False)
+    phone = db.Column(db.String())
+    website = db.Column(db.String())
     latitude = db.Column(db.Float())
     longitude = db.Column(db.Float())
     level = db.Column(db.Enum(Level, name="school_level"))

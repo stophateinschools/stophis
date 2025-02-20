@@ -2,17 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>Manage School District Data</title>
+    <title>Manage Data</title>
   </head>
   <body>
-    <h1>Manage School District Data</h1>
+    <h1>Manage {{data_type_title}} Data</h1>
     <h2>Upload from NCES CSV</h2>
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_districts.upload') }}">
-      <input type="file" name="csv_file" accept=".csv" required>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for(endpoint ~ '.upload') }}">
+      <input type="file" name="upload_file" accept=".xls" required>
       <button type="submit">Submit</button>
     </form>
     <h2>Sync from Airtable</h2>
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_districts.sync') }}">
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for(endpoint ~ '.sync') }}">
       <label>Airtable ID</label>
       <input type="text" name="airtable_id" required />
       <button type="submit">Sync</button>
