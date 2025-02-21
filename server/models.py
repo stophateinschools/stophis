@@ -75,7 +75,7 @@ class SchoolDistrict(db.Model):
     state = db.Column(db.String())
 
 
-class Level(Enum):
+class SchoolLevel(Enum):
     ELEMENTARY = "Elementary"
     HIGH = "High"
     MIDDLE = "Middle"
@@ -84,7 +84,7 @@ class Level(Enum):
     PRE = "Pre"
 
 
-class Type(Enum):
+class SchoolTypes(Enum):
     JEWISH = "Jewish"
     PRIVATE = "Private"
     PUBLIC = "Public"
@@ -104,7 +104,9 @@ class SchoolType(db.Model):
     __tablename__ = "school_types"
 
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.Enum(Type, name="school_type"), nullable=False, unique=True)
+    name = db.Column(
+        db.Enum(SchoolTypes, name="school_type"), nullable=False, unique=True
+    )
 
     schools = db.relationship("School", secondary=school_types, back_populates="types")
 
@@ -128,7 +130,7 @@ class School(db.Model):
     website = db.Column(db.String())
     latitude = db.Column(db.Float())
     longitude = db.Column(db.Float())
-    level = db.Column(db.Enum(Level, name="school_level"))
+    level = db.Column(db.Enum(SchoolLevel, name="school_level"))
     types = db.relationship(
         "SchoolType", secondary=school_types, back_populates="schools"
     )

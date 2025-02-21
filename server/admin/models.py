@@ -2,7 +2,6 @@ import csv
 from enum import Enum
 import os
 from io import StringIO
-import sys
 from flask import redirect, request, url_for
 from flask_login import current_user
 from .index import BaseModelView, render_model_details_link
@@ -14,7 +13,7 @@ from pyairtable import Api
 import wtforms
 from bs4 import BeautifulSoup, Tag
 
-from ..models import School, SchoolDistrict
+from ..models import School, SchoolDistrict, SchoolLevel, SchoolTypes
 from ..database import db
 
 
@@ -29,7 +28,6 @@ class RoleView(BaseModelView):
 
 class UserView(AuditModelView):
     can_delete = True
-    can_view_details = True
     column_list = [
         "google_id",
         "first_name",
@@ -42,8 +40,6 @@ class UserView(AuditModelView):
 
 
 class IncidentView(AuditModelView):
-    can_view_details = True
-
     column_list = [
         "summary",
         "details",
@@ -67,13 +63,12 @@ class IncidentView(AuditModelView):
             model.reporter = current_user
 
 
-# class SchoolView(BaseModelView):
-
-# column_formatters = {
-#     "district": lamda v, c, m, n: render_model_details_link(
-#         "school_district", m.
-#     )
-# }
+class SchoolView(BaseModelView):
+    column_formatters = {
+        "district": lambda v, c, m, n: render_model_details_link(
+            "school_district", m.district_id, m.district.name
+        )
+    }
 
 
 class SchoolDistrictView(BaseModelView):
@@ -113,52 +108,117 @@ class DataType(Enum):
 
 class ManageDataView(BaseView):
     @expose("/")
-    def index(self):
-        # Render the manage data form for specific data type
-        data_type = self.endpoint.split("/")[1]
-        if data_type == DataType.SCHOOL_DISTRICT.value:
-            data_type_title = "School District"
-        elif data_type == DataType.SCHOOL.value:
-            data_type_title = "School"
-
-        return self.render(
-            "manage_data.html", data_type_title=data_type_title, endpoint=self.endpoint
-        )
+    def index(cls):
+        return cls.render("manage_data.html")
 
     @expose("/upload", methods=["POST"])
-    def upload(self):
+    def upload(cls):
         file = request.files["upload_file"]
-        data_view_title = self.endpoint.split("/")[1].replace("_", "")
         if file and file.filename.endswith(".xls"):
             # Read the file in memory using StringIO
             file_content = file.stream.read().decode("utf-8")
             file_io = StringIO(file_content)
-            self.convert_file_to_data(file_io)
-            return redirect(url_for(f"{data_view_title}.index_view"))
+            data_type_title = cls.convert_file_to_data(file_io).replace("_", "")
+            return redirect(url_for(f"{data_type_title}.index_view"))
         else:
             return "Invalid file format", 400
 
+    # TODO Finish sync for schools
     @expose("/sync", methods=["POST"])
     def sync(cls):
         # Sync existing district rows with airtable metadata
-        airtable_id = request.form["airtable_id"]
+        state = request.form["state"]
+        table_name = request.form["table"]
         api = Api(os.environ["AIRTABLE_READ_TOKEN"])
         try:
-            table = api.table(os.environ["AIRTABLE_APP_ID"], airtable_id)
-            districts = table.all()
+            table = api.table(os.environ[f"AIRTABLE_APP_ID_{state}"], table_name)
+            data = table.all()
         except Exception as e:
             raise ValueError("Invalid Airtable ID")
 
+        if table_name == "District-Table":
+            return cls.sync_school_districts(data)
+        elif table_name == "School-Table":
+            return cls.sync_schools(data, state)
+
+    # Borrowed logic from https://github.com/stophateinschools/nces-data-scripts/blob/main/nceshtml2csv.py
+    # to reduce manual steps outside of this tool needed.
+    # Thanks Dave :)
+    def convert_file_to_data(self, html_file):
+        """
+        Converts an HTML file containing a table of public schools to CSV and writes to in memory file.
+        """
+        # Parse the HTML
+        soup = BeautifulSoup(html_file, "html.parser")
+
+        # Find the table in the HTML
+        table = soup.find("table")
+
+        # Create a StringIO object to hold the CSV data in memory
+        output = StringIO()
+        csvwriter = csv.writer(output)
+
+        # Find the row that contains headers and write it
+        headers_written = False
+        data_type = None
+        if isinstance(table, Tag):
+            for row in table.find_all("tr"):
+                headers = [cell.text.strip() for cell in row.find_all("td")]
+                if headers and (
+                    "NCES School ID" in headers[0] or "NCES District ID" in headers[0]
+                ):
+                    if "NCES School ID" in headers[0]:
+                        data_type = DataType.SCHOOL.value
+                    elif "NCES District ID" in headers[0]:
+                        data_type = DataType.SCHOOL_DISTRICT.value
+
+                    csvwriter.writerow(headers)
+                    headers_written = True
+                    break
+
+        # Write the remaining rows after headers
+        if headers_written:
+            for row in table.find_all("tr")[table.find_all("tr").index(row) + 1 :]:
+                cells = [cell.text.strip() for cell in row.find_all("td")]
+                if cells:  # Skip empty rows
+                    csvwriter.writerow(cells)
+
+        assert data_type  # Make sure we regnoize file data type
+        output.seek(0)  # Rewind the StringIO object to the beginning for reading
+
+        self.convert_csv_to_data(output, data_type)
+
+        return data_type
+
+    def convert_csv_to_data(self, csv_file, data_type):
+        # Process CSV file and insert data into the database
+        csv_reader = csv.DictReader(csv_file)
+        for row in csv_reader:
+            if data_type == DataType.SCHOOL_DISTRICT.value:
+                self.create_school_district(row)
+            elif data_type == DataType.SCHOOL.value:
+                self.create_school(row)
+        db.session.commit()
+
+    def create_school_district(self, data):
+        district_name = data["District Name"].strip()
+        nces_id = data["NCES District ID"].strip()
+        state = data["State"]
+
+        existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
+        if existing_district:
+            # Maybe at some point do a merge here if we want to update any data
+            return
+
+        district = SchoolDistrict(name=district_name, nces_id=nces_id, state=state)
+        db.session.add(district)
+
+    def sync_school_districts(self, districts):
         for district in districts:
-            name = district["fields"].get("District-Name")
             nces_id = district["fields"].get("NCES-District-ID")
             # TODO logo_url ?
 
-            existing_district = (
-                SchoolDistrict.query.filter_by(nces_id=nces_id)
-                .filter_by(name=name)
-                .first()
-            )
+            existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
             if existing_district == None:
                 continue
 
@@ -191,89 +251,53 @@ class ManageDataView(BaseView):
 
         return redirect(url_for("schooldistrict.index_view"))
 
-    # Borrowed logic from https://github.com/stophateinschools/nces-data-scripts/blob/main/nceshtml2csv.py
-    # to reduce manual steps outside of this tool needed.
-    # Thanks Dave :)
-    def convert_file_to_data(self, html_file):
+    def convert_grade_to_int(self, grade):
+        if grade == "PK":
+            return -1
+        elif grade == "KG":
+            return 0
+        else:
+            return int(grade)
+
+    def categorize_school_level(self, low_grade, high_grade):
         """
-        Converts an HTML file containing a table of public schools to CSV and writes to in memory file.
+        Categorizes the school based on low_grade and high_grade.
         """
-        # Parse the HTML
-        soup = BeautifulSoup(html_file, "html.parser")
+        low_grade = self.convert_grade_to_int(low_grade)
+        high_grade = self.convert_grade_to_int(high_grade)
 
-        # Find the table in the HTML
-        table = soup.find("table")
-
-        # Create a StringIO object to hold the CSV data in memory
-        output = StringIO()
-        csvwriter = csv.writer(output)
-
-        # Find the row that contains headers and write it
-        headers_written = False
-        if isinstance(table, Tag):
-            for row in table.find_all("tr"):
-                headers = [cell.text.strip() for cell in row.find_all("td")]
-                if headers and (
-                    "NCES School ID" in headers[0] or "NCES District ID" in headers[0]
-                ):
-                    data_type = None
-                    if "NCES District ID" in headers[0]:
-                        data_type = DataType.SCHOOL_DISTRICT.value
-                    elif "NCES School ID" in headers[0]:
-                        data_type = DataType.SCHOOL.value
-
-                    csvwriter.writerow(headers)
-                    headers_written = True
-                    break
-
-        # Write the remaining rows after headers
-        if headers_written:
-            for row in table.find_all("tr")[table.find_all("tr").index(row) + 1 :]:
-                cells = [cell.text.strip() for cell in row.find_all("td")]
-                if cells:  # Skip empty rows
-                    csvwriter.writerow(cells)
-
-        assert data_type  # Make sure we regnoize file data type
-        output.seek(0)  # Rewind the StringIO object to the beginning for reading
-
-        self.convert_csv_to_data(output, data_type)
-
-    def convert_csv_to_data(self, csv_file, data_type):
-        # Process CSV file and insert data into the database
-        csv_reader = csv.DictReader(csv_file)
-        for row in csv_reader:
-            if data_type == DataType.SCHOOL_DISTRICT.value:
-                self.create_school_district(row)
-            elif data_type == DataType.SCHOOL.value:
-                self.create_school(row)
-        db.session.commit()
-
-    def create_school_district(self, data):
-        district_name = data["District Name"].strip()
-        nces_id = data["NCES District ID"].strip()
-        state = data["State"]
-
-        existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
-        if existing_district:
-            # Maybe at some point do a merge here if we want to update any data
-            return
-
-        district = SchoolDistrict(name=district_name, nces_id=nces_id, state=state)
-        db.session.add(district)
+        if low_grade == -1 and high_grade == -1:
+            return SchoolLevel.PRE
+        elif low_grade >= 0 and high_grade <= 5:
+            return SchoolLevel.ELEMENTARY
+        elif low_grade >= 6 and high_grade <= 8:
+            return SchoolLevel.MIDDLE
+        elif low_grade >= 9 and high_grade <= 12:
+            return SchoolLevel.HIGH
+        elif low_grade == 0 and high_grade >= 12:
+            return SchoolLevel.K12
+        elif low_grade == 0 and high_grade <= 8:
+            return SchoolLevel.K8
+        else:
+            return None
 
     def create_school(self, data):
-        school_name = data["School Name"].strip()
+        # Note .lower().title() ensures all of our data is stored in Camel Case
+        # (Some NCES data comes in ALL CAPS)
+        school_name = data["School Name"].strip().lower().title()
         nces_id = data["NCES School ID"].strip()
-        street = data["Street Address"].strip()
-        city = data["City"].strip()
+        street = data["Street Address"].strip().lower().title()
+        city = data["City"].strip().lower().title()
         state = data["State"].strip()
         postal_code = data["ZIP"].strip()
         phone = data["Phone"].strip()
-        # level = TODO determine level
-        # types = TODO determine types
+        level = self.categorize_school_level(
+            data["Low Grade"].strip(), data["High Grade"].strip()
+        )
+        # TODO Right now the private school data from NCES is quite different so let's figure
+        # out a way to handle that
+        types = [SchoolTypes.PUBLIC] if data["Charter"] == "No" else None
         district_nces_id = data["NCES District ID"]
-
-        print(district_nces_id)
 
         existing_school = School.query.filter_by(nces_id=nces_id).first()
         if existing_school:
@@ -281,7 +305,6 @@ class ManageDataView(BaseView):
             return
 
         district = SchoolDistrict.query.filter_by(nces_id=district_nces_id).first()
-        print(district)
         school = School(
             name=school_name,
             nces_id=nces_id,
@@ -291,5 +314,25 @@ class ManageDataView(BaseView):
             postal_code=postal_code,
             phone=phone,
             district=district if district else None,
+            level=level,
+            types=types,
         )
         db.session.add(school)
+
+    def sync_schools(self, schools, state):
+        for school in schools:
+            name = school["fields"].get("Name")
+
+            # Unfortunately we didn't track School NCES ID so we need to
+            # match by name & state.
+            existing_school = (
+                School.query.filter_by(name=name).filter_by(state=state).first()
+            )
+            if existing_school == None:
+                continue
+
+            existing_school.website = school["fields"].get("Website")
+
+            db.session.commit()
+
+        return redirect(url_for("school.index_view"))

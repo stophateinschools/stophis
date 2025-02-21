@@ -57,18 +57,26 @@ def create_audit_log(action, instance, changes=None):
     db.session.add(audit_log)
 
 
+def is_audit_model(instance):
+    return hasattr(instance, "is_audted") and instance.is_audited
+
+
 # The SQLAlchemy event listener to track changes
 def log_audit(session):
+    # for instance in session.new + session.dirty:
+    #     if not (hasattr(instance, "is_audited") and instance.is_audited):
+    #         return
+
     for instance in session.new:
-        if isinstance(instance, db.Model):
+        if isinstance(instance, db.Model) and is_audit_model(instance):
             create_audit_log(AuditAction.INSERT, instance)
 
     for instance in session.deleted:
-        if isinstance(instance, db.Model):
+        if isinstance(instance, db.Model) and is_audit_model(instance):
             create_audit_log(AuditAction.DELETE, instance)
 
     for instance in session.dirty:
-        if isinstance(instance, db.Model):
+        if isinstance(instance, db.Model) and is_audit_model(instance):
             changes = {}
             for column in instance.__table__.columns:
                 history = get_history(instance, column.name)
@@ -105,6 +113,9 @@ class AuditModelView(BaseModelView):
         return Markup(
             f'<a href="/admin/auditlog/?record_id={record_id}&model_name_equals={model_name}">View Audit Logs</a>'
         )
+
+    def is_audited():
+        return True
 
     column_formatters = {"audit_log_link": _audit_log_link}
 

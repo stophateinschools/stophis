@@ -1,7 +1,7 @@
 """Add school related tables
 
 Revision ID: 88b67373be75
-Revises: 1a6ddd8935ee
+Revises: 207c645bcd2b
 Create Date: 2025-02-17 11:30:12.015833
 
 """
@@ -9,12 +9,12 @@ Create Date: 2025-02-17 11:30:12.015833
 from alembic import op
 import sqlalchemy as sa
 
-from server.models import Type
+from server.models import SchoolTypes
 
 
 # revision identifiers, used by Alembic.
 revision = "88b67373be75"
-down_revision = "1a6ddd8935ee"
+down_revision = "207c645bcd2b"
 
 
 def upgrade() -> None:
@@ -54,7 +54,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     # Insert Type values into the school_types table
-    for type_enum in Type:
+    for type_enum in SchoolTypes:
         op.execute(f"INSERT INTO school_types(name) VALUES ('{type_enum.name}')")
 
     op.create_table(

@@ -5,7 +5,15 @@ from flask_admin import Admin
 from .audit import AuditLog, AuditLogView
 
 from .admin.index import AdminView, BaseModelView
-from .admin.models import IncidentView, ManageDataView, UserView, BaseModelView, RoleView, SchoolDistrictView
+from .admin.models import (
+    IncidentView,
+    ManageDataView,
+    UserView,
+    BaseModelView,
+    RoleView,
+    SchoolDistrictView,
+    SchoolView,
+)
 
 from .user import Role, User
 from .models import Incident, IncidentType, School, SchoolDistrict, SchoolType
@@ -49,7 +57,7 @@ def create_app():
     # Incidents
     admin.add_view(IncidentView(Incident, db.session, category="Incidents"))
     admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents"))
-    admin.add_view(BaseModelView(School, db.session, category="Incidents"))
+    admin.add_view(SchoolView(School, db.session, category="Incidents"))
     admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents"))
     admin.add_view(SchoolDistrictView(SchoolDistrict, db.session, category="Incidents"))
 
@@ -58,17 +66,12 @@ def create_app():
     admin.add_view(RoleView(Role, db.session, category="Users"))
 
     admin.add_view(AuditLogView(AuditLog, db.session))
+
     # Data Management
     admin.add_view(
         ManageDataView(
-            name="School District",
-            endpoint="manage_data/school_district",
-            category="Mangage Data",
-        )
-    )
-    admin.add_view(
-        ManageDataView(
-            name="School", endpoint="manage_data/school", category="Mangage Data"
+            name="Manage Data",
+            endpoint="manage_data",
         )
     )
 
