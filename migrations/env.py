@@ -61,9 +61,11 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    database_url = os.getenv("DATABASE_URL")
+    database_url = os.getenv("HEROKU_POSTGRES_YELLOW_URL")
     if not database_url:
-        raise ValueError("The DATABASE_URL environment variable is not set.")
+        raise ValueError(
+            "The HEROKU_POSTGRES_YELLOW_URL environment variable is not set."
+        )
     elif database_url and database_url.startswith("postgres://"):
         # Replace 'postgres://' with 'postgresql://'
         database_url = database_url.replace("postgres://", "postgresql://", 1)

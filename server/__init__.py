@@ -35,8 +35,8 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY")
 
-    # Get the DATABASE_URL from environment variables (Heroku provides this for staging/prod)
-    database_url = os.getenv("DATABASE_URL")
+    # Get the HEROKU_POSTGRES_YELLOW_URL from environment variables (Heroku provides this for staging/prod)
+    database_url = os.getenv("HEROKU_POSTGRES_YELLOW_URL")
     if database_url and database_url.startswith("postgres://"):
         # Replace 'postgres://' with 'postgresql://'
         database_url = database_url.replace("postgres://", "postgresql://", 1)
