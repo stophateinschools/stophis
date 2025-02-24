@@ -14,7 +14,7 @@ class BaseModelView(ModelView):
 
 def render_model_details_link(model_name, record_id, display_text=None):
     return Markup(
-        f'<a href="/admin/{model_name}/details?id={record_id}">{display_text if display_text else record_id}</a>'
+        f'<a href="/admin/{model_name.replace("_", "")}/details?id={record_id}">{display_text if display_text else record_id}</a>'
     )
 
 

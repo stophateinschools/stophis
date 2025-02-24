@@ -21,8 +21,9 @@ black = "==25.1.0"
 pytest = "==8.3.4"
 tox = "==4.24.1"
 cryptography = ">=44.0.1"
-pytest-postgresql = "*"
-psycopg2-binary = "*"
+pytest-postgresql = "==6.1.1"
+pyairtable = "==3.0.1"
+bs4 = "*"
 
 [dev-packages]
 

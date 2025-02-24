@@ -21,12 +21,44 @@ You will be able to create a virtual environment in the directory where our `Pip
 4. Run `pipenv install` - to install all packages in Pipfile
 5. Run `pipenv shell` to enter your virtual environment
 
-## Docker and Postgresql
+## Database
+### [Docker and Postgresql](https://www.docker.com/blog/how-to-use-the-postgres-docker-official-image/)
+1. Download latest [docker desktop](https://www.docker.com/products/docker-desktop/)
+2. Pull latest postgres image in from docker terminal - `docker pull postgres`
+3. Now we can run a postgres instance (aka container) `docker run --name stophis -e POSTGRES_HOST_AUTH_METHOD=trust -d postgres`
+4. Now you can access the postgres container to execute psql queries with: `docker exec -it stophis psql -U postgres`
+5. Run `CREATE DATABASE stophis` query
 
+### [Alembic](https://alembic.sqlalchemy.org/en/latest/front.html)
+- Our relational tables will be managed using alembic
+- In order to autogenerate a revision based on your sqlalchemy model changes, you can run `pipenv run alembic revision --autogenerate -m "_message_here_"`
+	or to get a blank revision, you can run `pipenv run alembic revision -m "_message_here_"
 
-## Run Locally
+## Run locally
 Run
 
 ```bash
 pipenv run flask run
 ```
+
+## Run tests
+Run `pipenv run tox` to run entire test suite
+
+Run `pipenv run tox -- tests/_testfile_.py` or `pipenv run tox --tests/_testfile_.py::_testname_` if you would like to run a single test file or test, respectively
+
+# Data management
+The inital version of this application depends uploading data from the National Center for Education Statistics(NCES)[https://nces.ed.gov] and syncing with existing tables in our Airtable project. NOTE: These steps currently work with public school and district data ONLY.
+To upload from NCES:
+1. Go to [public school search](https://nces.ed.gov/ccd/schoolsearch/) or [district search](https://nces.ed.gov/ccd/districtsearch/)
+2. Select a state and click "Search"
+3. Scroll down to the bottom of the page and click "Download Excel File"
+4. A tiny popoup appears and once you see "Download Excel File" - click that
+5. Navigate to our admin page and click "Manage Data" tab
+6. Where you see "Upload from NCES File", select your file from (4) with "Choose File" and click "Upload"
+7. After upload is complete, you will be navigated to the list view of data you just uploaded
+
+To sync from Airtable:
+1. Navigate to admin page and click "Manage Data" tab
+2. Where you see "Sync from Airtable", choose your state and table you are wanting to sync data from and click "Sync"
+3. After sync is complete, you will be navigated to the list view of data you just synced
+

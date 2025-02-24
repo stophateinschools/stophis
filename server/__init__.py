@@ -5,10 +5,18 @@ from flask_admin import Admin
 from .audit import AuditLog, AuditLogView
 
 from .admin.index import AdminView, BaseModelView
-from .admin.models import IncidentView, UserView, RoleView
+from .admin.models import (
+    IncidentView,
+    ManageDataView,
+    UserView,
+    BaseModelView,
+    RoleView,
+    SchoolDistrictView,
+    SchoolView,
+)
 
 from .user import Role, User
-from .models import Incident, IncidentType
+from .models import Incident, IncidentType, School, SchoolDistrict, SchoolType
 from .database import db
 from .app import main
 from .auth import auth
@@ -27,8 +35,8 @@ def create_app():
     app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY")
 
-    # Get the DATABASE_URL from environment variables (Heroku provides this for staging/prod)
-    database_url = os.getenv("DATABASE_URL")
+    # Get the HEROKU_POSTGRES_YELLOW_URL from environment variables (Heroku provides this for staging/prod)
+    database_url = os.getenv("HEROKU_POSTGRES_YELLOW_URL")
     if database_url and database_url.startswith("postgres://"):
         # Replace 'postgres://' with 'postgresql://'
         database_url = database_url.replace("postgres://", "postgresql://", 1)
@@ -49,11 +57,22 @@ def create_app():
     # Incidents
     admin.add_view(IncidentView(Incident, db.session, category="Incidents"))
     admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents"))
+    admin.add_view(SchoolView(School, db.session, category="Incidents"))
+    admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents"))
+    admin.add_view(SchoolDistrictView(SchoolDistrict, db.session, category="Incidents"))
 
     # Users
     admin.add_view(UserView(User, db.session, category="Users"))
     admin.add_view(RoleView(Role, db.session, category="Users"))
 
     admin.add_view(AuditLogView(AuditLog, db.session))
+
+    # Data Management
+    admin.add_view(
+        ManageDataView(
+            name="Manage Data",
+            endpoint="manage_data",
+        )
+    )
 
     return app

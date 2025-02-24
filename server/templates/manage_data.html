@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Manage Data</title>
+  </head>
+  <body>
+    <h1>Manage Data</h1>
+    <h2>Upload from NCES File</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_data.upload') }}">
+      <input type="file" name="upload_file" accept=".xls" required>
+      <button type="submit">Upload</button>
+    </form>
+    <h2>Sync from Airtable</h2>
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_data.sync') }}">
+      <label for="state">Choose a state:</label>
+      <select name="state" id="states" required>
+        <option value="WA">WA</option>
+        <option value="MI">MI</option>
+        <option value="CA">CA</option>
+      </select>
+      <label for="table">Select a table:</label>
+      <select name="table" id="tables" required>
+        <option value="District-Table">District</option>
+        <option value="School-Table">School</option>
+      </select>
+      <button type="submit">Sync</button>
+    </form>
+  </body>
+</html>
