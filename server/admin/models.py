@@ -2,6 +2,7 @@ import csv
 from enum import Enum
 import os
 from io import StringIO
+import re
 from flask import redirect, request, url_for
 from flask_login import current_user
 from .index import BaseModelView, render_model_details_link
@@ -13,7 +14,7 @@ from pyairtable import Api
 import wtforms
 from bs4 import BeautifulSoup, Tag
 
-from ..models import School, SchoolDistrict, SchoolLevel, SchoolTypes
+from ..models import School, SchoolDistrict, SchoolLevel, SchoolType, SchoolTypes
 from ..database import db
 
 
@@ -67,7 +68,7 @@ class SchoolView(BaseModelView):
     column_formatters = {
         "district": lambda v, c, m, n: render_model_details_link(
             "school_district", m.district_id, m.district.name
-        )
+        ) if m.district else None
     }
 
 
@@ -123,7 +124,6 @@ class ManageDataView(BaseView):
         else:
             return "Invalid file format", 400
 
-    # TODO Finish sync for schools
     @expose("/sync", methods=["POST"])
     def sync(cls):
         # Sync existing district rows with airtable metadata
@@ -281,13 +281,24 @@ class ManageDataView(BaseView):
         else:
             return None
 
+    def get_title_casing(self, string):
+        """
+        .lower().title() ensures all of our data is stored in Camel Case.
+        Also, re.sub ensures for strees like "8th" we return "8th" and not "8Th"
+        (Some NCES data comes in ALL CAPS)
+        """
+        string = string.strip().lower()
+
+        # Regex to match words like "8th", "st", "rd", "nd" (ordinal numbers and suffixes) and preserve lower case
+        string = ' '.join(word.capitalize() if not re.match(r'\d+(st|nd|rd|th)', word) else word for word in string.split())
+
+        return string
+
     def create_school(self, data):
-        # Note .lower().title() ensures all of our data is stored in Camel Case
-        # (Some NCES data comes in ALL CAPS)
-        school_name = data["School Name"].strip().lower().title()
+        school_name = self.get_title_casing(data["School Name"])
         nces_id = data["NCES School ID"].strip()
-        street = data["Street Address"].strip().lower().title()
-        city = data["City"].strip().lower().title()
+        street = self.get_title_casing(data["Street Address"])
+        city = self.get_title_casing(data["City"])
         state = data["State"].strip()
         postal_code = data["ZIP"].strip()
         phone = data["Phone"].strip()
@@ -296,7 +307,7 @@ class ManageDataView(BaseView):
         )
         # TODO Right now the private school data from NCES is quite different so let's figure
         # out a way to handle that
-        types = [SchoolTypes.PUBLIC] if data["Charter"] == "No" else None
+        types = [SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first()] if data["Charter"] == "No" else []
         district_nces_id = data["NCES District ID"]
 
         existing_school = School.query.filter_by(nces_id=nces_id).first()
