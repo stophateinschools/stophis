@@ -3,8 +3,9 @@ from enum import Enum
 import os
 from io import StringIO
 import re
-from flask import redirect, request, url_for
+from flask import jsonify, redirect, request, url_for
 from flask_login import current_user
+import requests
 from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
 from flask_admin.contrib.sqla import ModelView
@@ -74,7 +75,7 @@ class SchoolView(BaseModelView):
 
 class SchoolDistrictView(BaseModelView):
     extra_js = [
-        "https://app.simplefileupload.com/buckets/940266945f5018c8b382023c3251749d.js"
+        f"https://app.simplefileupload.com/buckets/{os.environ["SIMPLE_FILE_UPLOAD_KEY"]}.js"
     ]
 
     def _render_img(view, context, model, name):
@@ -140,13 +141,15 @@ class ManageDataView(BaseView):
             return cls.sync_school_districts(data)
         elif table_name == "School-Table":
             return cls.sync_schools(data, state)
+        elif table_name == "Incidents":
+            return cls.create_or_sync_incidents(data)
 
     # Borrowed logic from https://github.com/stophateinschools/nces-data-scripts/blob/main/nceshtml2csv.py
     # to reduce manual steps outside of this tool needed.
     # Thanks Dave :)
     def convert_file_to_data(self, html_file):
         """
-        Converts an HTML file containing a table of public schools to CSV and writes to in memory file.
+        Converts an HTML file containing a table of data to CSV and writes to in memory file.
         """
         # Parse the HTML
         soup = BeautifulSoup(html_file, "html.parser")
@@ -191,7 +194,9 @@ class ManageDataView(BaseView):
         return data_type
 
     def convert_csv_to_data(self, csv_file, data_type):
-        # Process CSV file and insert data into the database
+        """
+        Converts an CSV file to data in our database.
+        """
         csv_reader = csv.DictReader(csv_file)
         for row in csv_reader:
             if data_type == DataType.SCHOOL_DISTRICT.value:
@@ -213,14 +218,59 @@ class ManageDataView(BaseView):
         district = SchoolDistrict(name=district_name, nces_id=nces_id, state=state)
         db.session.add(district)
 
+    def simple_file_upload_from_url(self, url, filename):
+        """
+        We use heroku's simple file upload plugin to handle how we store files (S3 under the hood).
+        We need to download Airtable files and reupload to Simple File Upload.
+        """
+        if url == None:
+            return
+        
+        API_URL = "https://app.simplefileupload.com/api/v1/file"
+        API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]
+        API_SECRET = os.environ["SIMPLE_FILE_UPLOAD_API_SECRET"]
+        
+        try:
+            image_response = requests.get(url)
+            image_response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": f"Error downloading file: {str(e)}"}), 400
+        
+        file = {'file': (filename, image_response.content)} 
+        try:
+            response = requests.post(
+                API_URL,
+                files=file,
+                auth=(API_TOKEN, API_SECRET),
+            )
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": f"Simple File Upload failed with status: {response.status_code}"}), 500
+
+        if response.status_code == 200:
+            try:
+                data = response.json()["data"]
+                return data["attributes"]["cdn-url"]
+            except ValueError:
+                return jsonify({"error": "Invalid JSON response from Simple File Upload API"}), 500
+
+
     def sync_school_districts(self, districts):
+        """
+        Sync school district data from Airtable to our database.
+        """
         for district in districts:
             nces_id = district["fields"].get("NCES-District-ID")
-            # TODO logo_url ?
 
             existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
             if existing_district == None:
                 continue
+            
+            logo = district["fields"].get("District-Logo")[0] if district["fields"].get("District-Logo") else None
+            if logo:
+                airtable_url = logo["url"]
+                filename = logo["filename"]
+                new_url = self.simple_file_upload_from_url(airtable_url, filename)
+                existing_district.logo_url = new_url
 
             existing_district.url = district["fields"].get("District-URL")
             existing_district.twitter = district["fields"].get("District-Twitter")
@@ -331,6 +381,9 @@ class ManageDataView(BaseView):
         db.session.add(school)
 
     def sync_schools(self, schools, state):
+        """
+        Sync school data from Airtable to our database.
+        """
         for school in schools:
             name = school["fields"].get("Name")
 
@@ -347,3 +400,11 @@ class ManageDataView(BaseView):
             db.session.commit()
 
         return redirect(url_for("school.index_view"))
+    
+    def create_or_sync_incidents(self, data):
+        """
+        Get incident data from Airtable and create or sync records.
+        """
+        for incident in data:
+            print(incident)
+
