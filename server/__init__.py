@@ -1,6 +1,7 @@
 import os
 from flask import Flask
 from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 
 from .audit import AuditLog, AuditLogView
 
@@ -8,6 +9,7 @@ from .admin.index import AdminView, BaseModelView
 from .admin.models import (
     IncidentView,
     ManageDataView,
+    UnionView,
     UserView,
     BaseModelView,
     RoleView,
@@ -16,7 +18,15 @@ from .admin.models import (
 )
 
 from .user import Role, User
-from .models import Incident, IncidentType, School, SchoolDistrict, SchoolType
+from .models import (
+    Incident,
+    IncidentType,
+    RelatedLink,
+    School,
+    SchoolDistrict,
+    SchoolType,
+    Union,
+)
 from .database import db
 from .app import main
 from .auth import auth
@@ -55,11 +65,15 @@ def create_app():
     login_manager.init_app(app)
 
     # Incidents
-    admin.add_view(IncidentView(Incident, db.session, category="Incidents"))
+
+    admin.add_view(
+        IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
+    )
     admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents"))
     admin.add_view(SchoolView(School, db.session, category="Incidents"))
     admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents"))
     admin.add_view(SchoolDistrictView(SchoolDistrict, db.session, category="Incidents"))
+    admin.add_view(UnionView(Union, db.session, category="Incidents"))
 
     # Users
     admin.add_view(UserView(User, db.session, category="Users"))

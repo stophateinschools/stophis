@@ -1,21 +1,44 @@
 import csv
 from enum import Enum
+import json
 import os
 from io import StringIO
 import re
 from flask import jsonify, redirect, request, url_for
 from flask_login import current_user
 import requests
+
 from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
 from flask_admin.contrib.sqla import ModelView
-from flask_admin import expose, BaseView
+from flask_admin import expose, BaseView, form
+from flask_admin.form import BaseForm
 from markupsafe import Markup
 from pyairtable import Api
-import wtforms
+from wtforms.fields import FieldList, Field
+from wtforms.validators import InputRequired
 from bs4 import BeautifulSoup, Tag
+import wtforms
+from flask_admin.model.form import InlineFormAdmin
+from flask_admin.form import SecureForm
+from wtforms import FormField, MultipleFileField, StringField, fields
+from requests.auth import HTTPBasicAuth
+from sqlalchemy import event
 
-from ..models import School, SchoolDistrict, SchoolLevel, SchoolType, SchoolTypes
+
+from ..models import (
+    File,
+    RelatedLink,
+    School,
+    SchoolDistrict,
+    SchoolDistrictLogo,
+    SchoolLevel,
+    SchoolType,
+    SchoolTypes,
+    SupportingMaterialFile,
+    Union,
+    union_to_school_districts,
+)
 from ..database import db
 
 
@@ -41,36 +64,246 @@ class UserView(AuditModelView):
     form_columns = ["first_name", "last_name", "email", "roles"]
 
 
+API_URL = "https://app.simplefileupload.com/api/v1/file"
+API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]
+API_SECRET = os.environ["SIMPLE_FILE_UPLOAD_API_SECRET"]
+
+
+def simple_file_delete_from_url(mapper, connection, target):
+    """
+    Let's delete a resource from simple file upload storage so we
+    don't overload.
+    """
+    if target.url == None:
+        return
+
+    try:
+        response = requests.delete(
+            API_URL,
+            params={"url": target.url},
+            auth=HTTPBasicAuth(API_TOKEN, API_SECRET),
+        )
+    except requests.exceptions.RequestException as e:
+        return (
+            jsonify(
+                {
+                    "error": f"Simple File Upload delete failed with status: {response.status_code}"
+                }
+            ),
+            500,
+        )
+
+    if response.status_code == 200:
+        print("Success deleting Simple File Upload file")
+        return {"success": True, "message": "File deleted successfully"}
+    else:
+        print("Error when deleting Simple File Upload file: ", response.text)
+        return {"success": False, "error": response.text}
+
+
+# Event listener to delete file from simple file upload
+event.listen(File, "before_delete", simple_file_delete_from_url, propagate=True)
+
+
 class IncidentView(AuditModelView):
+    # Define the route to fetch school details (district and union)
+    @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
+    @expose("/new/get_school_details/<int:school_id>", methods=["GET"])
+    def get_school_details(cls, school_id):
+        print("GET SCHOOL DETAILS ")
+        school = School.query.get(school_id)
+        # Return the related district and union information
+        return {
+            "district_id": school.district_id if school else None,
+        }
+
+    # Define the route to fetch union details (district and school)
+    @expose("/edit/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
+    @expose("/new/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
+    def get_district_details(cls, district_id):
+        schools = School.query.filter_by(district_id=district_id)
+        unions = (
+            Union.query.join(union_to_school_districts)
+            .filter(union_to_school_districts.c.district_id == district_id)
+            .all()
+        )
+        # Return the related school and union information
+        return {
+            "schools": [{"id": s.id, "name": s.name} for s in schools],
+            "unions": [{"id": u.id, "name": u.name} for u in unions],
+        }
+
+    def _render_supporting_material_links(view, context, model, name):
+        if model.supporting_materials:
+            links = "".join(
+                f'<a href="{sp.url}" target="_blank">{sp.url.split("/")[-1]}</a><br>'
+                for sp in model.supporting_materials
+            )
+            return Markup(links)
+
+    create_template = edit_template = "admin/create_edit_incident.html"
+
     column_list = [
         "summary",
         "details",
+        "school",
+        "district",
+        "union",
         "types",
         "updated_on",
         "occurred_on",
         "reporter",
         *AuditModelView.column_list,
     ]
-    form_columns = ["summary", "details", "types", "occurred_on"]
+
+    column_details_list = [
+        "summary",
+        "details",
+        "related_links",
+        "supporting_materials",
+        "district",
+        "school",
+        "union",
+        "reporter",
+        "reported_on",
+        "occurred_on",
+        "types",
+        "reported_to_school",
+        "school_responded_on",
+        "school_response",
+    ]
+
+    form_columns = [
+        *column_details_list,
+    ]
 
     column_formatters = {
-        "reporter": lambda v, c, m, n: render_model_details_link(
-            "user", m.reporter.id, m.reporter.first_name
+        "reporter": lambda v, c, m, n: (
+            render_model_details_link("user", m.reporter.id, m.reporter.first_name)
+            if m.reporter
+            else None
         ),
+        "related_links": lambda v, c, m, n: [
+            related_link.link for related_link in m.related_links
+        ],
+        "supporting_materials": _render_supporting_material_links,
         "audit_log_link": AuditModelView._audit_log_link,
     }
+
+    form_overrides = {
+        "related_links": FieldList,
+        "supporting_materials": Field,
+    }
+    form_args = {
+        "related_links": {"unbound_field": StringField(), "min_entries": 1},
+    }
+
+    def scaffold_form(self):
+        form_class = super().scaffold_form()
+        form_class.related_links = FieldList(StringField("Link"), min_entries=1)
+        form_class.supporting_materials = Field()
+        return form_class
 
     def on_model_change(self, form, model, is_created):
         if is_created:
             model.reporter = current_user
 
+        return super().on_model_change(form, model, is_created)
+
+    def create_model(self, form):
+        try:
+            model = self.model()
+            related_links_data = form.related_links.data if form.related_links else None
+            supporting_materials_data = (
+                form.supporting_materials.data
+                if form.supporting_materials.data
+                else request.form.getlist("supporting_materials[]")
+            )
+            del form.related_links
+            del form.supporting_materials
+            form.populate_obj(model)
+
+            # Convert related_links and supporting_materials from strings to ORM objects
+            model.related_links = [
+                RelatedLink(link=link, incident=model)
+                for link in related_links_data
+                if link
+            ]
+            model.supporting_materials = [
+                SupportingMaterialFile(link=link, incident=model)
+                for link in supporting_materials_data
+            ]
+
+            self.session.add(model)
+            self.session.commit()
+            return model
+        except Exception as e:
+            self.session.rollback()
+            raise
+
+    def update_model(self, form, model):
+        try:
+            # Need to remove related links & supporting materials
+            # from form so we can handle manually and not in populate_obj.
+            related_links_data = form.related_links.data if form.related_links else []
+            supporting_materials_data = (
+                request.form.getlist("supporting_materials[]") or []
+            )
+            removed_supporting_materials_data = (
+                request.form.get("removed-supporting-materials") or []
+            )
+
+            del form.related_links
+            del form.supporting_materials
+            form.populate_obj(model)
+
+            existing_links = [rl for rl in model.related_links]
+            new_links = filter(None, related_links_data)
+
+            links_to_add = [
+                (
+                    existing_links[link]
+                    if link in existing_links
+                    else RelatedLink(link=link, incident=model)
+                )
+                for link in new_links
+            ]
+
+            existing_materials = [
+                sm
+                for sm in model.supporting_materials
+                if sm.url not in removed_supporting_materials_data
+            ]
+            new_materials = filter(None, supporting_materials_data)
+
+            materials_to_add = [
+                SupportingMaterialFile(url=material, incident=model)
+                for material in new_materials
+            ]
+
+            model.related_links = links_to_add
+            model.supporting_materials = existing_materials + materials_to_add
+
+            self.session.commit()
+            return model
+        except Exception as e:
+            self.session.rollback()
+            raise
+
 
 class SchoolView(BaseModelView):
+    column_list = ["district", "name", "street", "city", "state", "postal_code"]
     column_formatters = {
-        "district": lambda v, c, m, n: render_model_details_link(
-            "school_district", m.district_id, m.district.name
-        ) if m.district else None
+        "name": lambda v, c, m, n: m.display_name if m.display_name else m.name,
+        "district": lambda v, c, m, n: (
+            render_model_details_link("school_district", m.district_id, m.district.name)
+            if m.district
+            else None
+        ),
     }
+
+    # Keep empty details so we show name AND display name in details view
+    column_formatters_detail = {}
 
 
 class SchoolDistrictView(BaseModelView):
@@ -79,33 +312,69 @@ class SchoolDistrictView(BaseModelView):
     ]
 
     def _render_img(view, context, model, name):
-        if model.logo_url:
-            return Markup(f"<img src={model.logo_url} width={100} />")
+        if model.logo:
+            return Markup(f"<img src={model.logo.url} width={50} />")
 
-    # Add input args for simple file upload inputs
-    # TODO I would like this uploader widget to be smaller but the
-    # size overrides aren't working
-    form_widget_args = {
-        "logo_url": {
-            "id": "uploader-preview-here-3780",
-            "class": "simple-file-upload",
-            "type": "hidden",
-            "data-template": "tailwind",
-            "data-maxFileSize": "5",
-            "data-accepted": "image/*",
-        }
+    form_extra_fields = {"logo_file": wtforms.FileField("Logo")}
+
+    column_list = [
+        "logo",
+        "name",
+    ]
+
+    column_details_list = [
+        "nces_id",
+        "logo",
+        "name",
+        "display_name",
+        "url",
+        "twitter",
+        "facebook",
+        "phone",
+        "superintendent_name",
+        "superintendent_email",
+        "civil_rights_url",
+        "civil_rights_contact_name",
+        "civil_rights_contact_email",
+        "hib_url",
+        "hib_form_url",
+        "hib_contact_name",
+        "hib_contact_email",
+        "board_url",
+        "state",
+    ]
+
+    form_excluded_columns = [
+        # TODO Maybe we use this to show currently uploaded logo?
+        "logo"
+    ]
+
+    def on_model_change(self, form, model, is_created):
+        # Custom logic to handle logo file upload before saving the model
+        if model.logo_file:
+            # Store the simple file upload generated URL
+            model.logo = SchoolDistrictLogo(url=model.logo_file)
+        return super().on_model_change(form, model, is_created)
+
+    column_formatters = {
+        "name": lambda v, c, m, n: m.display_name if m.display_name else m.name,
+        "logo": _render_img,
     }
 
-    form_overrides = {"logo_url": wtforms.FileField}
-
-    column_labels = {"logo_url": "Logo"}
-
-    column_formatters = {"logo_url": _render_img}
+    column_formatters_detail = {
+        "logo": _render_img,
+    }
 
 
 class DataType(Enum):
     SCHOOL_DISTRICT = "school_district"
     SCHOOL = "school"
+
+
+class UnionView(BaseModelView):
+    form_columns = ["name", "links"]
+
+    form_overrides = {"links": wtforms.TextAreaField}
 
 
 class ManageDataView(BaseView):
@@ -141,7 +410,7 @@ class ManageDataView(BaseView):
             return cls.sync_school_districts(data)
         elif table_name == "School-Table":
             return cls.sync_schools(data, state)
-        elif table_name == "Incidents":
+        elif table_name == "Incident-Table":
             return cls.create_or_sync_incidents(data)
 
     # Borrowed logic from https://github.com/stophateinschools/nces-data-scripts/blob/main/nceshtml2csv.py
@@ -225,18 +494,18 @@ class ManageDataView(BaseView):
         """
         if url == None:
             return
-        
+
         API_URL = "https://app.simplefileupload.com/api/v1/file"
         API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]
         API_SECRET = os.environ["SIMPLE_FILE_UPLOAD_API_SECRET"]
-        
+
         try:
             image_response = requests.get(url)
             image_response.raise_for_status()
         except requests.exceptions.RequestException as e:
             return jsonify({"error": f"Error downloading file: {str(e)}"}), 400
-        
-        file = {'file': (filename, image_response.content)} 
+
+        file = {"file": (filename, image_response.content)}
         try:
             response = requests.post(
                 API_URL,
@@ -244,15 +513,26 @@ class ManageDataView(BaseView):
                 auth=(API_TOKEN, API_SECRET),
             )
         except requests.exceptions.RequestException as e:
-            return jsonify({"error": f"Simple File Upload failed with status: {response.status_code}"}), 500
+            return (
+                jsonify(
+                    {
+                        "error": f"Simple File Upload failed with status: {response.status_code}"
+                    }
+                ),
+                500,
+            )
 
         if response.status_code == 200:
             try:
                 data = response.json()["data"]
                 return data["attributes"]["cdn-url"]
             except ValueError:
-                return jsonify({"error": "Invalid JSON response from Simple File Upload API"}), 500
-
+                return (
+                    jsonify(
+                        {"error": "Invalid JSON response from Simple File Upload API"}
+                    ),
+                    500,
+                )
 
     def sync_school_districts(self, districts):
         """
@@ -264,13 +544,20 @@ class ManageDataView(BaseView):
             existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
             if existing_district == None:
                 continue
-            
-            logo = district["fields"].get("District-Logo")[0] if district["fields"].get("District-Logo") else None
+
+            logo = (
+                district["fields"].get("District-Logo")[0]
+                if district["fields"].get("District-Logo")
+                else None
+            )
             if logo:
                 airtable_url = logo["url"]
                 filename = logo["filename"]
                 new_url = self.simple_file_upload_from_url(airtable_url, filename)
-                existing_district.logo_url = new_url
+                district_logo = SchoolDistrictLogo(
+                    url=new_url, school_district_id=existing_district.id
+                )
+                db.session.add(district_logo)
 
             existing_district.url = district["fields"].get("District-URL")
             existing_district.twitter = district["fields"].get("District-Twitter")
@@ -340,7 +627,10 @@ class ManageDataView(BaseView):
         string = string.strip().lower()
 
         # Regex to match words like "8th", "st", "rd", "nd" (ordinal numbers and suffixes) and preserve lower case
-        string = ' '.join(word.capitalize() if not re.match(r'\d+(st|nd|rd|th)', word) else word for word in string.split())
+        string = " ".join(
+            word.capitalize() if not re.match(r"\d+(st|nd|rd|th)", word) else word
+            for word in string.split()
+        )
 
         return string
 
@@ -357,7 +647,11 @@ class ManageDataView(BaseView):
         )
         # TODO Right now the private school data from NCES is quite different so let's figure
         # out a way to handle that
-        types = [SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first()] if data["Charter"] == "No" else []
+        types = (
+            [SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first()]
+            if data["Charter"] == "No"
+            else []
+        )
         district_nces_id = data["NCES District ID"]
 
         existing_school = School.query.filter_by(nces_id=nces_id).first()
@@ -400,11 +694,12 @@ class ManageDataView(BaseView):
             db.session.commit()
 
         return redirect(url_for("school.index_view"))
-    
+
     def create_or_sync_incidents(self, data):
         """
         Get incident data from Airtable and create or sync records.
         """
         for incident in data:
             print(incident)
-
+        
+        return redirect(url_for("incident.index_view"))

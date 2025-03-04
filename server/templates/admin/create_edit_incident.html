@@ -1,0 +1,108 @@
+{% extends 'admin/model/create.html' %}
+
+{% block tail_js %}
+    {{ super() }}
+    <script type="text/javascript" src="{{ url_for('static', filename='modify_incident_fields.js') }}"></script>
+    <script src="https://app.simplefileupload.com/buckets/940266945f5018c8b382023c3251749d.js"></script>
+{% endblock %}
+
+{% block create_form %}
+<form action method="POST" class="admin-form form-horizontal" enctype="multipart/form-data">
+    {% for field in form %}
+        {% if field.name == 'related_links' %}
+            <div id="related-links-container" class="control-group">
+                <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
+                {% for subfield in field %}
+                    <div class="related-link">
+                        {{ subfield(class="form-control", placeholder="Enter link", value=subfield.data.link) }}
+                        <button type="button" class="btn btn-danger remove-link">Remove</button>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-link" class="btn btn-primary flex flex-end">Add Link</button>
+        {% elif field.name == 'supporting_materials' %}
+            <div id="supporting-materials-container" class="control-group">
+                <label for="{{ field.id }}" class="control-label">{{ field.label }}
+                {% for data in field.data %}
+                <div class="supporting-material">
+                    <img src="{{ data.url }}"/>
+                    <button type="button" class="btn btn-danger remove-material">Remove</button>
+                </div>
+                {% endfor %}
+                <input id="supporting_materials[]" name="supporting_materials[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+                <!-- Hidden input to track removed files -->
+                <input type="hidden" id="removed-supporting-materials" name="removed-supporting-materials">
+            </div>
+        {% else %}
+            {{ lib.render_field(form, field) }}
+        {% endif %}
+    {% endfor %}
+    {{ lib.render_form_buttons(url_for("incident.index_view"), extra(), is_modal) }}
+</form>
+{% endblock %}
+
+{% block tail %}
+    {{ super() }}  {# Render the full default form #}
+
+    <script>
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        let container = document.getElementById("related-links-container");
+
+        document.getElementById("add-link").addEventListener("click", function() {
+            let input = document.createElement("input");
+            input.type = "text";
+            input.name = "related_links-" + container.children.length;
+            input.classList.add("form-control");
+            input.placeholder = "Enter link";
+
+            let div = document.createElement("div");
+            div.classList.add("related-link");
+            div.appendChild(input);
+
+            let removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.classList.add("btn", "btn-danger", "remove-link");
+            removeButton.innerText = "Remove";
+            removeButton.addEventListener("click", function() {
+                container.removeChild(div);
+            });
+
+            div.appendChild(removeButton);
+            container.appendChild(div);
+        });
+
+        document.querySelectorAll(".remove-link").forEach(btn => {
+            btn.addEventListener("click", function() {
+                this.parentElement.remove();
+            });
+        });
+
+        document.querySelectorAll(".remove-material").forEach(btn => {
+            btn.addEventListener("click", function() {
+                let removedFilesInput = document.getElementById("removed-supporting-materials");
+                let removedFiles = removedFilesInput.value ? removedFilesInput.value.split(",") : [];
+                let url = this.closest(".supporting-material").querySelector("img").getAttribute("src")
+                removedFiles.push(url);
+                removedFilesInput.value = removedFiles;
+                this.parentElement.remove();
+            });
+        });
+
+        let fileInput = document.getElementById("supporting_materials");
+        let existingFiles = fileInput.dataset.existingFiles;
+
+        if (existingFiles) {
+        existingFiles.split(",").forEach((fileUrl, ind) => {
+            if (ind === 0) {
+                let initalInput = document.getElementById("supporting_materials");
+                initalInput.value = fileUrl.trim();
+                initalInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
+    }
+
+        console.log(existingFiles)
+    });
+    </script>
+{% endblock %}
