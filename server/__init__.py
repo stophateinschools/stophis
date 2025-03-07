@@ -8,7 +8,6 @@ from .audit import AuditLog, AuditLogView
 from .admin.index import AdminView, BaseModelView
 from .admin.models import (
     IncidentView,
-    ManageDataView,
     UnionView,
     UserView,
     BaseModelView,
@@ -16,6 +15,7 @@ from .admin.models import (
     SchoolDistrictView,
     SchoolView,
 )
+from .admin.manage_data import ManageDataView
 
 from .user import Role, User
 from .models import (

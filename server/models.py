@@ -4,6 +4,59 @@ import datetime
 from enum import Enum
 
 
+class State(Enum):
+    AL = "Alabama"
+    AK = "Alaska"
+    AZ = "Arizona"
+    AR = "Arkansas"
+    CA = "California"
+    CO = "Colorado"
+    CT = "Connecticut"
+    DE = "Delaware"
+    FL = "Florida"
+    GA = "Georgia"
+    HI = "Hawaii"
+    ID = "Idaho"
+    IL = "Illinois"
+    IN = "Indiana"
+    IA = "Iowa"
+    KS = "Kansas"
+    KY = "Kentucky"
+    LA = "Louisiana"
+    ME = "Maine"
+    MD = "Maryland"
+    MA = "Massachusetts"
+    MI = "Michigan"
+    MN = "Minnesota"
+    MS = "Mississippi"
+    MO = "Missouri"
+    MT = "Montana"
+    NE = "Nebraska"
+    NV = "Nevada"
+    NH = "New Hampshire"
+    NJ = "New Jersey"
+    NM = "New Mexico"
+    NY = "New York"
+    NC = "North Carolina"
+    ND = "North Dakota"
+    OH = "Ohio"
+    OK = "Oklahoma"
+    OR = "Oregon"
+    PA = "Pennsylvania"
+    RI = "Rhode Island"
+    SC = "South Carolina"
+    SD = "South Dakota"
+    TN = "Tennessee"
+    TX = "Texas"
+    UT = "Utah"
+    VT = "Vermont"
+    VA = "Virginia"
+    WA = "Washington"
+    WV = "West Virginia"
+    WI = "Wisconsin"
+    WY = "Wyoming"
+
+
 class File(db.Model):
     """A file managed by Simple File Upload (S3)."""
 
@@ -26,6 +79,32 @@ incident_to_incident_types = db.Table(
     ),
 )
 
+incident_to_incident_internal_source_types = db.Table(
+    "incident_to_incident_internal_source_types",
+    db.Column(
+        "incident_id", db.Integer(), db.ForeignKey("incidents.id"), primary_key=True
+    ),
+    db.Column(
+        "incident_internal_source_type_id",
+        db.Integer(),
+        db.ForeignKey("incident_internal_source_types.id"),
+        primary_key=True,
+    ),
+)
+
+incident_to_incident_source_types = db.Table(
+    "incident_to_incident_source_types",
+    db.Column(
+        "incident_id", db.Integer(), db.ForeignKey("incidents.id"), primary_key=True
+    ),
+    db.Column(
+        "incident_source_type_id",
+        db.Integer(),
+        db.ForeignKey("incident_source_types.id"),
+        primary_key=True,
+    ),
+)
+
 
 class SupportingMaterialFile(File):
     __tablename__ = "supporting_material_files"
@@ -38,9 +117,41 @@ class RelatedLink(db.Model):
     __tablename__ = "related_links"
 
     id = db.Column(db.Integer, primary_key=True)
-    link = db.Column(db.String(100), nullable=False)
+    link = db.Column(db.String(500), nullable=False)
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
     incident = db.relationship("Incident", back_populates="related_links")
+
+
+class InternalNote(db.Model):
+    __tablename__ = "internal_notes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    note = db.Column(db.Text(), nullable=False)
+    author = db.relationship("User", back_populates="incidents")
+    created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
+    updated_on = db.Column(DateTime(timezone=True))
+    incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
+    incident = db.relationship("Incident", back_populates="internal_notes")
+
+
+class SchoolResponseMaterial(File):
+    __tablename__ = "school_response_materials"
+
+    school_response_id = db.Column(db.Integer, db.ForeignKey("school_responses.id"))
+    school_response = db.relationship("SchoolResponse", back_populates="materials")
+
+
+class SchoolResponse(db.Model):
+    __tablename__ = "school_responses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
+    updated_on = db.Column(DateTime(timezone=True))
+    occurred_on = db.Column(DateTime(timezone=True))
+    response = db.Column(db.Text())
+    materials = db.relationship("SchoolResponseMaterial", single_parent=True)
+    incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
+    incident = db.relationship("Incident", back_populates="school_response")
 
 
 class Incident(db.Model):
@@ -49,8 +160,11 @@ class Incident(db.Model):
     __tablename__ = "incidents"
 
     id = db.Column(db.Integer(), primary_key=True)
-    summary = db.Column(db.Text(), nullable=False)
+    airtable_id = db.Column(db.String(), unique=True)
+    airtable_id_number = db.Column(db.String(), unique=True)
+    summary = db.Column(db.Text())
     details = db.Column(db.Text())
+    internal_notes = db.relationship("InternalNote", single_parent=True)
     related_links = db.relationship(
         "RelatedLink", cascade="all, delete-orphan", single_parent=True
     )
@@ -68,12 +182,45 @@ class Incident(db.Model):
     reported_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     occurred_on = db.Column(DateTime(timezone=True))
+    occurred_on_is_month = db.Column(db.Boolean())
+    status = db.relationship("IncidentStatus", back_populates="incidents")
+    privacy_status = db.relationship(
+        "IncidentPrivacyStatus", back_populates="incidents"
+    )
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
-    # source_types = db.relationship("IncidentSourceType", secondary) - what are these?
+    internal_source_types = db.relationship(
+        "IncidentInternalSourceType",
+        secondary=incident_to_incident_internal_source_types,
+    )
+    source_types = db.relationship(
+        "IncidentSourceType", secondary=incident_to_incident_source_types
+    )
     reported_to_school = db.Column(db.Boolean())
-    school_responded_on = db.Column(DateTime(timezone=True))
-    school_response = db.Column(db.Text())
-    # school_response_materials = db.relationship(Files)
+    school_response = db.relationship("SchoolResponse", back_populates="incident")
+
+
+class IncidentStatus(db.Model):
+    """Incident status (publish vs. not)"""
+
+    __tablename__ = "incident_status"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
+    description = db.Column(db.Text())
+
+    incidents = db.relationship("Incident", back_populates="status")
+
+
+class IncidentPrivacyStatus(db.Model):
+    """Incident privacy status."""
+
+    __tablename__ = "incident_privacy_status"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
+    description = db.Column(db.Text())
+
+    incidents = db.relationship("Incident", back_populates="privacy_status")
 
 
 class IncidentType(db.Model):
@@ -82,7 +229,33 @@ class IncidentType(db.Model):
     __tablename__ = "incident_types"
 
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(), nullable=False)
+    name = db.Column(db.String(), nullable=False, unique=True)
+    description = db.Column(db.Text())
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class IncidentInternalSourceType(db.Model):
+    """An internal facing source type."""
+
+    __tablename__ = "incident_internal_source_types"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
+    description = db.Column(db.Text())
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class IncidentSourceType(db.Model):
+    """A public facing source type."""
+
+    __tablename__ = "incident_source_types"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
     def __str__(self):
@@ -123,8 +296,13 @@ class Union(db.Model):
     districts = db.relationship(
         "SchoolDistrict", secondary=union_to_school_districts, back_populates="unions"
     )
-    state = db.Column(db.String())
-    documents = db.relationship("UnionFile", back_populates="union", cascade="all, delete-orphan", single_parent=True)
+    state = db.Column(db.Enum(State, name="state"), nullable=False)
+    documents = db.relationship(
+        "UnionFile",
+        back_populates="union",
+        cascade="all, delete-orphan",
+        single_parent=True,
+    )
     links = db.Column(db.JSON())
     notes = db.Column(db.Text())
     incidents = db.relationship("Incident", back_populates="union")
@@ -135,7 +313,9 @@ class Union(db.Model):
 class SchoolDistrictLogo(File):
     __tablename__ = "school_district_logos"
 
-    school_district_id = db.Column(db.Integer, db.ForeignKey("school_districts.id"))
+    school_district_id = db.Column(
+        db.Integer, db.ForeignKey("school_districts.id"), unique=True, nullable=False
+    )
     school_district = db.relationship(
         "SchoolDistrict",
         back_populates="logo",
@@ -151,12 +331,16 @@ class SchoolDistrict(db.Model):
     __tablename__ = "school_districts"
 
     id = db.Column(db.Integer(), primary_key=True)
-    nces_id = db.Column(db.BigInteger(), unique=True)
+    airtable_id = db.Column(db.String(), unique=True)
+    nces_id = db.Column(db.String(), unique=True)
     name = db.Column(db.String(), nullable=False)
     display_name = db.Column(db.String(), nullable=True)
     schools = db.relationship("School", back_populates="district")
     logo = db.relationship(
-        "SchoolDistrictLogo", back_populates="school_district", cascade="all, delete-orphan", uselist=False
+        "SchoolDistrictLogo",
+        back_populates="school_district",
+        cascade="all, delete-orphan",
+        uselist=False,
     )
     url = db.Column(db.String())
     twitter = db.Column(db.String())
@@ -173,14 +357,14 @@ class SchoolDistrict(db.Model):
     hib_contact_email = db.Column(db.String())
     board_url = db.Column(db.String())
     notes = db.Column(db.Text())
-    state = db.Column(db.String())
+    state = db.Column(db.Enum(State, name="state"), nullable=False)
     incidents = db.relationship("Incident", back_populates="district")
     unions = db.relationship(
         "Union", secondary=union_to_school_districts, back_populates="districts"
     )
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.display_name if self.display_name else self.name}"
 
 
 class SchoolLevel(Enum):
@@ -228,18 +412,21 @@ class School(db.Model):
     __tablename__ = "schools"
 
     id = db.Column(db.Integer(), primary_key=True)
-    nces_id = db.Column(db.BigInteger(), unique=True)
+    airtable_id = db.Column(db.String(), unique=True)
+    nces_id = db.Column(db.String(), unique=True)
     name = db.Column(db.String(), nullable=False)
     display_name = db.Column(db.String(), nullable=True)
     street = db.Column(db.String(), nullable=False)
     city = db.Column(db.String(), nullable=False)
-    state = db.Column(db.String(), nullable=False)
+    state = db.Column(db.Enum(State, name="state"), nullable=False)
     postal_code = db.Column(db.String(5), nullable=False)
     phone = db.Column(db.String())
     website = db.Column(db.String())
     latitude = db.Column(db.Float())
     longitude = db.Column(db.Float())
     level = db.Column(db.Enum(SchoolLevel, name="school_level"))
+    low_grade = db.Column(db.String)
+    high_grade = db.Column(db.String)
     notes = db.Column(db.Text())
     types = db.relationship(
         "SchoolType", secondary=school_types, back_populates="schools"
