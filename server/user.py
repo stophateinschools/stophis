@@ -36,6 +36,7 @@ class User(UserMixin, db.Model):
 
     roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="reporter")
+    notes = db.relationship("InternalNote", back_populates="author")
 
     @hybrid_property
     def name(self):

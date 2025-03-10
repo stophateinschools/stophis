@@ -7,31 +7,43 @@
 {% endblock %}
 
 {% block create_form %}
-<form action method="POST" class="admin-form form-horizontal" enctype="multipart/form-data">
+<link rel="stylesheet" href="{{ url_for('static', filename='incident_form.css') }}">
+<form action method="POST" class="admin-form form-horizontal custom-form" enctype="multipart/form-data">
     {% for field in form %}
         {% if field.name == 'related_links' %}
             <div id="related-links-container" class="control-group">
-                <label for="{{ field.id }}" class="control-label">{{ field.label }}</label>
-                {% for subfield in field %}
-                    <div class="related-link">
-                        {{ subfield(class="form-control", placeholder="Enter link", value=subfield.data.link) }}
-                        <button type="button" class="btn btn-danger remove-link">Remove</button>
-                    </div>
-                {% endfor %}
+                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
+                <div id="related-links" class="controls">
+                    {% for subfield in field %}
+                        <div class="related-link">
+                            {{ subfield(class="form-control", placeholder="Enter link", value=subfield.data.link) }}
+                            <button type="button" class="btn btn-danger remove-link">Remove</button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-link" class="btn btn-primary controls">Add Link</button>
             </div>
-            <button type="button" id="add-link" class="btn btn-primary flex flex-end">Add Link</button>
         {% elif field.name == 'supporting_materials' %}
             <div id="supporting-materials-container" class="control-group">
-                <label for="{{ field.id }}" class="control-label">{{ field.label }}
-                {% for data in field.data %}
-                <div class="supporting-material">
+                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
+                {% for data in field.data or [] %}
+                <div class="supporting-material" class="controls">
                     <img src="{{ data.url }}"/>
                     <button type="button" class="btn btn-danger remove-material">Remove</button>
                 </div>
                 {% endfor %}
-                <input id="supporting_materials[]" name="supporting_materials[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+                <div class="controls">
+                    <input id="supporting_materials[]" name="supporting_materials[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+                </div>
                 <!-- Hidden input to track removed files -->
                 <input type="hidden" id="removed-supporting-materials" name="removed-supporting-materials">
+            </div>
+        {% elif field.name == 'publish_privacy' %}
+            <div id="publish-details-container" class="control-group">
+                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
+                <!-- <div id="publish-details">
+                    <input >
+                </div> -->
             </div>
         {% else %}
             {{ lib.render_field(form, field) }}
@@ -47,7 +59,7 @@
     <script>
     
     document.addEventListener("DOMContentLoaded", function() {
-        let container = document.getElementById("related-links-container");
+        let container = document.getElementById("related-links");
 
         document.getElementById("add-link").addEventListener("click", function() {
             let input = document.createElement("input");
@@ -93,16 +105,35 @@
         let existingFiles = fileInput.dataset.existingFiles;
 
         if (existingFiles) {
-        existingFiles.split(",").forEach((fileUrl, ind) => {
-            if (ind === 0) {
-                let initalInput = document.getElementById("supporting_materials");
-                initalInput.value = fileUrl.trim();
-                initalInput.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-        });
-    }
+            existingFiles.split(",").forEach((fileUrl, ind) => {
+                if (ind === 0) {
+                    let initalInput = document.getElementById("supporting_materials");
+                    initalInput.value = fileUrl.trim();
+                    initalInput.dispatchEvent(new Event("input", { bubbles: true }));
+                }
+            })  
+        }
 
-        console.log(existingFiles)
+        const publishCheckbox = document.getElementById("publish");
+        // const statusGroup = document.getElementById("status-group");
+        // const privacyGroup = document.getElementById("privacy-group");
+
+        function toggleFields() {
+            if (publishCheckbox.checked) {
+                console.log("CHECK ")
+                // statusGroup.style.display = "none";  // Hide Status
+                // privacyGroup.style.display = "block"; // Show Privacy
+            } else {
+                // statusGroup.style.display = "block";  // Show Status
+                // privacyGroup.style.display = "none"; // Hide Privacy
+            }
+        }
+
+        // Run on page load
+        toggleFields();
+
+        // Add event listener
+        publishCheckbox.addEventListener("change", toggleFields);
     });
     </script>
 {% endblock %}

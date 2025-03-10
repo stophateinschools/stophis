@@ -24,6 +24,7 @@ cryptography = ">=44.0.1"
 pytest-postgresql = "==6.1.1"
 pyairtable = "==3.0.1"
 bs4 = "==0.0.2"
+wtforms-sqlalchemy = "==0.4.2"
 
 [dev-packages]
 

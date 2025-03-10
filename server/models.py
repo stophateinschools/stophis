@@ -127,7 +127,8 @@ class InternalNote(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     note = db.Column(db.Text(), nullable=False)
-    author = db.relationship("User", back_populates="incidents")
+    author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    author = db.relationship("User", back_populates="notes")
     created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True))
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
@@ -150,6 +151,7 @@ class SchoolResponse(db.Model):
     occurred_on = db.Column(DateTime(timezone=True))
     response = db.Column(db.Text())
     materials = db.relationship("SchoolResponseMaterial", single_parent=True)
+
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
     incident = db.relationship("Incident", back_populates="school_response")
 
@@ -162,7 +164,7 @@ class Incident(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     airtable_id = db.Column(db.String(), unique=True)
     airtable_id_number = db.Column(db.String(), unique=True)
-    summary = db.Column(db.Text())
+    summary = db.Column(db.Text(), nullable=False)
     details = db.Column(db.Text())
     internal_notes = db.relationship("InternalNote", single_parent=True)
     related_links = db.relationship(
@@ -183,9 +185,8 @@ class Incident(db.Model):
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     occurred_on = db.Column(DateTime(timezone=True))
     occurred_on_is_month = db.Column(db.Boolean())
-    status = db.relationship("IncidentStatus", back_populates="incidents")
-    privacy_status = db.relationship(
-        "IncidentPrivacyStatus", back_populates="incidents"
+    publish_details = db.relationship(
+        "IncidentPublishDetails", back_populates="incident"
     )
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
     internal_source_types = db.relationship(
@@ -200,27 +201,52 @@ class Incident(db.Model):
 
 
 class IncidentStatus(db.Model):
-    """Incident status (publish vs. not)"""
+    """Incident statuses"""
 
-    __tablename__ = "incident_status"
+    __tablename__ = "incident_statuses"
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    incidents = db.relationship("Incident", back_populates="status")
+    details_id = db.Column(db.Integer(), db.ForeignKey("incident_publish_details.id"))
+    details = db.relationship("IncidentPublishDetails", back_populates="status")
+
+    def __str__(self):
+        return f"{self.name}"
+
 
 
 class IncidentPrivacyStatus(db.Model):
     """Incident privacy status."""
 
-    __tablename__ = "incident_privacy_status"
+    __tablename__ = "incident_privacy_statuses"
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    incidents = db.relationship("Incident", back_populates="privacy_status")
+    details_id = db.Column(db.Integer(), db.ForeignKey("incident_publish_details.id"))
+    details = db.relationship("IncidentPublishDetails", back_populates="privacy")
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class IncidentPublishDetails(db.Model):
+    """Incident Publish Details - publish vs. no & level of privacy if published"""
+
+    __tablename__ = "incident_publish_details"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    publish = db.Column(db.Boolean(), nullable=False, default=False)
+    status = db.relationship("IncidentStatus", back_populates="details")
+    privacy = db.relationship("IncidentPrivacyStatus", back_populates="details")
+
+    incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
+    incident = db.relationship(
+        "Incident", back_populates="publish_details", single_parent=True
+    )
 
 
 class IncidentType(db.Model):

@@ -1,0 +1,18 @@
+#related-links-container {
+  gap: 5px;
+}
+
+.related-link {
+  display: block;
+  margin-bottom: 10px;
+}
+
+#related-links {
+  display: block;
+}
+
+#add-link {
+  display: block;
+  margin-top: 10px;
+
+}

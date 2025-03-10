@@ -10,15 +10,19 @@ from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose
 from markupsafe import Markup
 from wtforms.fields import FieldList, Field
+from wtforms_sqlalchemy.fields import QuerySelectField
 import wtforms
-from wtforms import StringField
+from wtforms import BooleanField, SelectField, StringField
 from requests.auth import HTTPBasicAuth
 from sqlalchemy import event
-from flask_admin.contrib.sqla.filters import FilterLike, BaseSQLAFilter
+from flask_admin.contrib.sqla.filters import FilterLike
 
 from ..models import (
     File,
     Incident,
+    IncidentPrivacyStatus,
+    IncidentPublishDetails,
+    IncidentStatus,
     RelatedLink,
     School,
     SchoolDistrict,
@@ -153,12 +157,16 @@ class IncidentView(AuditModelView):
         "reported_on",
         "updated_on",
         "occurred_on",
+        "occurred_on_is_month",
         "types",
+        "internal_source_types",
+        "source_types",
+        "publish_details",
         "reported_to_school",
-        "school_responded_on",
         "school_response",
         "airtable_id",
         "airtable_id_number",
+        "internal_notes",
     ]
 
     column_filters = [
@@ -169,7 +177,23 @@ class IncidentView(AuditModelView):
     ]
 
     form_columns = [
-        *column_details_list,
+        "summary",
+        "details",
+        "related_links",
+        "supporting_materials",
+        "district",
+        "school",
+        "union",
+        "reporter",
+        "reported_on",
+        "updated_on",
+        "occurred_on",
+        "occurred_on_is_month",
+        "types",
+        "internal_source_types",
+        "source_types",
+        "reported_to_school",
+        "school_response",
     ]
 
     column_formatters = {
@@ -207,6 +231,17 @@ class IncidentView(AuditModelView):
         form_class = super().scaffold_form()
         form_class.related_links = FieldList(StringField("Link"), min_entries=1)
         form_class.supporting_materials = Field()
+        form_class.publish = BooleanField("Publish")
+        form_class.publish_status = QuerySelectField(
+            "Status",
+            query_factory=lambda: IncidentStatus.query.all(),
+            allow_blank=True
+        )
+        form_class.publish_privacy = QuerySelectField(
+            "Privacy",
+            query_factory=lambda: IncidentPrivacyStatus.query.all(),
+            allow_blank=True
+        )
         return form_class
 
     def on_model_change(self, form, model, is_created):
@@ -216,16 +251,22 @@ class IncidentView(AuditModelView):
         return super().on_model_change(form, model, is_created)
 
     def create_model(self, form):
+        print("CREATE FORM ", form.__dict__)
         try:
             model = self.model()
             related_links_data = form.related_links.data if form.related_links else None
             supporting_materials_data = (
-                form.supporting_materials.data
-                if form.supporting_materials.data
-                else request.form.getlist("supporting_materials[]")
+                (
+                    form.supporting_materials.data
+                    if form.supporting_materials.data
+                    else request.form.getlist("supporting_materials[]")
+                )
+                if form.supporting_materials
+                else None
             )
             del form.related_links
             del form.supporting_materials
+            print("CREATE MODEL ", model.__dict__)
             form.populate_obj(model)
 
             # Convert related_links and supporting_materials from strings to ORM objects
@@ -235,12 +276,13 @@ class IncidentView(AuditModelView):
                 if link
             ]
             model.supporting_materials = [
-                SupportingMaterialFile(link=link, incident=model)
-                for link in supporting_materials_data
+                SupportingMaterialFile(url=url, incident=model)
+                for url in supporting_materials_data
+                if url
             ]
 
-            self.session.add(model)
-            self.session.commit()
+            # self.session.add(model)
+            # self.session.commit()
             return model
         except Exception as e:
             self.session.rollback()

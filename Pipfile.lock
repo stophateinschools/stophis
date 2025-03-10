@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c146cc8dde1dbc4730242a25654409bad63a75aeb347e74d7dc9954953c53019"
+            "sha256": "5569bf88c8aaa66480650a0f7914696ca077605e0e379099519a69650474400f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -442,11 +442,11 @@
         },
         "jinja2": {
             "hashes": [
-                "sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb",
-                "sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb"
+                "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
+                "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==3.1.5"
+            "version": "==3.1.6"
         },
         "mako": {
             "hashes": [
@@ -821,11 +821,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:4880473a969e5f23f2a2be3646b2dfd84af9028716d398e46192f84bc36900d2",
-                "sha256:558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f"
+                "sha256:199466a166ff664970d0ee145839f5582cb9bca7a0a3a2e795b6a9cb2308e9c6",
+                "sha256:43b4ee60e10b0d0ee98ad11918e114c70701bc6051662a9a675a0496c1a158f4"
             ],
             "markers": "python_version >= '3.9'",
-            "version": "==75.8.2"
+            "version": "==76.0.0"
         },
         "soupsieve": {
             "hashes": [
@@ -932,11 +932,11 @@
         },
         "virtualenv": {
             "hashes": [
-                "sha256:fdaabebf6d03b5ba83ae0a02cfe96f48a716f4fae556461d180825866f75b728",
-                "sha256:febddfc3d1ea571bdb1dc0f98d7b45d24def7428214d4fb73cc486c9568cce6a"
+                "sha256:3e3d00f5807e83b234dfb6122bf37cfadf4be216c53a49ac059d02414f819170",
+                "sha256:95e39403fcf3940ac45bc717597dba16110b74506131845d9b687d5e73d947ac"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==20.29.2"
+            "version": "==20.29.3"
         },
         "werkzeug": {
             "hashes": [
@@ -954,6 +954,15 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==3.1.2"
+        },
+        "wtforms-sqlalchemy": {
+            "hashes": [
+                "sha256:5dfa6b9cd8c0fab644178af6a90adc057c1c2695a17c20a074f1f3c4d49a434d",
+                "sha256:638f23372e654eded3c19ea605a2d318062e26234772977b9bb1619160eed798"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==0.4.2"
         }
     },
     "develop": {}
