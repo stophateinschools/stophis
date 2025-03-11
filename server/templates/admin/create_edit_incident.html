@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block create_form %}
+{% from "admin/macros.html" import file_upload_field %}
 <link rel="stylesheet" href="{{ url_for('static', filename='incident_form.css') }}">
 <form action method="POST" class="admin-form form-horizontal custom-form" enctype="multipart/form-data">
     {% for field in form %}
@@ -17,33 +18,43 @@
                     {% for subfield in field %}
                         <div class="related-link">
                             {{ subfield(class="form-control", placeholder="Enter link", value=subfield.data.link) }}
-                            <button type="button" class="btn btn-danger remove-link">Remove</button>
+                            <button type="button" class="remove-link" style="border: none; background: transparent;">&#10060;</button>
                         </div>
                     {% endfor %}
                 </div>
                 <button type="button" id="add-link" class="btn btn-primary controls">Add Link</button>
             </div>
         {% elif field.name == 'supporting_materials' %}
-            <div id="supporting-materials-container" class="control-group">
-                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
-                {% for data in field.data or [] %}
-                <div class="supporting-material" class="controls">
-                    <img src="{{ data.url }}"/>
-                    <button type="button" class="btn btn-danger remove-material">Remove</button>
-                </div>
-                {% endfor %}
+            {{ file_upload_field(field) }}
+        {% elif field.name == 'publish_details' %}
+            <div class="control-group">
+                <label for="{{ field.id }}">{{ field.label.text }}</label>
                 <div class="controls">
-                    <input id="supporting_materials[]" name="supporting_materials[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+                    {% for subfield in field %}
+                    <div id="{{ subfield.id }}">
+                        <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+                        {{ subfield( value=subfield.data) }}
+                    </div>
+                    {% endfor %}
                 </div>
-                <!-- Hidden input to track removed files -->
-                <input type="hidden" id="removed-supporting-materials" name="removed-supporting-materials">
             </div>
-        {% elif field.name == 'publish_privacy' %}
-            <div id="publish-details-container" class="control-group">
+        {% elif field.name == 'school_response' %}
+            <div id="school-response-container" class="control-group">
                 <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
-                <!-- <div id="publish-details">
-                    <input >
-                </div> -->
+                <div class="controls">
+                    {% for subfield in field %}
+                        {% if subfield.id == 'school_response-school_response_materials' %}
+                            {{ file_upload_field(subfield) }}
+                        {% else %}
+                            <div id="{{ subfield.id }}">
+                                <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+                                {{ subfield( value=subfield.data ) }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+   
             </div>
         {% else %}
             {{ lib.render_field(form, field) }}
@@ -59,12 +70,17 @@
     <script>
     
     document.addEventListener("DOMContentLoaded", function() {
-        let container = document.getElementById("related-links");
+        let relatedLinksContainer = document.getElementById("related-links");
+        let publishCheckbox = document.getElementById("publish_details-publish").querySelector("input");
+        let publishStatus = document.getElementById("publish_details-publish_status");
+        let publishPrivacy = document.getElementById("publish_details-publish_privacy");
+        let schoolRespondedCheckbox = document.getElementById("school_responded");
+        let fileInput = document.getElementById("supporting_materials");
 
         document.getElementById("add-link").addEventListener("click", function() {
             let input = document.createElement("input");
             input.type = "text";
-            input.name = "related_links-" + container.children.length;
+            input.name = "related_links-" + relatedLinksContainer.children.length;
             input.classList.add("form-control");
             input.placeholder = "Enter link";
 
@@ -74,14 +90,16 @@
 
             let removeButton = document.createElement("button");
             removeButton.type = "button";
-            removeButton.classList.add("btn", "btn-danger", "remove-link");
-            removeButton.innerText = "Remove";
+            removeButton.classList.add("remove-link");
+            removeButton.innerHTML = "&#10060;"; // Unicode for X
+            removeButton.style.border = "none";
+            removeButton.style.background = "transparent";
             removeButton.addEventListener("click", function() {
-                container.removeChild(div);
+                relatedLinksContainer.removeChild(div);
             });
 
             div.appendChild(removeButton);
-            container.appendChild(div);
+            relatedLinksContainer.appendChild(div);
         });
 
         document.querySelectorAll(".remove-link").forEach(btn => {
@@ -92,48 +110,53 @@
 
         document.querySelectorAll(".remove-material").forEach(btn => {
             btn.addEventListener("click", function() {
-                let removedFilesInput = document.getElementById("removed-supporting-materials");
+                let removedFilesInput = document.getElementById("removed_supporting_materials");
                 let removedFiles = removedFilesInput.value ? removedFilesInput.value.split(",") : [];
-                let url = this.closest(".supporting-material").querySelector("img").getAttribute("src")
+                let url = this.closest(".supporting_materials").querySelector("img").getAttribute("src")
                 removedFiles.push(url);
                 removedFilesInput.value = removedFiles;
                 this.parentElement.remove();
             });
         });
 
-        let fileInput = document.getElementById("supporting_materials");
-        let existingFiles = fileInput.dataset.existingFiles;
-
-        if (existingFiles) {
-            existingFiles.split(",").forEach((fileUrl, ind) => {
-                if (ind === 0) {
-                    let initalInput = document.getElementById("supporting_materials");
-                    initalInput.value = fileUrl.trim();
-                    initalInput.dispatchEvent(new Event("input", { bubbles: true }));
-                }
-            })  
-        }
-
-        const publishCheckbox = document.getElementById("publish");
-        // const statusGroup = document.getElementById("status-group");
-        // const privacyGroup = document.getElementById("privacy-group");
-
-        function toggleFields() {
+        function togglePublishFields() {
             if (publishCheckbox.checked) {
-                console.log("CHECK ")
-                // statusGroup.style.display = "none";  // Hide Status
-                // privacyGroup.style.display = "block"; // Show Privacy
+                publishStatus.hidden = true;  // Hide Status
+                publishPrivacy.hidden = false; // Show Privacy
             } else {
-                // statusGroup.style.display = "block";  // Show Status
-                // privacyGroup.style.display = "none"; // Hide Privacy
+                publishStatus.hidden = false;  // Show Status
+                publishPrivacy.hidden = true; // Hide Privacy
+            }
+        }
+        function toggleSchoolResponseFields() {
+            let schoolResponseContainer = document.getElementById("school-response-container");
+            if (schoolRespondedCheckbox.checked) {
+                schoolResponseContainer.hidden = false;  // Hide details
+            } else {
+                schoolResponseContainer.hidden = true;  // Show details
             }
         }
 
         // Run on page load
-        toggleFields();
+        togglePublishFields();
+        toggleSchoolResponseFields();
 
-        // Add event listener
-        publishCheckbox.addEventListener("change", toggleFields);
+        // Add event listeners
+        publishCheckbox.addEventListener("change", togglePublishFields);
+        schoolRespondedCheckbox.addEventListener("change", toggleSchoolResponseFields);
+
+        let existingFiles = [];
+        if (fileInput && fileInput.dataset && fileInput.dataset.existingFiles) {
+            existingFiles = fileInput.dataset.existingFiles.split(",");
+        }
+        
+        existingFiles.forEach((fileUrl, ind) => {
+            if (ind === 0) {
+                let initalInput = document.getElementById("supporting_materials");
+                initalInput.value = fileUrl.trim();
+                initalInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+        });
     });
     </script>
 {% endblock %}

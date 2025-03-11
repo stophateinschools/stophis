@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from flask import jsonify, request
 from flask_login import current_user
@@ -9,10 +10,21 @@ from ..audit import AuditModelView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin import expose
 from markupsafe import Markup
-from wtforms.fields import FieldList, Field
+from wtforms.fields import FieldList, Field, DateTimeLocalField
 from wtforms_sqlalchemy.fields import QuerySelectField
 import wtforms
-from wtforms import BooleanField, SelectField, StringField
+from wtforms import (
+    BooleanField,
+    DateField,
+    DateTimeField,
+    Form,
+    FormField,
+    SelectField,
+    StringField,
+    TextAreaField,
+    validators,
+)
+from wtforms.widgets import DateInput
 from requests.auth import HTTPBasicAuth
 from sqlalchemy import event
 from flask_admin.contrib.sqla.filters import FilterLike
@@ -27,6 +39,8 @@ from ..models import (
     School,
     SchoolDistrict,
     SchoolDistrictLogo,
+    SchoolResponse,
+    SchoolResponseMaterial,
     SupportingMaterialFile,
     Union,
     union_to_school_districts,
@@ -93,6 +107,29 @@ def simple_file_delete_from_url(mapper, connection, target):
 
 # Event listener to delete file from simple file upload
 event.listen(File, "before_delete", simple_file_delete_from_url, propagate=True)
+
+
+class PublishDetailsForm(Form):
+    publish = BooleanField("Publish")
+    publish_status = QuerySelectField(
+        "Status", query_factory=lambda: IncidentStatus.query.all(), allow_blank=True
+    )
+    publish_privacy = QuerySelectField(
+        "Privacy",
+        query_factory=lambda: IncidentPrivacyStatus.query.all(),
+        allow_blank=True,
+    )
+
+
+class SchoolResponseForm(Form):
+    school_responded_on = DateTimeField(
+        "School Responded On",
+        format="%Y-%m-%d",
+        widget=DateInput(),
+        validators=[validators.Optional()],
+    )
+    school_response = TextAreaField("School Response")
+    school_response_materials = Field()
 
 
 class IncidentView(AuditModelView):
@@ -169,6 +206,14 @@ class IncidentView(AuditModelView):
         "internal_notes",
     ]
 
+    column_searchable_list = [
+        "summary",
+        "details",
+        "school.name",
+        "district.name",
+        "union.name",
+    ]
+
     column_filters = [
         "summary",
         FilterLike(School.display_name, "School Name"),
@@ -186,12 +231,12 @@ class IncidentView(AuditModelView):
         "union",
         "reporter",
         "reported_on",
-        "updated_on",
         "occurred_on",
         "occurred_on_is_month",
         "types",
         "internal_source_types",
         "source_types",
+        "publish_details",
         "reported_to_school",
         "school_response",
     ]
@@ -222,26 +267,23 @@ class IncidentView(AuditModelView):
     form_overrides = {
         "related_links": FieldList,
         "supporting_materials": Field,
+        "reported_on": DateTimeField,
+        "occurred_on": DateTimeField,
     }
     form_args = {
         "related_links": {"unbound_field": StringField(), "min_entries": 1},
+        "reported_on": {"format": "%Y-%m-%d", "widget": DateInput()},
+        "occurred_on": {"format": "%Y-%m-%d", "widget": DateInput()},
     }
 
     def scaffold_form(self):
         form_class = super().scaffold_form()
         form_class.related_links = FieldList(StringField("Link"), min_entries=1)
         form_class.supporting_materials = Field()
-        form_class.publish = BooleanField("Publish")
-        form_class.publish_status = QuerySelectField(
-            "Status",
-            query_factory=lambda: IncidentStatus.query.all(),
-            allow_blank=True
-        )
-        form_class.publish_privacy = QuerySelectField(
-            "Privacy",
-            query_factory=lambda: IncidentPrivacyStatus.query.all(),
-            allow_blank=True
-        )
+        form_class.publish_details = FormField(PublishDetailsForm)
+        form_class.school_responded = BooleanField("School Responded")
+        form_class.school_response = FormField(SchoolResponseForm)
+
         return form_class
 
     def on_model_change(self, form, model, is_created):
@@ -250,24 +292,133 @@ class IncidentView(AuditModelView):
 
         return super().on_model_change(form, model, is_created)
 
+    def create_edit_model(self, form, model):
+        """Common logic between the update & create model methods."""
+        # Need to remove related links & supporting materials
+        # from form so we can handle manually and not in populate_obj.
+        related_links_data = form.related_links.data if form.related_links else []
+        supporting_materials_data = request.form.getlist("supporting_materials[]") or []
+        school_response_materials_data = request.form.getlist("school_response-school_response_materials[]") or []
+        if form.school_responded.data:
+            existing_school_response = model.school_response
+            if existing_school_response:
+                school_response = existing_school_response
+                existing_school_response.updated_on = datetime.now()
+                existing_school_response.occurred_on = (
+                    form.school_response.school_responded_on.data
+                )
+                existing_school_response.response = (
+                    form.school_response.school_response.data
+                )
+            else:
+                school_response = SchoolResponse(
+                    updated_on=datetime.now(),
+                    occurred_on=form.school_response.school_responded_on.data,
+                    response=form.school_response.school_response.data,
+                )
+                model.school_response = school_response
+        else:
+            model.school_response = None
+
+        if form.publish_details.publish:
+            existing_publish_details = model.publish_details
+            if existing_publish_details:
+                new_details = form.publish_details
+                existing_publish_details.publish = new_details.publish.data
+                existing_publish_details.status_id = (
+                    new_details.publish_status.data.id
+                    if new_details.publish_status.data and not new_details.publish.data
+                    else None
+                )
+                existing_publish_details.privacy_id = (
+                    new_details.publish_privacy.data.id
+                    if new_details.publish_privacy.data and new_details.publish.data
+                    else None
+                )
+            else:
+                publish_details = IncidentPublishDetails(
+                    publish=form.publish_details.publish.data,
+                    status_id=(
+                        form.publish_details.publish_status.data.id
+                        if not form.publish_details.publish.data
+                        else None
+                    ),
+                    privacy_id=(
+                        form.publish_details.publish_privacy.data.id
+                        if form.publish_details.publish.data
+                        else None
+                    ),
+                )
+                model.publish_details = publish_details
+
+        del form.school_responded
+        del form.school_response
+        del form.related_links
+        del form.supporting_materials
+        form.populate_obj(model)
+
+        return {
+            "related_links_data": related_links_data,
+            "supporting_materials_data": supporting_materials_data,
+            "school_response_materials_data": school_response_materials_data
+        }
+
+    def update_materials(self, model, relationship_attr, material_cls, removed_materials, new_materials_data, foreign_key_attr):
+        """
+        Generalized function to update material relationships.
+
+        :param model: The parent model instance (e.g., an Incident or SchoolResponse).
+        :param relationship_attr: Name of the relationship attribute on the model (string).
+        :param material_cls: The class of the material model (e.g., SupportingMaterialFile).
+        :param removed_materials: List of material URLs to be removed.
+        :param new_materials_data: List of new material URLs to be added.
+        :param foreign_key_attr: The attribute name to link new material instances to the parent model (e.g., "incident").
+        """
+        print("UPDATE MATERIALS ", model, relationship_attr, material_cls, removed_materials, new_materials_data, foreign_key_attr)
+        # Get existing materials, keeping only those that are NOT in the removed list
+        existing_materials = [
+            material for material in getattr(model, relationship_attr) if material.url not in removed_materials
+        ]
+
+        # Filter out empty strings or None values from new materials
+        new_materials = [url for url in new_materials_data if url]
+
+        # Create new material instances, dynamically setting the foreign key relationship
+        materials_to_add = [material_cls(url=url, **{foreign_key_attr: model}) for url in new_materials]
+
+        # Assign the updated list back to the model
+        setattr(model, relationship_attr, existing_materials + materials_to_add)
+
+    def on_form_prefill(self, form, id):
+        model = self.model.query.get(id)
+
+        print("INCIDENt MATERIALS ", model.supporting_materials)
+        if model.school_response:
+            form.school_responded.data = True
+            form.school_response.school_responded_on.data = (
+                model.school_response.occurred_on.date() if model.school_response.occurred_on else None
+            )
+            form.school_response.school_response.data = model.school_response.response
+            print("MATERIALS ", model.school_response.materials)
+            form.school_response.school_response_materials.data = model.school_response.materials
+
+        if model.publish_details:
+            form.publish_details.publish.data = model.publish_details.publish
+            form.publish_details.publish_status.data = model.publish_details.status
+            form.publish_details.publish_privacy.data = model.publish_details.privacy
+
+        return form
+
     def create_model(self, form):
         print("CREATE FORM ", form.__dict__)
         try:
             model = self.model()
-            related_links_data = form.related_links.data if form.related_links else None
-            supporting_materials_data = (
-                (
-                    form.supporting_materials.data
-                    if form.supporting_materials.data
-                    else request.form.getlist("supporting_materials[]")
-                )
-                if form.supporting_materials
-                else None
+            data = self.create_edit_model(
+                form, model
             )
-            del form.related_links
-            del form.supporting_materials
-            print("CREATE MODEL ", model.__dict__)
-            form.populate_obj(model)
+            related_links_data = data["related_links_data"]
+            supporting_materials_data = data["supporting_materials_data"]
+            print("data ", data, related_links_data, supporting_materials_data)
 
             # Convert related_links and supporting_materials from strings to ORM objects
             model.related_links = [
@@ -281,8 +432,8 @@ class IncidentView(AuditModelView):
                 if url
             ]
 
-            # self.session.add(model)
-            # self.session.commit()
+            self.session.add(model)
+            self.session.commit()
             return model
         except Exception as e:
             self.session.rollback()
@@ -290,19 +441,18 @@ class IncidentView(AuditModelView):
 
     def update_model(self, form, model):
         try:
-            # Need to remove related links & supporting materials
-            # from form so we can handle manually and not in populate_obj.
-            related_links_data = form.related_links.data if form.related_links else []
-            supporting_materials_data = (
-                request.form.getlist("supporting_materials[]") or []
+            data = self.create_edit_model(
+                form, model
             )
+            related_links_data = data["related_links_data"]
+            supporting_materials_data = data["supporting_materials_data"]
             removed_supporting_materials_data = (
                 request.form.get("removed-supporting-materials") or []
             )
-
-            del form.related_links
-            del form.supporting_materials
-            form.populate_obj(model)
+            school_response_materials_data = data["school_response_materials_data"]
+            removed_school_response_materials_data = (
+                request.form.get("removed_school_response-school_response_materials") or []
+            )
 
             existing_links = [rl for rl in model.related_links]
             new_links = filter(None, related_links_data)
@@ -315,21 +465,24 @@ class IncidentView(AuditModelView):
                 )
                 for link in new_links
             ]
-
-            existing_materials = [
-                sm
-                for sm in model.supporting_materials
-                if sm.url not in removed_supporting_materials_data
-            ]
-            new_materials = filter(None, supporting_materials_data)
-
-            materials_to_add = [
-                SupportingMaterialFile(url=material, incident=model)
-                for material in new_materials
-            ]
-
             model.related_links = links_to_add
-            model.supporting_materials = existing_materials + materials_to_add
+
+            self.update_materials(
+                model=model,
+                relationship_attr="supporting_materials",
+                material_cls=SupportingMaterialFile,
+                removed_materials=removed_supporting_materials_data,
+                new_materials_data=supporting_materials_data,
+                foreign_key_attr="incident"
+            )
+            self.update_materials(
+                model=model.school_response,
+                relationship_attr="materials",
+                material_cls=SchoolResponseMaterial,
+                removed_materials=removed_school_response_materials_data,
+                new_materials_data=school_response_materials_data,
+                foreign_key_attr="school_response"
+            )
 
             self.session.commit()
             return model

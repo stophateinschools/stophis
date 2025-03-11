@@ -162,7 +162,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["details_id"],
             ["incident_publish_details.id"],
-            name=op.f("fk_incident_privacy_statuses_details_id_incident_publish_details"),
+            name=op.f(
+                "fk_incident_privacy_statuses_details_id_incident_publish_details"
+            ),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_incident_privacy_statuses")),
         sa.UniqueConstraint("name", name=op.f("uq_incident_privacy_statuses_name")),

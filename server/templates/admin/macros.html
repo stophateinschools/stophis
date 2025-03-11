@@ -1,0 +1,16 @@
+{% macro file_upload_field(field) %}
+  <div class="control-group">
+    <label for="{{ field.id }}">{{ field.label.text }}</label>
+    {% for data in field.data | select %}
+    <div class="{{ field.id }}" class="controls" style="display: flex; align-items: flex-start;">
+        <img src="{{ data.url }}" width="200"/>
+        <button type="button" class="remove-material" style="border: none; background: transparent; position: absolute;">&#10060;</button>
+    </div>
+    {% endfor %}
+    <div class="controls">
+        <input id="{{field.id}}[]" name="{{field.id}}[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+    </div>
+    <!-- Hidden input to track removed files -->
+    <input type="hidden" id="removed_{{field.id}}" name="removed_{{field.id}}">
+  </div>
+{% endmacro %}

@@ -11,6 +11,9 @@ class BaseModelView(ModelView):
     # Human-readable names for filters in URL parameters
     named_filter_urls = True
 
+    def search_placeholder(self):
+        return ""
+
 
 def render_model_details_link(model_name, record_id, display_text=None):
     return Markup(

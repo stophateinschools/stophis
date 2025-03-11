@@ -186,7 +186,7 @@ class Incident(db.Model):
     occurred_on = db.Column(DateTime(timezone=True))
     occurred_on_is_month = db.Column(db.Boolean())
     publish_details = db.relationship(
-        "IncidentPublishDetails", back_populates="incident"
+        "IncidentPublishDetails", back_populates="incident", uselist=False
     )
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
     internal_source_types = db.relationship(
@@ -197,7 +197,9 @@ class Incident(db.Model):
         "IncidentSourceType", secondary=incident_to_incident_source_types
     )
     reported_to_school = db.Column(db.Boolean())
-    school_response = db.relationship("SchoolResponse", back_populates="incident")
+    school_response = db.relationship(
+        "SchoolResponse", back_populates="incident", uselist=False
+    )
 
 
 class IncidentStatus(db.Model):
@@ -209,12 +211,10 @@ class IncidentStatus(db.Model):
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    details_id = db.Column(db.Integer(), db.ForeignKey("incident_publish_details.id"))
     details = db.relationship("IncidentPublishDetails", back_populates="status")
 
     def __str__(self):
         return f"{self.name}"
-
 
 
 class IncidentPrivacyStatus(db.Model):
@@ -226,7 +226,6 @@ class IncidentPrivacyStatus(db.Model):
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    details_id = db.Column(db.Integer(), db.ForeignKey("incident_publish_details.id"))
     details = db.relationship("IncidentPublishDetails", back_populates="privacy")
 
     def __str__(self):
@@ -240,8 +239,12 @@ class IncidentPublishDetails(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     publish = db.Column(db.Boolean(), nullable=False, default=False)
-    status = db.relationship("IncidentStatus", back_populates="details")
-    privacy = db.relationship("IncidentPrivacyStatus", back_populates="details")
+    status_id = db.Column(db.Integer, db.ForeignKey("incident_statuses.id"))
+    status = db.relationship("IncidentStatus", back_populates="details", uselist=False)
+    privacy_id = db.Column(db.Integer, db.ForeignKey("incident_privacy_statuses.id"))
+    privacy = db.relationship(
+        "IncidentPrivacyStatus", back_populates="details", uselist=False
+    )
 
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
     incident = db.relationship(
