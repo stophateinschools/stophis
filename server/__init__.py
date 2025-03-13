@@ -59,13 +59,12 @@ def create_app():
     # Register Blueprints (routes)
     app.register_blueprint(main)
     app.register_blueprint(auth, url_prefix="/auth")
-    admin = Admin(app, index_view=AdminView())
+    admin = Admin(app)
 
     # Configure flask login for session management
     login_manager.init_app(app)
 
     # Incidents
-
     admin.add_view(
         IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
     )

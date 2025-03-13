@@ -29,4 +29,4 @@ class AdminView(AdminIndexView):
     @expose("/")
     @login_required()
     def index(self):
-        return self.render("admin/index.html")
+        return self.render("/admin/index.html")

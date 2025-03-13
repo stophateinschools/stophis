@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Stop Hate in Schools - Login</title>
+      <link rel="shortcut icon" href="/static/assets/brand/favicon.ico" />
+      <link rel="stylesheet" href="/static/assets/css/index.css">
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">   
+      <!--
+         Official google login button does not play nice with flask-dance.
+         Source for button source code: https://codepen.io/mupkoo/pen/YgddgB
+       -->
+      <link rel="stylesheet" href="/static/assets/css/login.css">
+   </head>
+   <body>
+      {% import 'admin/macros.html' as macros %}
+      {{ macros.header() }}
+      <div class="container">
+         <div class="login-container">
+            <button type="button" class="login-with-google-btn" onclick="window.location.href = '/auth/login'">
+               Sign in with Google
+            </button>
+            <span class="subtext">
+               Need help?
+               <a href="mailto:admin@stophateinschools.org">Contact Us</a>
+            </span>
+         </div>
+         <img class="background-img" src="/static/assets/brand/favicon.svg" alt="Stop Hate in Schools - Login Background">
+      </div>
+  <body>
+</html>

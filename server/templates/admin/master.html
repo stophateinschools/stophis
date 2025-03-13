@@ -1,0 +1,59 @@
+{% extends admin_base_template %}
+
+{% block head_css %}
+    {{ super() }}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop Hate in Schools</title>
+    <link rel="shortcut icon" href="/static/assets/brand/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">    
+    <link rel="stylesheet" href="/static/assets/css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-top navbar-expand-sm navbar-dark bg-white border-bottom">
+      {% block brand %}
+        <a class="navbar-brand" href="/admin">
+          <img src="/static/assets/brand/icon.png" width="50" alt="Stop Hate in Schools - Logo">
+        </a>
+      {% endblock %}
+      <!-- navbar content -->
+      <div class="collapse navbar-collapse" id="admin-navbar-collapse">
+
+      {% block main_menu %}
+        <ul class="navbar-nav bg-white">
+          {% for item in admin_view.admin.menu() %}
+          {% if item._children %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle text-primary {% if 'map' in segment %} active {% endif %}" href="#" id="dropdown{{ loop.index }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="ni ni-pin-3"></i>
+                <span class="nav-link-text">{{ item.name }}</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdown{{ loop.index }}">
+                {% for child in item._children %}
+                  <li><a class="dropdown-item" href="{{ child._view.url }}">{{ child.name }}</a></li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item {% if item.is_active(admin_view) %} active {% endif %}">
+              <a class="nav-link" href="{{ item._view.url }}">
+                <i class="ni {{ item.icon_class }}"></i>
+                <span class="nav-link-text text-primary">{{ item.name }}</span>
+              </a>
+            </li>
+          {% endif %}
+          {% endfor %}
+        </ul>
+      {% endblock %}
+
+      </div>
+    </nav>
+{% endblock %}
+
+{% block tail_js %}
+  {% include 'components/scripts.html' %}
+{% endblock %}

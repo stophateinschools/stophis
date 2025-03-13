@@ -14,3 +14,18 @@
     <input type="hidden" id="removed_{{field.id}}" name="removed_{{field.id}}">
   </div>
 {% endmacro %}
+
+{% macro header() %}
+<nav class="navbar navbar-top navbar-expand-sm navbar-dark bg-white border-bottom">
+  <div class="container-fluid">
+      <a class="navbar-brand" href="/">
+          <img src="/static/assets/brand/icon.png" width="50" alt="Stop Hate in Schools - Logo">
+      </a>
+      <div class="navbar-content">
+        {% if caller %}
+          {{ caller() }}
+        {% endif %}
+      </div>
+  </div>
+</nav>
+{% endmacro %}

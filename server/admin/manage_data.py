@@ -15,7 +15,7 @@ from ..admin.util import (
 class ManageDataView(BaseView):
     @expose("/")
     def index(cls):
-        return cls.render("manage_data.html")
+        return cls.render("admin/manage_data.html")
 
     @expose("/upload", methods=["POST"])
     def upload(cls):
