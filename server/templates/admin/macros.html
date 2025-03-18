@@ -8,7 +8,7 @@
     </div>
     {% endfor %}
     <div class="controls">
-        <input id="{{field.id}}[]" name="{{field.id}}[]" class="simple-file-upload form-control" type="hidden" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+        <input id="{{field.id}}[]" name="{{field.id}}[]" class="simple-file-upload form-control" type="hidden" data-tag="{{field.id}}" data-multiple="true" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
     </div>
     <!-- Hidden input to track removed files -->
     <input type="hidden" id="removed_{{field.id}}" name="removed_{{field.id}}">

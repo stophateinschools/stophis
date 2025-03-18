@@ -34,7 +34,7 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdown{{ loop.index }}">
                 {% for child in item._children %}
-                  <li><a class="dropdown-item" href="{{ child._view.url }}">{{ child.name }}</a></li>
+                  <li><a class="dropdown-item" href="{{ child._view.url }}?flt1_state_equals=WA">{{ child.name }}</a></li>
                 {% endfor %}
               </ul>
             </li>

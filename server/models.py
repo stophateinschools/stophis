@@ -1,7 +1,10 @@
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, select, case
+from sqlalchemy.sql import func
+from sqlalchemy.orm import aliased
 from .database import db
 import datetime
 from enum import Enum
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class State(Enum):
@@ -92,18 +95,36 @@ incident_to_incident_internal_source_types = db.Table(
     ),
 )
 
-incident_to_incident_source_types = db.Table(
-    "incident_to_incident_source_types",
-    db.Column(
-        "incident_id", db.Integer(), db.ForeignKey("incidents.id"), primary_key=True
-    ),
-    db.Column(
-        "incident_source_type_id",
-        db.Integer(),
-        db.ForeignKey("incident_source_types.id"),
-        primary_key=True,
-    ),
+incident_schools = db.Table(
+    "incident_schools",
+    db.Column("incident_id", db.Integer, db.ForeignKey("incidents.id"), primary_key=True),
+    db.Column("school_id", db.Integer, db.ForeignKey("schools.id"), primary_key=True),
 )
+
+incident_districts = db.Table(
+    "incident_districts",
+    db.Column("incident_id", db.Integer, db.ForeignKey("incidents.id"), primary_key=True),
+    db.Column("district_id", db.Integer, db.ForeignKey("school_districts.id"), primary_key=True),
+)
+
+incident_unions = db.Table(
+    "incident_unions",
+    db.Column("incident_id", db.Integer, db.ForeignKey("incidents.id"), primary_key=True),
+    db.Column("union_id", db.Integer, db.ForeignKey("unions.id"), primary_key=True),
+)
+
+class IncidentSourceAssociation(db.Model):
+    """Association table for linking incidents to source types with an optional source ID."""
+
+    __tablename__ = "incident_source_associations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"), nullable=False)
+    source_type_id = db.Column(db.Integer, db.ForeignKey("incident_source_types.id"), nullable=False)
+    source_id = db.Column(db.String(), nullable=True)
+
+    incident = db.relationship("Incident", back_populates="source_types")
+    source_type = db.relationship("IncidentSourceType")
 
 
 class SupportingMaterialFile(File):
@@ -171,14 +192,11 @@ class Incident(db.Model):
         "RelatedLink", cascade="all, delete-orphan", single_parent=True
     )
     supporting_materials = db.relationship(
-        "SupportingMaterialFile", cascade="all, delete-orphan", single_parent=True
+        "SupportingMaterialFile", single_parent=True
     )
-    school_id = db.Column(db.Integer, db.ForeignKey("schools.id"))
-    school = db.relationship("School", back_populates="incidents")
-    district_id = db.Column(db.Integer, db.ForeignKey("school_districts.id"))
-    district = db.relationship("SchoolDistrict", back_populates="incidents")
-    union_id = db.Column(db.Integer, db.ForeignKey("unions.id"))
-    union = db.relationship("Union", back_populates="incidents")
+    schools = db.relationship("School", secondary=incident_schools, back_populates="incidents")
+    districts = db.relationship("SchoolDistrict", secondary=incident_districts, back_populates="incidents")
+    unions = db.relationship("Union", secondary=incident_unions, back_populates="incidents")
     reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     reporter = db.relationship("User", back_populates="incidents")
     reported_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
@@ -194,12 +212,50 @@ class Incident(db.Model):
         secondary=incident_to_incident_internal_source_types,
     )
     source_types = db.relationship(
-        "IncidentSourceType", secondary=incident_to_incident_source_types
+        "IncidentSourceAssociation", back_populates="incident", cascade="all, delete-orphan"
     )
     reported_to_school = db.Column(db.Boolean())
     school_response = db.relationship(
         "SchoolResponse", back_populates="incident", uselist=False
     )
+
+    @hybrid_property
+    def state(self):
+        if self.schools:
+            return self.schools[0].state
+        elif self.districts:
+            return self.districts[0].state
+        else:
+            return None
+    
+    @state.expression
+    def state(cls):
+        school_state = (
+            select(School.state)
+            .join(incident_schools, incident_schools.c.school_id == School.id)
+            .where(incident_schools.c.incident_id == cls.id)
+            .limit(1)
+            .scalar_subquery()
+        )
+
+        district_state = (
+            select(SchoolDistrict.state)
+            .join(incident_districts, incident_districts.c.district_id == SchoolDistrict.id)
+            .where(incident_districts.c.incident_id == cls.id)
+            .limit(1)
+            .scalar_subquery()
+        )
+
+        union_state = (
+            select(Union.state)
+            .join(incident_unions, incident_unions.c.union_id == Union.id)
+            .where(incident_unions.c.incident_id == cls.id)
+            .limit(1)
+            .scalar_subquery()
+        )
+
+        # Return first non null value between all of the selects
+        return func.coalesce(school_state, district_state, union_state)
 
 
 class IncidentStatus(db.Model):
@@ -334,7 +390,7 @@ class Union(db.Model):
     )
     links = db.Column(db.JSON())
     notes = db.Column(db.Text())
-    incidents = db.relationship("Incident", back_populates="union")
+    incidents = db.relationship("Incident", secondary=incident_unions, back_populates="unions")
 
     __table_args__ = (db.UniqueConstraint("name", "state", name="uix_name_state"),)
 
@@ -387,7 +443,7 @@ class SchoolDistrict(db.Model):
     board_url = db.Column(db.String())
     notes = db.Column(db.Text())
     state = db.Column(db.Enum(State, name="state"), nullable=False)
-    incidents = db.relationship("Incident", back_populates="district")
+    incidents = db.relationship("Incident", secondary=incident_districts, back_populates="districts")
     unions = db.relationship(
         "Union", secondary=union_to_school_districts, back_populates="districts"
     )
@@ -409,6 +465,7 @@ class SchoolTypes(Enum):
     JEWISH = "Jewish"
     PRIVATE = "Private"
     PUBLIC = "Public"
+    CHARTER = "Charter"
 
 
 school_types = db.Table(
@@ -462,7 +519,7 @@ class School(db.Model):
     )
     district_id = db.Column(db.Integer, db.ForeignKey("school_districts.id"))
     district = db.relationship("SchoolDistrict", back_populates="schools")
-    incidents = db.relationship("Incident", back_populates="school")
+    incidents = db.relationship("Incident", secondary=incident_schools, back_populates="schools")
 
     def __str__(self):
         return self.name

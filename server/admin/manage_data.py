@@ -9,6 +9,7 @@ from ..admin.util import (
     create_or_sync_school_districts,
     sync_schools,
     create_or_sync_incidents,
+    convert_file_to_data,
 )
 
 
@@ -24,7 +25,7 @@ class ManageDataView(BaseView):
             # Read the file in memory using StringIO
             file_content = file.stream.read().decode("utf-8", errors="ignore")
             file_io = StringIO(file_content)
-            data_type_title = cls.convert_file_to_data(file_io).replace("_", "")
+            data_type_title = convert_file_to_data(file_io).replace("_", "")
             data_type_title = (
                 "school" if data_type_title == "privateschool" else data_type_title
             )
