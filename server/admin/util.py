@@ -350,10 +350,6 @@ def sync_schools(schools):
     Sync school data from Airtable to our database.
     """
     for school in schools:
-        # TODO Handle private schools
-        if school["fields"].get("School-Type") == "Private":
-            continue
-
         nces_id = school["fields"].get("NCES-School-ID")
 
         existing_school = School.query.filter_by(nces_id=nces_id).first()
@@ -375,6 +371,7 @@ def sync_schools(schools):
 
     return redirect(url_for("school.index_view"))
 
+
 def get_publish_details(publish_string, privacy_string):
     publish = None
     status = None
@@ -383,7 +380,9 @@ def get_publish_details(publish_string, privacy_string):
         publish = True
     elif publish_string == "NO-Cannot-Validate-Insufficient-Details-or-Not-Anti-Jewish":
         publish = False
-        status = IncidentStatus.query.filter_by(name="Cannot Validate/Insufficient Details").first()
+        status = IncidentStatus.query.filter_by(
+            name="Cannot Validate/Insufficient Details"
+        ).first()
     elif publish_string == "NO-Duplicate":
         publish = False
         status = IncidentStatus.query.filter_by(name="Duplicate").first()
@@ -401,7 +400,9 @@ def get_publish_details(publish_string, privacy_string):
         status = IncidentStatus.query.filter_by(name="Safety Concern").first()
 
     if privacy_string == "NO-Hide-School-Privacy":
-        privacy = IncidentPrivacyStatus.query.filter_by(name="Hide School Privacy").first()
+        privacy = IncidentPrivacyStatus.query.filter_by(
+            name="Hide School Privacy"
+        ).first()
     elif privacy_string == "NO-No-Details-Available":
         privacy = IncidentPrivacyStatus.query.filter_by(name="Hide Details").first()
     elif privacy_string == "YES-Show-Detail-Page":
@@ -409,16 +410,17 @@ def get_publish_details(publish_string, privacy_string):
 
     return IncidentPublishDetails(publish=publish, status=status, privacy=privacy)
 
+
 def create_or_sync_incidents(data):
     """
     Get incident data from Airtable and create or sync records.
     """
     for incident in data:
         airtable_id = incident["id"]
-
+        if airtable_id == "recPAIxsIZ6GCFNR9":
+            print("Processing incident: ", airtable_id)
+            print(incident)
         existing_incident = Incident.query.filter_by(airtable_id=airtable_id).first()
-        if existing_incident != None:
-            continue
 
         airtable_id_number = incident["fields"].get("Incident-Number")
         summary = incident["fields"].get("Incident-Summary")
@@ -433,15 +435,21 @@ def create_or_sync_incidents(data):
             if incident["fields"].get("School-Name")
             else None
         )
-        school = School.query.filter_by(airtable_id=school_airtable_id).first()
+        school = (
+            School.query.filter_by(airtable_id=school_airtable_id).first()
+            if school_airtable_id
+            else None
+        )
         district_airtable_id = (
             incident["fields"].get("School-District")[0]
             if incident["fields"].get("School-District")
             else None
         )
-        district = SchoolDistrict.query.filter_by(
-                airtable_id=district_airtable_id
-            ).first()
+        district = (
+            SchoolDistrict.query.filter_by(airtable_id=district_airtable_id).first()
+            if district_airtable_id
+            else None
+        )
         created_on = incident["fields"].get("Created")
         updated_on = incident["fields"].get("Last Modified")
         occurred_on = "-".join(
@@ -453,14 +461,26 @@ def create_or_sync_incidents(data):
             for k in ["Year", "Month", "Day"]
         ).strip("-")
         occurred_on_is_month = incident["fields"].get("Day") == "null"
-        publish_string = incident["fields"].get("Publish")
-        privacy_string = incident["fields"].get("Privacy")
-        publish_details = get_publish_details(publish_string, privacy_string)
-        incident_type_name = incident["fields"].get("Incident-Type")[0] if incident["fields"].get("Incident-Type") else None
+
+        incident_type_name = (
+            incident["fields"].get("Incident-Type")[0]
+            if incident["fields"].get("Incident-Type")
+            else None
+        )
         incident_type = IncidentType.query.filter_by(name=incident_type_name).first()
-        internal_source_type_name = incident["fields"].get("Source-Internal")[0] if incident["fields"].get("Source-Internal") else None
-        internal_source_type = IncidentInternalSourceType.query.filter_by(name=internal_source_type_name).first()
-        source_type_name = incident["fields"].get("Source-Attribution")[0] if incident["fields"].get("Source-Attribution") else None
+        internal_source_type_name = (
+            incident["fields"].get("Source-Internal")[0]
+            if incident["fields"].get("Source-Internal")
+            else None
+        )
+        internal_source_type = IncidentInternalSourceType.query.filter_by(
+            name=internal_source_type_name
+        ).first()
+        source_type_name = (
+            incident["fields"].get("Source-Attribution")[0]
+            if incident["fields"].get("Source-Attribution")
+            else None
+        )
         source_type = IncidentSourceType.query.filter_by(name=source_type_name).first()
         source_id = incident["fields"].get("Source-ID")
         reported_to_school = (
@@ -468,41 +488,63 @@ def create_or_sync_incidents(data):
         )
         school_responded = incident["fields"].get("School-Responded") == "Yes"
 
-        new_supporting_materials = []
-        for supporting_material in supporting_materials or []:
-            airtable_url = supporting_material["url"]
-            filename = supporting_material["filename"]
-            new_url = simple_file_upload_from_url(airtable_url, filename)
-            new_supporting_materials.append(SupportingMaterialFile(url=new_url))
-        
-        internal_notes = [InternalNote(note=internal_note_0)] if internal_note_0 else []
+        # For now, things that require new object creation lets keep to only new incidents
+        if existing_incident == None:
+            publish_string = incident["fields"].get("Publish")
+            privacy_string = incident["fields"].get("Privacy")
+            publish_details = get_publish_details(publish_string, privacy_string)
+            internal_notes = (
+                [InternalNote(note=internal_note_0)] if internal_note_0 else []
+            )
+            new_supporting_materials = []
+            for supporting_material in supporting_materials or []:
+                airtable_url = supporting_material["url"]
+                filename = supporting_material["filename"]
+                new_url = simple_file_upload_from_url(airtable_url, filename)
+                new_supporting_materials.append(SupportingMaterialFile(url=new_url))
 
-        new_incident = Incident(
-            airtable_id=airtable_id,
-            airtable_id_number=airtable_id_number,
-            summary=summary,
-            details=details,
-            internal_notes=internal_notes,
-            related_links=[
-                RelatedLink(link=link)
-                for link in [related_link_1, related_link_2, related_link_3]
-                if link is not None
-            ],
-            supporting_materials=new_supporting_materials,
-            schools=[school] if school else [],
-            districts=[district] if district else [],
-            reported_on=created_on,
-            updated_on=updated_on,
-            occurred_on=occurred_on,
-            occurred_on_is_month=occurred_on_is_month,
-            publish_details=publish_details,
-            types=[incident_type] if incident_type else [],
-            internal_source_types=[internal_source_type] if internal_source_type else [],
-            source_types=[IncidentSourceAssociation(source_type=source_type, source_id=source_id)] if source_type else [],
-            reported_to_school=reported_to_school,
-            school_response=SchoolResponse() if school_responded else None,
-        )
-        db.session.add(new_incident)
+            new_incident = Incident(
+                airtable_id=airtable_id,
+                airtable_id_number=airtable_id_number,
+                summary=summary,
+                details=details,
+                internal_notes=internal_notes,
+                related_links=[
+                    RelatedLink(link=link)
+                    for link in [related_link_1, related_link_2, related_link_3]
+                    if link is not None
+                ],
+                supporting_materials=new_supporting_materials,
+                schools=[school] if school else [],
+                districts=[district] if district else [],
+                reported_on=created_on,
+                updated_on=updated_on,
+                occurred_on=occurred_on,
+                occurred_on_is_month=occurred_on_is_month,
+                publish_details=publish_details,
+                types=[incident_type] if incident_type else [],
+                internal_source_types=(
+                    [internal_source_type] if internal_source_type else []
+                ),
+                source_types=(
+                    [
+                        IncidentSourceAssociation(
+                            source_type=source_type, source_id=source_id
+                        )
+                    ]
+                    if source_type
+                    else []
+                ),
+                reported_to_school=reported_to_school,
+                school_response=SchoolResponse() if school_responded else None,
+            )
+            db.session.add(new_incident)
+        else:
+            existing_incident.summary = summary
+            existing_incident.details = details
+            existing_incident.schools = [school] if school else []
+            existing_incident.districts = [district] if district else []
+
         db.session.commit()
 
     return redirect(url_for("incident.index_view"))

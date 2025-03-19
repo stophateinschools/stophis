@@ -7,7 +7,7 @@ import requests
 from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
 from flask_admin.contrib.sqla import ModelView
-from flask_admin.contrib.sqla.filters import FilterLike
+from flask_admin.contrib.sqla.filters import FilterInList, EnumEqualFilter
 from flask_admin import expose
 from markupsafe import Markup
 from wtforms.fields import FieldList, Field
@@ -18,6 +18,7 @@ from wtforms import (
     DateTimeField,
     Form,
     FormField,
+    SelectMultipleField,
     StringField,
     TextAreaField,
     validators,
@@ -40,6 +41,7 @@ from ..models import (
     SchoolDistrictLogo,
     SchoolResponse,
     SchoolResponseMaterial,
+    State,
     SupportingMaterialFile,
     Union,
     union_to_school_districts,
@@ -133,26 +135,28 @@ class SchoolResponseForm(Form):
     )
     school_response = TextAreaField("School Response")
     school_response_materials = Field()
-    
 
-class ManyToManyFilter(FilterLike):
-    def __init__(self, column, name, options=None, data_type=None, alias=None, join_table=None, join_column=None):
+
+class ManyToManyFilter(FilterInList):
+    def __init__(
+        self, column, name, options=None, alias=None, join_table=None, join_column=None
+    ):
         """
         Constructor.
 
         :param column: Model field
         :param name: Display name
         :param options: Fixed set of options
-        :param data_type: Client data type
         :param alias: The aliased model
         :param join_table: The table to join
         :param join_column: The column to join on
         """
-        super().__init__(name, options, data_type)
+        super(FilterInList, self).__init__(column, name, options)
         self.name = name
         self.alias = alias
         self.join_table = join_table
         self.join_column = join_column
+        self.widget = SelectMultipleField(choices=options)
 
     def apply(self, query, value, alias=None):
         if self.alias:
@@ -161,17 +165,19 @@ class ManyToManyFilter(FilterLike):
             join_column = self.join_column
 
             join_query = (
-                query
-                .join(join_table, join_table.c.incident_id == Incident.id)
+                query.join(join_table, join_table.c.incident_id == Incident.id)
                 .join(alias, alias.id == join_column)
-                .filter(alias.name.like(f"%{value}%"))
+                .filter(alias.name.in_(value))
             )
             return join_query
-        
+
         # Default case if no alias is passed
         return query
 
-    
+    def operation(self):
+        return "equals"
+
+
 class IncidentView(AuditModelView):
     # Define the route to fetch school details (district and union)
     @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
@@ -199,6 +205,61 @@ class IncidentView(AuditModelView):
             "unions": [{"id": u.id, "name": u.name} for u in unions],
         }
 
+    @expose("/")
+    def index_view(self):
+        self.dynamic_filters = [
+            ManyToManyFilter(
+                column=Incident.schools,
+                name="School Name",
+                options=[
+                    (school.name, school.name)
+                    for school in db.session.query(School).all()
+                ],
+                alias=aliased(School),
+                join_table=incident_schools,
+                join_column=incident_schools.c.school_id,
+            ),
+            ManyToManyFilter(
+                column=Incident.districts,
+                name="District Name",
+                options=(
+                    (district.name, district.name)
+                    for district in db.session.query(SchoolDistrict).all()
+                ),
+                alias=aliased(SchoolDistrict),
+                join_table=incident_districts,
+                join_column=incident_districts.c.district_id,
+            ),
+            ManyToManyFilter(
+                column=Incident.types,
+                name="Type",
+                options=(
+                    (type.name, type.name)
+                    for type in db.session.query(IncidentType).all()
+                ),
+                alias=aliased(IncidentType),
+                join_table=incident_to_incident_types,
+                join_column=incident_to_incident_types.c.incident_type_id,
+            ),
+            EnumEqualFilter(
+                column=Incident.state,
+                name="State",
+                options=[(state.name, state.value) for state in State],
+            ),
+        ]
+
+        self._refresh_filters_cache()
+        return super().index_view()
+
+    def get_filters(self):
+        filters = []
+        if hasattr(self, "dynamic_filters") and self.dynamic_filters:
+            for filter in self.dynamic_filters:
+                filters.append(filter)
+            print(filters)
+
+        return filters
+
     def _render_supporting_material_links(view, context, model, name):
         if model.supporting_materials:
             links = "".join(
@@ -206,7 +267,7 @@ class IncidentView(AuditModelView):
                 for sp in model.supporting_materials
             )
             return Markup(links)
-        
+
     def _publish_details_string(view, context, model, name):
         if model.publish_details.publish:
             ret = f"Published{f', {model.publish_details.privacy}' if model.publish_details.privacy else ''}"
@@ -261,13 +322,6 @@ class IncidentView(AuditModelView):
         "details",
     ]
 
-    column_filters = [
-        "state",
-        ManyToManyFilter(School.name, "School Name", alias=aliased(School), join_table=incident_schools, join_column=incident_schools.c.school_id),
-        ManyToManyFilter(SchoolDistrict.name, "District Name", alias=aliased(SchoolDistrict), join_table=incident_districts, join_column=incident_districts.c.district_id),
-        ManyToManyFilter(IncidentType.name, "Incident Type", alias=aliased(IncidentType), join_table=incident_to_incident_types, join_column=incident_to_incident_types.c.incident_type_id),
-    ]
-
     form_columns = [
         "summary",
         "details",
@@ -304,7 +358,10 @@ class IncidentView(AuditModelView):
         #     if m.school
         #     else None
         # ),
-        "source_types": lambda v, c, m, n: [f'{type.source_type.name} {f'({type.source_id})' if type.source_id else ''}' for type in m.source_types],
+        "source_types": lambda v, c, m, n: [
+            f"{type.source_type.name} {f'({type.source_id})' if type.source_id else ''}"
+            for type in m.source_types
+        ],
         "publish_details": _publish_details_string,
         "related_links": lambda v, c, m, n: [
             related_link.link for related_link in m.related_links
@@ -312,6 +369,9 @@ class IncidentView(AuditModelView):
         "supporting_materials": _render_supporting_material_links,
         "internal_notes": lambda v, c, m, n: [note.note for note in m.internal_notes],
         "audit_log_link": AuditModelView._audit_log_link,
+        "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
+        "occurred_on": lambda v, c, m, n: m.occurred_on.strftime("%B, %-d, %Y"),
+        "reported_on": lambda v, c, m, n: m.reported_on.strftime("%B, %-d, %Y"),
     }
 
     form_overrides = {
@@ -348,7 +408,9 @@ class IncidentView(AuditModelView):
         # from form so we can handle manually and not in populate_obj.
         related_links_data = form.related_links.data if form.related_links else []
         supporting_materials_data = request.form.getlist("supporting_materials[]") or []
-        school_response_materials_data = request.form.getlist("school_response-school_response_materials[]") or []
+        school_response_materials_data = (
+            request.form.getlist("school_response-school_response_materials[]") or []
+        )
         if form.school_responded.data:
             existing_school_response = model.school_response
             if existing_school_response:
@@ -410,10 +472,18 @@ class IncidentView(AuditModelView):
         return {
             "related_links_data": related_links_data,
             "supporting_materials_data": supporting_materials_data,
-            "school_response_materials_data": school_response_materials_data
+            "school_response_materials_data": school_response_materials_data,
         }
 
-    def update_materials(self, model, relationship_attr, material_cls, removed_materials, new_materials_data, foreign_key_attr):
+    def update_materials(
+        self,
+        model,
+        relationship_attr,
+        material_cls,
+        removed_materials,
+        new_materials_data,
+        foreign_key_attr,
+    ):
         """
         Generalized function to update material relationships.
 
@@ -426,14 +496,18 @@ class IncidentView(AuditModelView):
         """
         # Get existing materials, keeping only those that are NOT in the removed list
         existing_materials = [
-            material for material in getattr(model, relationship_attr) if material.url not in removed_materials
+            material
+            for material in getattr(model, relationship_attr)
+            if material.url not in removed_materials
         ]
 
         # Filter out empty strings or None values from new materials
         new_materials = [url for url in new_materials_data if url]
 
         # Create new material instances, dynamically setting the foreign key relationship
-        materials_to_add = [material_cls(url=url, **{foreign_key_attr: model}) for url in new_materials]
+        materials_to_add = [
+            material_cls(url=url, **{foreign_key_attr: model}) for url in new_materials
+        ]
 
         # Assign the updated list back to the model
         setattr(model, relationship_attr, existing_materials + materials_to_add)
@@ -444,10 +518,14 @@ class IncidentView(AuditModelView):
         if model.school_response:
             form.school_responded.data = True
             form.school_response.school_responded_on.data = (
-                model.school_response.occurred_on.date() if model.school_response.occurred_on else None
+                model.school_response.occurred_on.date()
+                if model.school_response.occurred_on
+                else None
             )
             form.school_response.school_response.data = model.school_response.response
-            form.school_response.school_response_materials.data = model.school_response.materials
+            form.school_response.school_response_materials.data = (
+                model.school_response.materials
+            )
 
         if model.publish_details:
             form.publish_details.publish.data = model.publish_details.publish
@@ -459,9 +537,7 @@ class IncidentView(AuditModelView):
     def create_model(self, form):
         try:
             model = self.model()
-            data = self.create_edit_model(
-                form, model
-            )
+            data = self.create_edit_model(form, model)
             related_links_data = data["related_links_data"]
             supporting_materials_data = data["supporting_materials_data"]
 
@@ -486,9 +562,7 @@ class IncidentView(AuditModelView):
 
     def update_model(self, form, model):
         try:
-            data = self.create_edit_model(
-                form, model
-            )
+            data = self.create_edit_model(form, model)
             related_links_data = data["related_links_data"]
             supporting_materials_data = data["supporting_materials_data"]
             removed_supporting_materials_data = (
@@ -496,7 +570,8 @@ class IncidentView(AuditModelView):
             )
             school_response_materials_data = data["school_response_materials_data"]
             removed_school_response_materials_data = (
-                request.form.get("removed_school_response-school_response_materials") or []
+                request.form.get("removed_school_response-school_response_materials")
+                or []
             )
 
             existing_links = [rl for rl in model.related_links]
@@ -512,22 +587,23 @@ class IncidentView(AuditModelView):
             ]
             model.related_links = links_to_add
 
-            self.update_materials(
-                model=model,
-                relationship_attr="supporting_materials",
-                material_cls=SupportingMaterialFile,
-                removed_materials=removed_supporting_materials_data,
-                new_materials_data=supporting_materials_data,
-                foreign_key_attr="incident"
-            )
-            self.update_materials(
-                model=model.school_response,
-                relationship_attr="materials",
-                material_cls=SchoolResponseMaterial,
-                removed_materials=removed_school_response_materials_data,
-                new_materials_data=school_response_materials_data,
-                foreign_key_attr="school_response"
-            )
+            # TODO Fix these
+            # self.update_materials(
+            #     model=model,
+            #     relationship_attr="supporting_materials",
+            #     material_cls=SupportingMaterialFile,
+            #     removed_materials=removed_supporting_materials_data,
+            #     new_materials_data=supporting_materials_data,
+            #     foreign_key_attr="incident",
+            # )
+            # self.update_materials(
+            #     model=model.school_response,
+            #     relationship_attr="materials",
+            #     material_cls=SchoolResponseMaterial,
+            #     removed_materials=removed_school_response_materials_data,
+            #     new_materials_data=school_response_materials_data,
+            #     foreign_key_attr="school_response",
+            # )
 
             self.session.commit()
             return model
@@ -552,15 +628,9 @@ class SchoolView(BaseModelView):
 
 
 class SchoolDistrictView(BaseModelView):
-    extra_js = [
-        f"https://app.simplefileupload.com/buckets/{os.environ["SIMPLE_FILE_UPLOAD_KEY"]}.js"
-    ]
-
     def _render_img(view, context, model, name):
         if model.logo:
             return Markup(f"<img src={model.logo.url} width={50} />")
-
-    form_extra_fields = {"logo_file": wtforms.FileField("Logo")}
 
     column_list = [
         "logo",
@@ -569,7 +639,6 @@ class SchoolDistrictView(BaseModelView):
 
     column_details_list = [
         "nces_id",
-        "logo",
         "name",
         "display_name",
         "url",
@@ -589,16 +658,20 @@ class SchoolDistrictView(BaseModelView):
         "state",
     ]
 
-    form_excluded_columns = [
-        # TODO Maybe we use this to show currently uploaded logo?
-        "logo"
-    ]
+    create_template = edit_template = "admin/create_edit_school_district.html"
 
     def on_model_change(self, form, model, is_created):
         # Custom logic to handle logo file upload before saving the model
-        if model.logo_file:
-            # Store the simple file upload generated URL
-            model.logo = SchoolDistrictLogo(url=model.logo_file)
+        removed_logo_data = request.form.get("removed_logo") or None
+        uploaded_logo_data = request.form.get("logo[]")
+        if uploaded_logo_data:
+            if model.logo:
+                model.logo.url = uploaded_logo_data
+            else:
+                model.logo = SchoolDistrictLogo(url=uploaded_logo_data)
+        elif removed_logo_data:
+            model.logo = None
+
         return super().on_model_change(form, model, is_created)
 
     column_formatters = {

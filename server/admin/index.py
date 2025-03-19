@@ -21,6 +21,18 @@ def render_model_details_link(model_name, record_id, display_text=None):
     )
 
 
+def get_filters(self):
+    """
+    Logic to support using filters that depend on app context (i.e. Filter List options)
+    Define dynamic_filters in the `index_view` of the ModelView class.
+    See IncidentView in server/admin/models.py for an example.
+    """
+    return sorted(
+        (super(BaseModelView, self).get_filters() or []) + self.dynamic_filters,
+        key=lambda f: f.name,
+    )
+
+
 class AdminView(AdminIndexView):
     @login_required()
     def is_accessible(self):

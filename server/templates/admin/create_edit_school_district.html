@@ -1,0 +1,41 @@
+{% extends 'admin/model/create.html' %}
+
+{% block tail_js %}
+    {{ super() }}
+{% endblock %}
+
+{% block create_form %}
+{% from "admin/macros.html" import file_upload_field %}
+<form action method="POST" class="admin-form form-horizontal custom-form" enctype="multipart/form-data">
+    {% for field in form %}
+        {% if field.name == 'logo' %}
+            {{ file_upload_field(field, false) }}
+        {% else %}
+            {{ lib.render_field(form, field) }}
+        {% endif %}
+    {% endfor %}
+    {{ lib.render_form_buttons(url_for("incident.index_view"), extra(), is_modal) }}
+</form>
+{% endblock %}
+
+{% block tail %}
+    {{ super() }}  {# Render the full default form #}
+
+    <script>
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        let fileInput = document.getElementById("logo");
+
+        document.querySelectorAll(".remove-material").forEach(btn => {
+            btn.addEventListener("click", function() {
+                let removedFilesInput = document.getElementById("removed_logo");
+                let removedFiles = removedFilesInput.value ? removedFilesInput.value.split(",") : [];
+                let url = this.closest(".logo").querySelector("img").getAttribute("src")
+                removedFiles.push(url);
+                removedFilesInput.value = removedFiles;
+                this.parentElement.remove();
+            });
+        });
+    });
+    </script>
+{% endblock %}

@@ -54,14 +54,12 @@ auth = make_google_blueprint(
 @auth.route("/authorized")
 def google_authorized_wrapper():
     # Check if the user is authorized
-    print("Google authorized")
     if not google.authorized:
         return redirect(
             url_for("google.login")
         )  # Redirect to Google login if not authorized
 
     resp = google.get("/oauth2/v2/userinfo")
-    print(resp)
 
     user = create_user(resp.json())
     login_user(user)  # Store user in session with flask-login
@@ -72,11 +70,8 @@ def google_authorized_wrapper():
 
 @auth.route("/login")
 def google_login_wrapper():
-    print("Googel login")
     if not google.authorized:
-        print("Not authorized")
         return redirect(url_for("google.login"))
-    print("Authorized")
     return redirect(url_for("google.authorized"))
 
 

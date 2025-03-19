@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 import pytest
 from sqlalchemy import create_engine

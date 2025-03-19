@@ -32,6 +32,8 @@ from .app import main
 from .auth import auth
 from flask_login import LoginManager
 
+app = Flask(__name__)
+
 login_manager = LoginManager()
 
 
@@ -40,9 +42,15 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
+@app.context_processor
+def inject_env_vars():
+    return {
+        "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
+    }
+
+
 def create_app():
     # Create the Flask app instance
-    app = Flask(__name__)
     app.secret_key = os.getenv("SECRET_KEY")
 
     # Get the HEROKU_POSTGRESQL_YELLOW_URL from environment variables (Heroku provides this for staging/prod)

@@ -1,6 +1,7 @@
 from sqlalchemy.engine import Connection
 from sqlalchemy import text
 
+
 def reset_primary_key(connection: Connection, table_name: str):
     """
     Reset the sequence for a table in PostgreSQL to the current maximum value of the primary key.
@@ -15,4 +16,6 @@ def reset_primary_key(connection: Connection, table_name: str):
 
     # If the table is empty, the next value will be 1.
     next_available_value = max_id + 1 if max_id is not None else 1
-    connection.execute(text(f"SELECT setval('{sequence_name}', {next_available_value}, false)"))
+    connection.execute(
+        text(f"SELECT setval('{sequence_name}', {next_available_value}, false)")
+    )
