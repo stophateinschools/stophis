@@ -6,7 +6,7 @@ from flask_admin import expose, BaseView
 from pyairtable import Api
 
 from ..admin.util import (
-    create_or_sync_school_districts,
+    sync_school_districts,
     sync_schools,
     create_or_sync_incidents,
     convert_file_to_data,
@@ -46,7 +46,7 @@ class ManageDataView(BaseView):
             raise ValueError("Invalid Airtable ID")
 
         if table_name == "District-Table":
-            return create_or_sync_school_districts(data)
+            return sync_school_districts(data)
         elif table_name == "School-Table":
             return sync_schools(data)
         elif table_name == "Incident-Table":

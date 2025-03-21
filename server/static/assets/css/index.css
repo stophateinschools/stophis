@@ -14,11 +14,6 @@
   --font-family-sans-serif: "Open Sans", sans-serif;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box; }
-
 html {
   font-family: sans-serif;
   line-height: 1.15;
@@ -50,6 +45,7 @@ ul ol {
 hr {
   border-color: var(--primary);
   margin-left: -20px;
+  border-top: 0;
 }
 
 a {
@@ -108,7 +104,7 @@ a:not([href]) {
   margin-bottom: 0;
   list-style: none;
   gap: 2rem; }
-.dropdown-menu {
+/* .dropdown-menu {
   position: static;
   float: none; }
 
@@ -120,7 +116,7 @@ a:not([href]) {
   border-radius: 10px;
   border: none;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px 0; }
+  padding: 10px 0; } */
 
 .navbar .dropdown-item, .actions-nav .dropdown-menu a {
   background-color: var(--white);
@@ -248,4 +244,69 @@ a:not([href]) {
 
 .admin-form input {
   height: 28px;
+}
+
+.admin-form .control-label,
+.admin-form .control-label label {
+  width: 200px;
+  font-weight: 600 !important;
+}
+.admin-form .controls {
+  margin-left: 210px;
+}
+.admin-form .controls-inline {
+  margin-left: 210px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+/* Inicident Form specific CSS*/
+#related-links-container {
+  gap: 5px;
+}
+
+.related-link {
+  display: block;
+  margin-bottom: 10px;
+}
+
+#related-links {
+  display: block;
+}
+
+#add-link {
+  display: block;
+  margin-top: 10px;
+
+}
+
+.circle-btn {
+  content: '';
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--lighter);
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s, transform 0.1s ease-in-out;
+}
+#plus:before {
+  content: '\FF0B';
+}
+
+.circle-btn:hover {
+  background-color: var(--primary);
+  transform: scale(1.1);
+}
+
+.circle-btn:active {
+  transform: scale(0.95);
 }

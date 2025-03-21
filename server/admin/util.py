@@ -6,6 +6,8 @@ from flask import jsonify, redirect, url_for
 import requests
 from sqlalchemy import func
 
+from server.user import User
+
 from ..models import (
     Incident,
     IncidentInternalSourceType,
@@ -99,7 +101,7 @@ def convert_csv_to_data(csv_file, data_type):
     csv_reader = csv.DictReader(csv_file)
     for row in csv_reader:
         if data_type == DataType.SCHOOL_DISTRICT.value:
-            create_school_district_from_nces(row)
+            create_school_district(row)
         elif data_type == DataType.SCHOOL.value:
             create_school(row, is_public=True)
         elif data_type == DataType.PRIVATE_SCHOOL.value:
@@ -107,7 +109,7 @@ def convert_csv_to_data(csv_file, data_type):
     db.session.commit()
 
 
-def create_school_district_from_nces(data):
+def create_school_district(data):
     district_name = data["District Name"].strip()
     nces_id = data["NCES District ID"].strip()
     state = data["State"]
@@ -119,12 +121,6 @@ def create_school_district_from_nces(data):
 
     district = SchoolDistrict(name=district_name, nces_id=nces_id, state=state)
     db.session.add(district)
-
-
-def create_school_district_from_airtable(data):
-    # TODO Might not need this if we don't expect extras in airtable?
-    print("TODO create airtable district - we had no match from NCES ", data)
-    return
 
 
 def simple_file_upload_from_url(url, filename):
@@ -173,16 +169,15 @@ def simple_file_upload_from_url(url, filename):
             )
 
 
-def create_or_sync_school_districts(districts):
+def sync_school_districts(districts):
     """
-    Create new or sync school district data from Airtable to our database.
+    Sync school district data from Airtable to our database.
     """
     for district in districts:
         nces_id = district["fields"].get("NCES-District-ID")
 
         existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
         if existing_district == None:
-            create_school_district_from_airtable(district)
             continue
 
         logo = (
@@ -324,8 +319,8 @@ def create_school(data, is_public):
         district_nces_id = None
 
     existing_school = School.query.filter_by(nces_id=nces_id).first()
-    if existing_school:
-        # Maybe at some point do a merge here if we want to update any data
+    is_undergraduate = low_grade == "UG" or high_grade == "UG"
+    if existing_school or is_undergraduate:
         return
 
     district = SchoolDistrict.query.filter_by(nces_id=district_nces_id).first()
@@ -488,11 +483,16 @@ def create_or_sync_incidents(data):
 
         # For now, things that require new object creation lets keep to only new incidents
         if existing_incident == None:
+            admin_user = User.query.filter_by(
+                email="admin@stophateinschools.org"
+            ).first()
             publish_string = fields.get("Publish")
             privacy_string = fields.get("Privacy")
             publish_details = get_publish_details(publish_string, privacy_string)
             internal_notes = (
-                [InternalNote(note=internal_note_0)] if internal_note_0 else []
+                [InternalNote(note=internal_note_0, author_id=admin_user.id)]
+                if internal_note_0
+                else []
             )
             new_supporting_materials = []
             for supporting_material in supporting_materials or []:
@@ -516,10 +516,11 @@ def create_or_sync_incidents(data):
                 schools=[school] if school else [],
                 districts=[district] if district else [],
                 reported_on=created_on,
+                reporter_id=admin_user.id,
                 updated_on=updated_on,
                 occurred_on_year=occurred_on_year,
                 occurred_on_month=occurred_on_month,
-                occured_on_day=occured_on_day,
+                occurred_on_day=occurred_on_day,
                 publish_details=publish_details,
                 types=[incident_type] if incident_type else [],
                 internal_source_types=(

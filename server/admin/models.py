@@ -9,7 +9,11 @@ from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
 from flask_admin.form import Select2Widget
 from flask_admin.contrib.sqla import ModelView
-from flask_admin.contrib.sqla.filters import FilterInList, EnumEqualFilter
+from flask_admin.contrib.sqla.filters import (
+    FilterInList,
+    EnumEqualFilter,
+    DateBetweenFilter,
+)
 from flask_admin import expose
 from markupsafe import Markup
 from wtforms.fields import FieldList, Field
@@ -279,6 +283,11 @@ class IncidentView(AuditModelView):
                 name="State",
                 options=[(state.name, state.value) for state in State],
             ),
+            DateBetweenFilter(
+                column=Incident.occurred_on,
+                name="Occurred On",
+                # options={'class': 'datepicker'}
+            ),
         ]
 
         self._refresh_filters_cache()
@@ -289,7 +298,6 @@ class IncidentView(AuditModelView):
         if hasattr(self, "dynamic_filters") and self.dynamic_filters:
             for filter in self.dynamic_filters:
                 filters.append(filter)
-            print(filters)
 
         return filters
 
@@ -448,7 +456,6 @@ class IncidentView(AuditModelView):
         "occurred_on_year": YearSelectField,
         "occurred_on_month": MonthSelectField,
         "occurred_on_day": DaySelectField,
-        # "source_types": QuerySelectField,
     }
 
     form_extra_fields = {
@@ -711,22 +718,22 @@ class IncidentView(AuditModelView):
             model.related_links = links_to_add
 
             # TODO Fix these
-            # self._update_materials(
-            #     model=model,
-            #     relationship_attr="supporting_materials",
-            #     material_cls=SupportingMaterialFile,
-            #     removed_materials=removed_supporting_materials_data,
-            #     new_materials_data=supporting_materials_data,
-            #     foreign_key_attr="incident",
-            # )
-            # self._update_materials(
-            #     model=model.school_response,
-            #     relationship_attr="materials",
-            #     material_cls=SchoolResponseMaterial,
-            #     removed_materials=removed_school_response_materials_data,
-            #     new_materials_data=school_response_materials_data,
-            #     foreign_key_attr="school_response",
-            # )
+            self._update_materials(
+                model=model,
+                relationship_attr="supporting_materials",
+                material_cls=SupportingMaterialFile,
+                removed_materials=removed_supporting_materials_data,
+                new_materials_data=supporting_materials_data,
+                foreign_key_attr="incident",
+            )
+            self._update_materials(
+                model=model.school_response,
+                relationship_attr="materials",
+                material_cls=SchoolResponseMaterial,
+                removed_materials=removed_school_response_materials_data,
+                new_materials_data=school_response_materials_data,
+                foreign_key_attr="school_response",
+            )
 
             self.session.commit()
             return model
@@ -746,6 +753,8 @@ class SchoolView(BaseModelView):
         ),
     }
 
+    column_filters = ["state", "city"]
+
     # Keep empty details so we show name AND display name in details view
     column_formatters_detail = {}
 
@@ -757,8 +766,11 @@ class SchoolDistrictView(BaseModelView):
 
     column_list = [
         "logo",
+        "state",
         "name",
     ]
+
+    column_filters = ["state"]
 
     column_details_list = [
         "nces_id",

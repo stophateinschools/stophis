@@ -1,5 +1,7 @@
 $(document).ready(function() {
   var noneVal = "__None"
+  // TODO This used to work for the many to one relationship from Incident -> School
+  // District, and Union but now we have many-to-many so maybe we can adjust this.
   // When a school is selected, pre-fill or disable the district and union fields
   // function handleDistrictChange(onLoad) {
   //   var district_id = $('#district').val();

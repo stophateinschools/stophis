@@ -62,18 +62,16 @@ def is_audit_model(instance):
     return instance.__class__.__name__ in [e.value for e in AuditModel]
 
 
-# The SQLAlchemy event listener to track changes
+# The SQLAlchemy event listeners to track changes
 def log_audit(session):
-    for instance in session.new:
-        if isinstance(instance, db.Model) and is_audit_model(instance):
-            create_audit_log(AuditAction.INSERT, instance)
-
     for instance in session.deleted:
         if isinstance(instance, db.Model) and is_audit_model(instance):
+            print("creating delete audit")
             create_audit_log(AuditAction.DELETE, instance)
 
     for instance in session.dirty:
         if isinstance(instance, db.Model) and is_audit_model(instance):
+            print("creating chagne audit")
             changes = {}
             for column in instance.__table__.columns:
                 history = get_history(instance, column.name)
@@ -91,7 +89,7 @@ def log_audit(session):
                 create_audit_log(AuditAction.UPDATE, instance, changes)
 
 
-# Listen for the insert, update, and delete events
+# Listen for the update and delete events
 event.listen(db.session, "before_commit", log_audit)
 
 

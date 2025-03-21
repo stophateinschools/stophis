@@ -13,10 +13,10 @@
         {% if field.name == 'school_response' %}
             <div id="school-response-container" class="control-group">
                 <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
-                <div class="controls">
+                <div class="controls-inline">
                     {% for subfield in field %}
                         {% if subfield.id == 'school_response-school_response_materials' %}
-                            {{ file_upload_field(subfield, true) }}
+                            {{ file_upload_field(subfield, true, true) }}
                         {% else %}
                             <div id="{{ subfield.id }}">
                                 <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
@@ -40,10 +40,12 @@
                     {% endif %}
                     {% endfor %}
                 </div>
-                <button type="button" id="add-link" class="btn btn-primary controls">Add Link</button>
+                <button type="button" id="plus" class="circle-btn"></button>
             </div>
+            <hr class="solid">
         {% elif field.name == 'supporting_materials' %}
-            {{ file_upload_field(field, true) }}
+            {{ file_upload_field(field, true, false) }}
+            <hr class="solid">
         {% elif field.name == 'publish_details' %}
             <div class="control-group">
                 <label for="{{ field.id }}">{{ field.label.text }}</label>
@@ -58,6 +60,9 @@
             </div>
         {% else %}
             {{ lib.render_field(form, field) }}
+            {% if field.name in ["source_types"] %}
+                <hr class="solid">
+            {% endif %}
         {% endif %}
     {% endfor %}
     {{ lib.render_form_buttons(url_for("incident.index_view"), extra(), is_modal) }}
@@ -77,7 +82,7 @@
         let schoolRespondedCheckbox = document.getElementById("school_responded");
         let fileInput = document.getElementById("supporting_materials");
 
-        document.getElementById("add-link").addEventListener("click", function() {
+        document.getElementById("plus").addEventListener("click", function() {
             let input = document.createElement("input");
             input.type = "text";
             input.name = "related_links-" + relatedLinksContainer.children.length;
