@@ -2,7 +2,7 @@
 
 {% block tail_js %}
     {{ super() }}
-    <script type="text/javascript" src="{{ url_for('static', filename='assets/js/modify_incident_fields.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='assets/js/create_edit_incident.js') }}"></script>
 {% endblock %}
 
 {% block create_form %}
@@ -10,8 +10,25 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/incident_form.css') }}">
 <form action method="POST" class="admin-form form-horizontal custom-form" enctype="multipart/form-data">
     {% for field in form %}
-        {% if field.name == 'related_links' %}
-            <div id="related-links-container" class="control-group collapse">
+        {% if field.name == 'school_response' %}
+            <div id="school-response-container" class="control-group">
+                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
+                <div class="controls">
+                    {% for subfield in field %}
+                        {% if subfield.id == 'school_response-school_response_materials' %}
+                            {{ file_upload_field(subfield, true) }}
+                        {% else %}
+                            <div id="{{ subfield.id }}">
+                                <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
+                                {{ subfield( value=subfield.data ) }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <hr class="solid">
+        {% elif field.name == 'related_links' %}
+            <div id="related-links-container" class="control-group">
                 <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
                 <div id="related-links" class="controls">
                     {% for subfield in field %}
@@ -38,24 +55,6 @@
                     </div>
                     {% endfor %}
                 </div>
-            </div>
-        {% elif field.name == 'school_response' %}
-            <div id="school-response-container" class="control-group">
-                <label for="{{ field.id }}" class="control-label">{{ field.label.text }}</label>
-                <div class="controls">
-                    {% for subfield in field %}
-                        {% if subfield.id == 'school_response-school_response_materials' %}
-                            {{ file_upload_field(subfield, true) }}
-                        {% else %}
-                            <div id="{{ subfield.id }}">
-                                <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
-                                {{ subfield( value=subfield.data ) }}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-
-   
             </div>
         {% else %}
             {{ lib.render_field(form, field) }}
@@ -158,6 +157,7 @@
                 initalInput.dispatchEvent(new Event("input", { bubbles: true }));
             }
         });
+
     });
     </script>
 {% endblock %}

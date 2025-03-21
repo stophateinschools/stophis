@@ -2,6 +2,8 @@ from enum import Enum
 from flask_login import UserMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 
+from .models import State
+
 from .database import db
 
 
@@ -33,6 +35,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
     profile_picture = db.Column(db.String())
+    region = db.Column(db.Enum(State, name="state"))
 
     roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="reporter")

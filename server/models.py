@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, select, case
+from sqlalchemy import DateTime, String, cast, select, case
 from sqlalchemy.sql import func
 from sqlalchemy.orm import aliased
 from .database import db
@@ -58,6 +58,7 @@ class State(Enum):
     WV = "West Virginia"
     WI = "Wisconsin"
     WY = "Wyoming"
+    DC = "District of Columbia"
 
 
 class File(db.Model):
@@ -140,6 +141,9 @@ class IncidentSourceAssociation(db.Model):
     incident = db.relationship("Incident", back_populates="source_types")
     source_type = db.relationship("IncidentSourceType")
 
+    def __str__(self):
+        return f"{self.source_type.name}"
+
 
 class SupportingMaterialFile(File):
     __tablename__ = "supporting_material_files"
@@ -215,12 +219,13 @@ class Incident(db.Model):
     unions = db.relationship(
         "Union", secondary=incident_unions, back_populates="incidents"
     )
-    reporter_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    reporter_id = db.Column(db.Integer(), db.ForeignKey("users.id"))
     reporter = db.relationship("User", back_populates="incidents")
     reported_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
-    occurred_on = db.Column(DateTime(timezone=True))
-    occurred_on_is_month = db.Column(db.Boolean())
+    occurred_on_year = db.Column(db.Integer())
+    occurred_on_month = db.Column(db.Integer())
+    occurred_on_day = db.Column(db.Integer())
     publish_details = db.relationship(
         "IncidentPublishDetails", back_populates="incident", uselist=False
     )
@@ -241,12 +246,32 @@ class Incident(db.Model):
 
     @hybrid_property
     def state(self):
+        """
+        Return the state associated with the incident based on the school, district, or union.
+        """
         if self.schools:
             return self.schools[0].state
         elif self.districts:
             return self.districts[0].state
+        elif self.unions:
+            return self.unions[0].state
         else:
             return None
+
+    @hybrid_property
+    def occurred_on(self):
+        """
+        Return the occurred_on date and for sorting purposes, if day or month is NULL,
+        default to 1.
+        """
+        if self.occurred_on_year:
+            month = self.occurred_on_month if self.occurred_on_month else 1
+            day = self.occurred_on_day if self.occurred_on_day else 1
+            print(
+                "__________________", datetime.date(self.occurred_on_year, month, day)
+            )
+            return datetime.date(self.occurred_on_year, month, day)
+        return None
 
     @state.expression
     def state(cls):
@@ -279,6 +304,27 @@ class Incident(db.Model):
 
         # Return first non null value between all of the selects
         return func.coalesce(school_state, district_state, union_state)
+
+    @occurred_on.expression
+    def occurred_on(cls):
+        """SQL expression for sorting with defaults for month/day."""
+        return case(
+            (cls.occurred_on_year == None, None),  # If year is NULL, return NULL
+            else_=func.to_date(
+                func.concat(
+                    cast(cls.occurred_on_year, String),
+                    "-",
+                    func.lpad(
+                        cast(func.coalesce(cls.occurred_on_month, 1), String), 2, "0"
+                    ),
+                    "-",
+                    func.lpad(
+                        cast(func.coalesce(cls.occurred_on_day, 1), String), 2, "0"
+                    ),
+                ),
+                "YYYY-MM-DD",
+            ),
+        )
 
 
 class IncidentStatus(db.Model):

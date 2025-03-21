@@ -4,6 +4,7 @@ import re
 
 from flask import jsonify, redirect, url_for
 import requests
+from sqlalchemy import func
 
 from ..models import (
     Incident,
@@ -416,24 +417,23 @@ def create_or_sync_incidents(data):
     Get incident data from Airtable and create or sync records.
     """
     for incident in data:
+        fields = incident["fields"]
         airtable_id = incident["id"]
         if airtable_id == "recPAIxsIZ6GCFNR9":
             print("Processing incident: ", airtable_id)
             print(incident)
         existing_incident = Incident.query.filter_by(airtable_id=airtable_id).first()
 
-        airtable_id_number = incident["fields"].get("Incident-Number")
-        summary = incident["fields"].get("Incident-Summary")
-        details = incident["fields"].get("Incident-Details")
-        related_link_1 = incident["fields"].get("Related-Link-1")
-        related_link_2 = incident["fields"].get("Related-Link-2")
-        related_link_3 = incident["fields"].get("Related-Link-3")
-        internal_note_0 = incident["fields"].get("INTERNAL-Notes")
-        supporting_materials = incident["fields"].get("Supporting-Materials")
+        airtable_id_number = fields.get("Incident-Number")
+        summary = fields.get("Incident-Summary")
+        details = fields.get("Incident-Details")
+        related_link_1 = fields.get("Related-Link-1")
+        related_link_2 = fields.get("Related-Link-2")
+        related_link_3 = fields.get("Related-Link-3")
+        internal_note_0 = fields.get("INTERNAL-Notes")
+        supporting_materials = fields.get("Supporting-Materials")
         school_airtable_id = (
-            incident["fields"].get("School-Name")[0]
-            if incident["fields"].get("School-Name")
-            else None
+            fields.get("School-Name")[0] if fields.get("School-Name") else None
         )
         school = (
             School.query.filter_by(airtable_id=school_airtable_id).first()
@@ -441,57 +441,55 @@ def create_or_sync_incidents(data):
             else None
         )
         district_airtable_id = (
-            incident["fields"].get("School-District")[0]
-            if incident["fields"].get("School-District")
-            else None
+            fields.get("School-District")[0] if fields.get("School-District") else None
         )
         district = (
             SchoolDistrict.query.filter_by(airtable_id=district_airtable_id).first()
             if district_airtable_id
             else None
         )
-        created_on = incident["fields"].get("Created")
-        updated_on = incident["fields"].get("Last Modified")
-        occurred_on = "-".join(
-            (
-                str(incident["fields"].get(k, "")).zfill(2)
-                if incident["fields"].get(k) != "null"
-                else "01"
-            )
-            for k in ["Year", "Month", "Day"]
-        ).strip("-")
-        occurred_on_is_month = incident["fields"].get("Day") == "null"
+        created_on = fields.get("Created")
+        updated_on = fields.get("Last Modified")
+        occurred_on_year = (
+            fields.get("Year")
+            if fields.get("Year") and fields.get("Year") != "null"
+            else None
+        )
+        occurred_on_month = (
+            fields.get("Month")
+            if fields.get("Month") and fields.get("Month") != "null"
+            else None
+        )
+        occurred_on_day = (
+            fields.get("Day")
+            if fields.get("Day") and fields.get("Day") != "null"
+            else None
+        )
 
         incident_type_name = (
-            incident["fields"].get("Incident-Type")[0]
-            if incident["fields"].get("Incident-Type")
-            else None
+            fields.get("Incident-Type")[0] if fields.get("Incident-Type") else None
         )
         incident_type = IncidentType.query.filter_by(name=incident_type_name).first()
         internal_source_type_name = (
-            incident["fields"].get("Source-Internal")[0]
-            if incident["fields"].get("Source-Internal")
-            else None
+            fields.get("Source-Internal")[0] if fields.get("Source-Internal") else None
         )
         internal_source_type = IncidentInternalSourceType.query.filter_by(
             name=internal_source_type_name
         ).first()
         source_type_name = (
-            incident["fields"].get("Source-Attribution")[0]
-            if incident["fields"].get("Source-Attribution")
+            fields.get("Source-Attribution")[0]
+            if fields.get("Source-Attribution")
             else None
         )
         source_type = IncidentSourceType.query.filter_by(name=source_type_name).first()
-        source_id = incident["fields"].get("Source-ID")
-        reported_to_school = (
-            True if incident["fields"].get("Reported-To-School") == "Yes" else None
-        )
-        school_responded = incident["fields"].get("School-Responded") == "Yes"
+        source_id = fields.get("Source-ID")
+        reported_to_school = True if fields.get("Reported-To-School") == "Yes" else None
+        school_responded = fields.get("School-Responded") == "Yes"
 
         # For now, things that require new object creation lets keep to only new incidents
         if existing_incident == None:
-            publish_string = incident["fields"].get("Publish")
-            privacy_string = incident["fields"].get("Privacy")
+            publish_string = fields.get("Publish")
+            privacy_string = fields.get("Privacy")
             publish_details = get_publish_details(publish_string, privacy_string)
             internal_notes = (
                 [InternalNote(note=internal_note_0)] if internal_note_0 else []
@@ -519,8 +517,9 @@ def create_or_sync_incidents(data):
                 districts=[district] if district else [],
                 reported_on=created_on,
                 updated_on=updated_on,
-                occurred_on=occurred_on,
-                occurred_on_is_month=occurred_on_is_month,
+                occurred_on_year=occurred_on_year,
+                occurred_on_month=occurred_on_month,
+                occured_on_day=occured_on_day,
                 publish_details=publish_details,
                 types=[incident_type] if incident_type else [],
                 internal_source_types=(
@@ -544,6 +543,9 @@ def create_or_sync_incidents(data):
             existing_incident.details = details
             existing_incident.schools = [school] if school else []
             existing_incident.districts = [district] if district else []
+            existing_incident.occurred_on_year = occurred_on_year
+            existing_incident.occurred_on_month = occurred_on_month
+            existing_incident.occurred_on_day = occurred_on_day
 
         db.session.commit()
 

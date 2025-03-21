@@ -47,6 +47,11 @@ ol ul,
 ul ol {
   margin-bottom: 0; }
 
+hr {
+  border-color: var(--primary);
+  margin-left: -20px;
+}
+
 a {
   color: var(--primary);
   text-decoration: none;
@@ -218,7 +223,7 @@ a:not([href]) {
 .admin-form {
   display: flex;
   flex-direction: column;
-  padding-left: 40px;
+  margin-left: 40px;
 }
 
 .admin-form input,
@@ -234,6 +239,11 @@ a:not([href]) {
 .admin-form .select2-selection__clear,
 .admin-form .select2-search {
   display: none;
+  min-width: 220px;
+}
+.admin-form textarea {
+  height: 100px;
+  resize: vertical horizontal;
 }
 
 .admin-form input {

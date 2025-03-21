@@ -1,4 +1,5 @@
-from datetime import datetime
+import calendar
+from datetime import datetime, date
 import os
 from flask import jsonify, request
 from flask_login import current_user
@@ -6,18 +7,20 @@ import requests
 
 from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
+from flask_admin.form import Select2Widget
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.contrib.sqla.filters import FilterInList, EnumEqualFilter
 from flask_admin import expose
 from markupsafe import Markup
 from wtforms.fields import FieldList, Field
-from wtforms_sqlalchemy.fields import QuerySelectField
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField, QuerySelectField
 import wtforms
 from wtforms import (
     BooleanField,
     DateTimeField,
     Form,
     FormField,
+    SelectField,
     SelectMultipleField,
     StringField,
     TextAreaField,
@@ -25,7 +28,7 @@ from wtforms import (
 )
 from wtforms.widgets import DateInput
 from requests.auth import HTTPBasicAuth
-from sqlalchemy import event
+from sqlalchemy import desc, event, func
 from sqlalchemy.orm import aliased
 
 from ..models import (
@@ -33,6 +36,8 @@ from ..models import (
     Incident,
     IncidentPrivacyStatus,
     IncidentPublishDetails,
+    IncidentSourceAssociation,
+    IncidentSourceType,
     IncidentStatus,
     IncidentType,
     RelatedLink,
@@ -135,6 +140,34 @@ class SchoolResponseForm(Form):
     )
     school_response = TextAreaField("School Response")
     school_response_materials = Field()
+
+
+class YearSelectField(SelectField):
+    def __init__(
+        self, label=None, validators=None, start_year=1900, end_year=None, **kwargs
+    ):
+        if end_year is None:
+            end_year = datetime.today().year  # Default to the current year
+        choices = [("", "")] + [
+            (str(year), str(year)) for year in range(end_year, start_year - 1, -1)
+        ]
+        super().__init__(label, validators, choices=choices, **kwargs)
+
+
+class MonthSelectField(SelectField):
+    def __init__(self, label=None, validators=None, **kwargs):
+        curr_year = datetime.today().year
+        choices = [("", "")] + [
+            (str(m), date(curr_year, m, 1).strftime("%B")) for m in range(1, 13)
+        ]
+        super().__init__(label, validators, choices=choices, **kwargs)
+
+
+class DaySelectField(SelectField):
+    def __init__(self, label=None, validators=None, **kwargs):
+        # We will actually adjust the choices based on the month selected in JS
+        choices = [(str(d), str(d)) for d in range(1, 32)]
+        super().__init__(label, validators, choices=choices, **kwargs)
 
 
 class ManyToManyFilter(FilterInList):
@@ -260,6 +293,39 @@ class IncidentView(AuditModelView):
 
         return filters
 
+    def _format_occurred_on(view, context, model, name):
+        month = (
+            calendar.month_name[model.occurred_on_month]
+            if model.occurred_on_month
+            else ""
+        )
+        day = model.occurred_on_day or ""
+        year = model.occurred_on_year or ""
+
+        if not any([month, day, year]):
+            return "Date not available"
+
+        # Format the date dynamically based on available values
+        if month and day and year:
+            return f"{month} {day}, {year}"
+        elif month and year:
+            return f"{month} {year}"
+        elif year:
+            return str(year)
+
+        return f"{month} {day}"
+
+    def _sort_occurred_on(self, query, sort_desc):
+        sort_column = func.concat(
+            self.model.occurred_on_year,
+            "-",
+            self.model.occurred_on_month,
+            "-",
+            self.model.occurred_on_day,
+        )
+
+        return query.order_by(sort_column.desc() if sort_desc else sort_column.asc())
+
     def _render_supporting_material_links(view, context, model, name):
         if model.supporting_materials:
             links = "".join(
@@ -289,7 +355,8 @@ class IncidentView(AuditModelView):
         "reporter",
     ]
 
-    column_default_sort = ("occurred_on", True)
+    column_sortable_list = ["occurred_on"]
+    column_default_sort = "occurred_on"
 
     column_details_list = [
         "summary",
@@ -303,7 +370,6 @@ class IncidentView(AuditModelView):
         "reported_on",
         "updated_on",
         "occurred_on",
-        "occurred_on_is_month",
         "types",
         "internal_source_types",
         "source_types",
@@ -325,21 +391,22 @@ class IncidentView(AuditModelView):
     form_columns = [
         "summary",
         "details",
-        "related_links",
-        "supporting_materials",
         "districts",
         "schools",
         "unions",
         "reporter",
         "reported_on",
-        "occurred_on",
-        "occurred_on_is_month",
+        "occurred_on_year",
+        "occurred_on_month",
+        "occurred_on_day",
         "types",
         "internal_source_types",
         "source_types",
-        "publish_details",
         "reported_to_school",
         "school_response",
+        "publish_details",
+        "related_links",
+        "supporting_materials",
     ]
 
     column_formatters = {
@@ -370,7 +437,7 @@ class IncidentView(AuditModelView):
         "internal_notes": lambda v, c, m, n: [note.note for note in m.internal_notes],
         "audit_log_link": AuditModelView._audit_log_link,
         "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
-        "occurred_on": lambda v, c, m, n: m.occurred_on.strftime("%B, %-d, %Y"),
+        "occurred_on": _format_occurred_on,
         "reported_on": lambda v, c, m, n: m.reported_on.strftime("%B, %-d, %Y"),
     }
 
@@ -378,34 +445,55 @@ class IncidentView(AuditModelView):
         "related_links": FieldList,
         "supporting_materials": Field,
         "reported_on": DateTimeField,
-        "occurred_on": DateTimeField,
+        "occurred_on_year": YearSelectField,
+        "occurred_on_month": MonthSelectField,
+        "occurred_on_day": DaySelectField,
+        # "source_types": QuerySelectField,
     }
+
+    form_extra_fields = {
+        "source_types": QuerySelectMultipleField(
+            "Source Types",
+            query_factory=lambda: IncidentSourceType.query.all(),
+            get_label="name",
+            widget=Select2Widget(multiple=True),
+        )
+    }
+
     form_args = {
         "related_links": {"unbound_field": StringField(), "min_entries": 1},
         "reported_on": {"format": "%Y-%m-%d", "widget": DateInput()},
-        "occurred_on": {"format": "%Y-%m-%d", "widget": DateInput()},
+        "occurred_on_year": {"start_year": 2000},
     }
 
     def scaffold_form(self):
         form_class = super().scaffold_form()
+        form_class.school_responded = BooleanField("School Responded")
+        form_class.school_response = FormField(SchoolResponseForm)
         form_class.related_links = FieldList(StringField("Link"), min_entries=1)
         form_class.supporting_materials = Field()
         form_class.publish_details = FormField(PublishDetailsForm)
-        form_class.school_responded = BooleanField("School Responded")
-        form_class.school_response = FormField(SchoolResponseForm)
 
         return form_class
 
     def on_model_change(self, form, model, is_created):
+        """
+        Perform some actions before a model is created OR updated.
+        Called from create_model and update_model. So you will see that in
+        create_model and update_model overrides we do things that Flask-admin
+        can't figure out.
+        """
         if is_created:
             model.reporter = current_user
 
         return super().on_model_change(form, model, is_created)
 
-    def create_edit_model(self, form, model):
-        """Common logic between the update & create model methods."""
-        # Need to remove related links & supporting materials
-        # from form so we can handle manually and not in populate_obj.
+    def _create_edit_model(self, form, model):
+        """
+        Common logic between the update & create model methods.
+        Here we remove and manually populate the model with the data
+        from the form that Flask-admin can't map itself.
+        """
         related_links_data = form.related_links.data if form.related_links else []
         supporting_materials_data = request.form.getlist("supporting_materials[]") or []
         school_response_materials_data = (
@@ -463,10 +551,35 @@ class IncidentView(AuditModelView):
                 )
                 model.publish_details = publish_details
 
+        if form.source_types.data:
+            existing_source_type_ids = [
+                assoc.source_type_id for assoc in model.source_types
+            ]
+            new_source_type_ids = [new_type.id for new_type in form.source_types.data]
+            for source_type_id in new_source_type_ids:
+                if source_type_id not in existing_source_type_ids:
+                    model.source_types.append(
+                        IncidentSourceAssociation(source_type_id=source_type_id)
+                    )
+        model.occurred_on_day = (
+            None if form.occurred_on_day.data == "" else form.occurred_on_day.data
+        )
+        model.occurred_on_month = (
+            None if form.occurred_on_month.data == "" else form.occurred_on_month.data
+        )
+        model.occurred_on_year = (
+            None if form.occurred_on_year.data == "" else form.occurred_on_year.data
+        )
+
         del form.school_responded
         del form.school_response
         del form.related_links
         del form.supporting_materials
+        del form.source_types
+        del form.occurred_on_day
+        del form.occurred_on_month
+        del form.occurred_on_year
+
         form.populate_obj(model)
 
         return {
@@ -475,7 +588,7 @@ class IncidentView(AuditModelView):
             "school_response_materials_data": school_response_materials_data,
         }
 
-    def update_materials(
+    def _update_materials(
         self,
         model,
         relationship_attr,
@@ -513,6 +626,11 @@ class IncidentView(AuditModelView):
         setattr(model, relationship_attr, existing_materials + materials_to_add)
 
     def on_form_prefill(self, form, id):
+        """
+        Perform additional actions to prefill the edit form.
+        This only needs to be overriden with logic about custom fields that depend
+        on the database in a way that Flask-admin can't figure out by itself
+        """
         model = self.model.query.get(id)
 
         if model.school_response:
@@ -532,12 +650,16 @@ class IncidentView(AuditModelView):
             form.publish_details.publish_status.data = model.publish_details.status
             form.publish_details.publish_privacy.data = model.publish_details.privacy
 
+        if model.source_types:
+            form.source_types.data = [assoc.source_type for assoc in model.source_types]
+
         return form
 
     def create_model(self, form):
+        """Create model from the form"""
         try:
             model = self.model()
-            data = self.create_edit_model(form, model)
+            data = self._create_edit_model(form, model)
             related_links_data = data["related_links_data"]
             supporting_materials_data = data["supporting_materials_data"]
 
@@ -561,8 +683,9 @@ class IncidentView(AuditModelView):
             raise
 
     def update_model(self, form, model):
+        """Update model from the form"""
         try:
-            data = self.create_edit_model(form, model)
+            data = self._create_edit_model(form, model)
             related_links_data = data["related_links_data"]
             supporting_materials_data = data["supporting_materials_data"]
             removed_supporting_materials_data = (
@@ -588,7 +711,7 @@ class IncidentView(AuditModelView):
             model.related_links = links_to_add
 
             # TODO Fix these
-            # self.update_materials(
+            # self._update_materials(
             #     model=model,
             #     relationship_attr="supporting_materials",
             #     material_cls=SupportingMaterialFile,
@@ -596,7 +719,7 @@ class IncidentView(AuditModelView):
             #     new_materials_data=supporting_materials_data,
             #     foreign_key_attr="incident",
             # )
-            # self.update_materials(
+            # self._update_materials(
             #     model=model.school_response,
             #     relationship_attr="materials",
             #     material_cls=SchoolResponseMaterial,
