@@ -1,9 +1,12 @@
 import os
 from io import StringIO
+import time
 from flask import redirect, request, url_for
 
 from flask_admin import expose, BaseView
 from pyairtable import Api
+from rq import Queue
+from worker import conn
 
 from ..admin.util import (
     sync_school_districts,
@@ -12,6 +15,7 @@ from ..admin.util import (
     convert_file_to_data,
 )
 
+q = Queue(connection=conn)
 
 class ManageDataView(BaseView):
     @expose("/")
@@ -25,7 +29,11 @@ class ManageDataView(BaseView):
             # Read the file in memory using StringIO
             file_content = file.stream.read().decode("utf-8", errors="ignore")
             file_io = StringIO(file_content)
-            data_type_title = convert_file_to_data(file_io).replace("_", "")
+            job = q.enqueue(convert_file_to_data, file_io)
+            while job.result is None:
+                print("Waiting for job to complete...")
+                time.sleep(1)
+            data_type_title = job.result.replace("_", "")
             data_type_title = (
                 "school" if data_type_title == "privateschool" else data_type_title
             )
@@ -46,8 +54,8 @@ class ManageDataView(BaseView):
             raise ValueError("Invalid Airtable ID")
 
         if table_name == "District-Table":
-            return sync_school_districts(data)
+            return q.enqueue(sync_school_districts, data)
         elif table_name == "School-Table":
-            return sync_schools(data)
+            return  q.enqueue(sync_schools, data)
         elif table_name == "Incident-Table":
-            return create_or_sync_incidents(data)
+            return  q.enqueue(create_or_sync_incidents, data)

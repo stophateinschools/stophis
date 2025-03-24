@@ -1,2 +1,3 @@
-web: gunicorn --timeout 60 --workers=2 --threads=2 wsgi:app
+web: gunicorn wsgi:app
 release: alembic upgrade head
+worker: python worker.py

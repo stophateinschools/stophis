@@ -47,6 +47,7 @@ def convert_file_to_data(html_file):
     """
     Converts an HTML file containing a table of data to CSV and writes to in memory file.
     """
+    print("Converting data ", html_file)
     # Parse the HTML
     soup = BeautifulSoup(html_file, "html.parser")
 
@@ -54,6 +55,7 @@ def convert_file_to_data(html_file):
     table = soup.find("table")
 
     # Create a StringIO object to hold the CSV data in memory
+    # TODO with output = StringIO so that output is closed at the end
     output = StringIO()
     csvwriter = csv.writer(output)
 
