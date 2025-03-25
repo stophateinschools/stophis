@@ -3,12 +3,48 @@
   <head>
     <meta charset="UTF-8">
     <title>Manage Data</title>
+    <script>
+      function checkJobStatus(jobId) {
+        var interval = setInterval(function() {
+            fetch(`/admin/manage_data/job-status/${jobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "finished") {
+                      alert(data.alertMessage)
+                      clearInterval(interval);  // Stop checking
+                    }
+                })
+                .catch(error => {
+                  console.error("Error checking job status:", error)
+                });
+        }, 1000);  // Check every second
+        }
+
+      function uploadFile(event) {
+        event.preventDefault();
+        var formData = new FormData();
+        formData.append("upload_file", document.getElementById("fileInput").files[0]);
+
+        fetch("/admin/manage_data/upload", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert("Data is loading! Press 'OK' and wait for completion alert - this may take up to 60 seconds");
+          // Get the job ID and start checking the status
+          checkJobStatus(data.job_id);
+        })
+        .catch(error => console.error("Error uploading file:", error));
+  }
+
+    </script>
   </head>
   <body>
     <h1>Manage Data</h1>
     <h2>Upload from NCES File</h2>
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_data.upload') }}">
-      <input type="file" name="upload_file" accept=".xls" required>
+    <form method="POST" enctype="multipart/form-data" onsubmit=uploadFile(event)>
+      <input type="file" id="fileInput"name="upload_file" accept=".xls" required>
       <button type="submit">Upload</button>
     </form>
     <h2>Sync from Airtable</h2>

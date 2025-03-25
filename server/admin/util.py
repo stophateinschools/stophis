@@ -4,7 +4,6 @@ import re
 
 from flask import jsonify, redirect, url_for
 import requests
-from sqlalchemy import func
 
 from server.user import User
 
@@ -47,53 +46,57 @@ def convert_file_to_data(html_file):
     """
     Converts an HTML file containing a table of data to CSV and writes to in memory file.
     """
-    print("Converting data ", html_file)
-    # Parse the HTML
-    soup = BeautifulSoup(html_file, "html.parser")
+    try:
+        # Parse the HTML
+        soup = BeautifulSoup(html_file, "html.parser")
 
-    # Find the table in the HTML
-    table = soup.find("table")
+        # Find the table in the HTML
+        table = soup.find("table")
 
-    # Create a StringIO object to hold the CSV data in memory
-    # TODO with output = StringIO so that output is closed at the end
-    output = StringIO()
-    csvwriter = csv.writer(output)
+        # Create a StringIO object to hold the CSV data in memory
+        # TODO with output = StringIO so that output is closed at the end
+        output = StringIO()
+        csvwriter = csv.writer(output)
 
-    # Find the row that contains headers and write it
-    headers_written = False
-    data_type = None
-    if isinstance(table, Tag):
-        for row in table.find_all("tr"):
-            headers = [cell.text.strip() for cell in row.find_all("td")]
-            if headers and (
-                "NCES School ID" in headers[0]
-                or "NCES District ID" in headers[0]
-                or "PSS_SCHOOL_ID" in headers[0]
-            ):
-                if "NCES School ID" in headers[0]:
-                    data_type = DataType.SCHOOL.value
-                elif "PSS_SCHOOL_ID" in headers[0]:
-                    data_type = DataType.PRIVATE_SCHOOL.value
-                elif "NCES District ID" in headers[0]:
-                    data_type = DataType.SCHOOL_DISTRICT.value
+        # Find the row that contains headers and write it
+        headers_written = False
+        data_type = None
+        if isinstance(table, Tag):
+            for row in table.find_all("tr"):
+                headers = [cell.text.strip() for cell in row.find_all("td")]
+                if headers and (
+                    "NCES School ID" in headers[0]
+                    or "NCES District ID" in headers[0]
+                    or "PSS_SCHOOL_ID" in headers[0]
+                ):
+                    if "NCES School ID" in headers[0]:
+                        data_type = DataType.SCHOOL.value
+                    elif "PSS_SCHOOL_ID" in headers[0]:
+                        data_type = DataType.PRIVATE_SCHOOL.value
+                    elif "NCES District ID" in headers[0]:
+                        data_type = DataType.SCHOOL_DISTRICT.value
 
-                csvwriter.writerow(headers)
-                headers_written = True
-                break
+                    csvwriter.writerow(headers)
+                    headers_written = True
+                    break
 
-    # Write the remaining rows after headers
-    if headers_written:
-        for row in table.find_all("tr")[table.find_all("tr").index(row) + 1 :]:
-            cells = [cell.text.strip() for cell in row.find_all("td")]
-            if cells:  # Skip empty rows
-                csvwriter.writerow(cells)
+        # Write the remaining rows after headers
+        if headers_written:
+            for row in table.find_all("tr")[table.find_all("tr").index(row) + 1 :]:
+                cells = [cell.text.strip() for cell in row.find_all("td")]
+                if cells:  # Skip empty rows
+                    csvwriter.writerow(cells)
 
-    assert data_type  # Make sure we regnoize file data type
-    output.seek(0)  # Rewind the StringIO object to the beginning for reading
+        assert data_type  # Make sure we regnoize file data type
+        output.seek(0)  # Rewind the StringIO object to the beginning for reading
 
-    convert_csv_to_data(output, data_type)
+        convert_csv_to_data(output, data_type)
 
-    return data_type
+        return data_type
+    except Exception as e:
+        # Log the error or handle it
+        print(f"Job failed due to: {str(e)}")
+        raise  # RQ will mark this job as failed
 
 
 def convert_csv_to_data(csv_file, data_type):
