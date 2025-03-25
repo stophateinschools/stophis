@@ -88,7 +88,6 @@ def upgrade() -> None:
     """
         )
     )
-    print(result)
     if result is None:
         op.execute("ALTER TYPE state ADD VALUE 'DC'")
     state_enum.create(op.get_bind(), checkfirst=True)
