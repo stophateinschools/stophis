@@ -20,13 +20,9 @@ from ..admin.util import (
 q = Queue(connection=conn)
 
 
-def failure_callback(job, exception):
-    """This callback will run if the job fails."""
-    # Return failure response or trigger user notification
-    print(f"Job {job.id} failed with error: {exception}")
-    # You can store the error in the database or send a failure alert to user
-    # Optionally, you can redirect to a page showing an error message
-    return jsonify({"error": f"Job failed: {str(exception)}"}), 500
+def handle_job(job):
+    return jsonify({"job_id": job.get_id(), "status": "loading"})
+
 
 class ManageDataView(BaseView):
     @expose("/")
@@ -41,13 +37,11 @@ class ManageDataView(BaseView):
             return jsonify(
                 {
                     "status": "finished",
-                    "alertMessage": f"Upload {job_result.return_value()} complete!",
+                    "alertMessage": f"{job_result.return_value()} complete!",
                 }
             )
 
         return jsonify({"status": "pending"})
-
-
 
     @expose("/upload", methods=["POST"])
     def upload(cls):
@@ -56,9 +50,7 @@ class ManageDataView(BaseView):
             # Read the file in memory using StringIO
             file_content = file.stream.read().decode("utf-8", errors="ignore")
             file_io = StringIO(file_content)
-            job = q.enqueue(convert_file_to_data, file_io)
-            job.on_failure = failure_callback
-            return jsonify({"job_id": job.get_id(), "status": "loading"})
+            return handle_job(q.enqueue(convert_file_to_data, file_io))
         else:
             return "Invalid file format", 400
 
@@ -75,8 +67,8 @@ class ManageDataView(BaseView):
             raise ValueError("Invalid Airtable ID")
 
         if table_name == "District-Table":
-            return q.enqueue(sync_school_districts, data)
+            return handle_job(q.enqueue(sync_school_districts, data))
         elif table_name == "School-Table":
-            return q.enqueue(sync_schools, data)
+            return handle_job(q.enqueue(sync_schools, data))
         elif table_name == "Incident-Table":
-            return q.enqueue(create_or_sync_incidents, data)
+            return handle_job(q.enqueue(create_or_sync_incidents, data))

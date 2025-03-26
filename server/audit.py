@@ -66,12 +66,10 @@ def is_audit_model(instance):
 def log_audit(session):
     for instance in session.deleted:
         if isinstance(instance, db.Model) and is_audit_model(instance):
-            print("creating delete audit")
             create_audit_log(AuditAction.DELETE, instance)
 
     for instance in session.dirty:
         if isinstance(instance, db.Model) and is_audit_model(instance):
-            print("creating chagne audit")
             changes = {}
             for column in instance.__table__.columns:
                 history = get_history(instance, column.name)

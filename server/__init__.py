@@ -52,6 +52,7 @@ def inject_env_vars():
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
     }
 
+
 def create_app():
     # Create the Flask app instance
     app.secret_key = os.getenv("SECRET_KEY")

@@ -36,7 +36,26 @@
           checkJobStatus(data.job_id);
         })
         .catch(error => console.error("Error uploading file:", error));
-  }
+      }
+
+      function syncData(event) {
+        event.preventDefault();
+        var formData = new FormData();
+        formData.append("state", document.getElementById("states").value);
+        formData.append("table", document.getElementById("tables").value);
+
+        fetch("/admin/manage_data/sync", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          alert("Data is loading! Press 'OK' and wait for completion alert - this may take up to 60 seconds");
+          // Get the job ID and start checking the status
+          checkJobStatus(data.job_id);
+        })
+        .catch(error => console.error("Error syncing data:", error));
+      }
 
     </script>
   </head>
@@ -44,11 +63,11 @@
     <h1>Manage Data</h1>
     <h2>Upload from NCES File</h2>
     <form method="POST" enctype="multipart/form-data" onsubmit=uploadFile(event)>
-      <input type="file" id="fileInput"name="upload_file" accept=".xls" required>
+      <input type="file" id="fileInput" name="upload_file" accept=".xls" required>
       <button type="submit">Upload</button>
     </form>
     <h2>Sync from Airtable</h2>
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('manage_data.sync') }}">
+    <form method="POST" enctype="multipart/form-data" onsubmit=syncData(event)>
       <label for="state">Choose a state:</label>
       <select name="state" id="states" required>
         <option value="WA">WA</option>

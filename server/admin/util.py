@@ -1,8 +1,9 @@
 from enum import Enum
 import os
 import re
+import traceback
 
-from flask import jsonify, redirect, url_for
+from flask import jsonify
 import requests
 
 from server.user import User
@@ -92,11 +93,10 @@ def convert_file_to_data(html_file):
 
         convert_csv_to_data(output, data_type)
 
-        return data_type
+        return f"Upload {data_type}"
     except Exception as e:
-        # Log the error or handle it
         print(f"Job failed due to: {str(e)}")
-        raise  # RQ will mark this job as failed
+        raise
 
 
 def convert_csv_to_data(csv_file, data_type):
@@ -148,6 +148,7 @@ def simple_file_upload_from_url(url, filename):
 
     file = {"file": (filename, image_response.content)}
     try:
+        print(API_URL, API_TOKEN, API_SECRET)
         response = requests.post(
             API_URL,
             files=file,
@@ -178,58 +179,68 @@ def sync_school_districts(districts):
     """
     Sync school district data from Airtable to our database.
     """
-    for district in districts:
-        nces_id = district["fields"].get("NCES-District-ID")
+    try:
+        updated_count = 0
+        for district in districts:
+            nces_id = district["fields"].get("NCES-District-ID")
 
-        existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
-        if existing_district == None:
-            continue
+            existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
+            if existing_district == None:
+                continue
 
-        logo = (
-            district["fields"].get("District-Logo")[0]
-            if district["fields"].get("District-Logo")
-            else None
-        )
-        if logo:
-            airtable_url = logo["url"]
-            filename = logo["filename"]
-            new_url = simple_file_upload_from_url(airtable_url, filename)
-            if existing_district.logo:
-                existing_district.logo.url = new_url
-            else:
-                existing_district.logo = SchoolDistrictLogo(url=new_url)
+            logo = (
+                district["fields"].get("District-Logo")[0]
+                if district["fields"].get("District-Logo")
+                else None
+            )
+            if logo:
+                airtable_url = logo["url"]
+                filename = logo["filename"]
+                new_url = simple_file_upload_from_url(airtable_url, filename)
+                if existing_district.logo:
+                    existing_district.logo.url = new_url
+                else:
+                    existing_district.logo = SchoolDistrictLogo(url=new_url)
 
-        airtable_name = district["fields"].get("District-Name")
-        existing_district.display_name = (
-            airtable_name if airtable_name != existing_district.name else None
-        )
-        existing_district.airtable_id = district["id"]
-        existing_district.url = district["fields"].get("District-URL")
-        existing_district.twitter = district["fields"].get("District-Twitter")
-        existing_district.facebook = district["fields"].get("District-Facebook")
-        existing_district.phone = district["fields"].get("District-Phone")
-        existing_district.superintendent_name = district["fields"].get(
-            "Superintendent-Name"
-        )
-        existing_district.superintendent_email = district["fields"].get(
-            "Superintendent-Email"
-        )
-        existing_district.civil_rights_url = district["fields"].get("CivilRights-URL")
-        existing_district.civil_rights_contact_name = district["fields"].get(
-            "CivilRights-Contact"
-        )
-        existing_district.civil_rights_contact_email = district["fields"].get(
-            "CivilRights-Email"
-        )
-        existing_district.hib_url = district["fields"].get("HIB-URL")
-        existing_district.hib_form_url = district["fields"].get("HIB-Form")
-        existing_district.hib_contact_name = district["fields"].get("HIB-Contact")
-        existing_district.hib_contact_email = district["fields"].get("HIB-Email")
-        existing_district.board_url = district["fields"].get("Board-URL")
+            airtable_name = district["fields"].get("District-Name")
+            existing_district.display_name = (
+                airtable_name if airtable_name != existing_district.name else None
+            )
+            existing_district.airtable_id = district["id"]
+            existing_district.url = district["fields"].get("District-URL")
+            existing_district.twitter = district["fields"].get("District-Twitter")
+            existing_district.facebook = district["fields"].get("District-Facebook")
+            existing_district.phone = district["fields"].get("District-Phone")
+            existing_district.superintendent_name = district["fields"].get(
+                "Superintendent-Name"
+            )
+            existing_district.superintendent_email = district["fields"].get(
+                "Superintendent-Email"
+            )
+            existing_district.civil_rights_url = district["fields"].get(
+                "CivilRights-URL"
+            )
+            existing_district.civil_rights_contact_name = district["fields"].get(
+                "CivilRights-Contact"
+            )
+            existing_district.civil_rights_contact_email = district["fields"].get(
+                "CivilRights-Email"
+            )
+            existing_district.hib_url = district["fields"].get("HIB-URL")
+            existing_district.hib_form_url = district["fields"].get("HIB-Form")
+            existing_district.hib_contact_name = district["fields"].get("HIB-Contact")
+            existing_district.hib_contact_email = district["fields"].get("HIB-Email")
+            existing_district.board_url = district["fields"].get("Board-URL")
+
+            updated_count += 1
 
         db.session.commit()
-
-    return redirect(url_for("schooldistrict.index_view"))
+        return f"Sync complete: {updated_count} districts updated"
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f"Sync failed: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return error_msg
 
 
 def convert_grade_to_int(grade):
@@ -350,27 +361,37 @@ def sync_schools(schools):
     """
     Sync school data from Airtable to our database.
     """
-    for school in schools:
-        nces_id = school["fields"].get("NCES-School-ID")
+    try:
+        updated_count = 0
+        for school in schools:
+            nces_id = school["fields"].get("NCES-School-ID")
 
-        existing_school = School.query.filter_by(nces_id=nces_id).first()
+            existing_school = School.query.filter_by(nces_id=nces_id).first()
 
-        if existing_school == None:
-            print("TODO create airtable school - we had no match from NCES ", school)
-            continue
+            if existing_school == None:
+                print(
+                    "TODO create airtable school - we had no match from NCES ", school
+                )
+                continue
 
-        airtable_name = school["fields"].get("School-Name")
-        (
-            existing_school.display_name == airtable_name
-            if airtable_name != existing_school.name
-            else None
-        )
-        existing_school.website = school["fields"].get("Website")
-        existing_school.airtable_id = school["fields"].get("School-Record-ID")
+            airtable_name = school["fields"].get("School-Name")
+            (
+                existing_school.display_name == airtable_name
+                if airtable_name != existing_school.name
+                else None
+            )
+            existing_school.website = school["fields"].get("Website")
+            existing_school.airtable_id = school["fields"].get("School-Record-ID")
+
+            updated_count += 1
 
         db.session.commit()
-
-    return redirect(url_for("school.index_view"))
+        return f"Sync complete: {updated_count} schools updated"
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f"Sync failed: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return error_msg
 
 
 def get_publish_details(publish_string, privacy_string):
@@ -416,143 +437,163 @@ def create_or_sync_incidents(data):
     """
     Get incident data from Airtable and create or sync records.
     """
-    for incident in data:
-        fields = incident["fields"]
-        airtable_id = incident["id"]
-        if airtable_id == "recPAIxsIZ6GCFNR9":
-            print("Processing incident: ", airtable_id)
-            print(incident)
-        existing_incident = Incident.query.filter_by(airtable_id=airtable_id).first()
-
-        airtable_id_number = fields.get("Incident-Number")
-        summary = fields.get("Incident-Summary")
-        details = fields.get("Incident-Details")
-        related_link_1 = fields.get("Related-Link-1")
-        related_link_2 = fields.get("Related-Link-2")
-        related_link_3 = fields.get("Related-Link-3")
-        internal_note_0 = fields.get("INTERNAL-Notes")
-        supporting_materials = fields.get("Supporting-Materials")
-        school_airtable_id = (
-            fields.get("School-Name")[0] if fields.get("School-Name") else None
-        )
-        school = (
-            School.query.filter_by(airtable_id=school_airtable_id).first()
-            if school_airtable_id
-            else None
-        )
-        district_airtable_id = (
-            fields.get("School-District")[0] if fields.get("School-District") else None
-        )
-        district = (
-            SchoolDistrict.query.filter_by(airtable_id=district_airtable_id).first()
-            if district_airtable_id
-            else None
-        )
-        created_on = fields.get("Created")
-        updated_on = fields.get("Last Modified")
-        occurred_on_year = (
-            fields.get("Year")
-            if fields.get("Year") and fields.get("Year") != "null"
-            else None
-        )
-        occurred_on_month = (
-            fields.get("Month")
-            if fields.get("Month") and fields.get("Month") != "null"
-            else None
-        )
-        occurred_on_day = (
-            fields.get("Day")
-            if fields.get("Day") and fields.get("Day") != "null"
-            else None
-        )
-
-        incident_type_name = (
-            fields.get("Incident-Type")[0] if fields.get("Incident-Type") else None
-        )
-        incident_type = IncidentType.query.filter_by(name=incident_type_name).first()
-        internal_source_type_name = (
-            fields.get("Source-Internal")[0] if fields.get("Source-Internal") else None
-        )
-        internal_source_type = IncidentInternalSourceType.query.filter_by(
-            name=internal_source_type_name
-        ).first()
-        source_type_name = (
-            fields.get("Source-Attribution")[0]
-            if fields.get("Source-Attribution")
-            else None
-        )
-        source_type = IncidentSourceType.query.filter_by(name=source_type_name).first()
-        source_id = fields.get("Source-ID")
-        reported_to_school = True if fields.get("Reported-To-School") == "Yes" else None
-        school_responded = fields.get("School-Responded") == "Yes"
-
-        # For now, things that require new object creation lets keep to only new incidents
-        if existing_incident == None:
-            admin_user = User.query.filter_by(
-                email="admin@stophateinschools.org"
+    try:
+        created_count = 0
+        updated_count = 0
+        for incident in data:
+            fields = incident["fields"]
+            airtable_id = incident["id"]
+            existing_incident = Incident.query.filter_by(
+                airtable_id=airtable_id
             ).first()
-            publish_string = fields.get("Publish")
-            privacy_string = fields.get("Privacy")
-            publish_details = get_publish_details(publish_string, privacy_string)
-            internal_notes = (
-                [InternalNote(note=internal_note_0, author_id=admin_user.id)]
-                if internal_note_0
-                else []
-            )
-            new_supporting_materials = []
-            for supporting_material in supporting_materials or []:
-                airtable_url = supporting_material["url"]
-                filename = supporting_material["filename"]
-                new_url = simple_file_upload_from_url(airtable_url, filename)
-                new_supporting_materials.append(SupportingMaterialFile(url=new_url))
 
-            new_incident = Incident(
-                airtable_id=airtable_id,
-                airtable_id_number=airtable_id_number,
-                summary=summary,
-                details=details,
-                internal_notes=internal_notes,
-                related_links=[
-                    RelatedLink(link=link)
-                    for link in [related_link_1, related_link_2, related_link_3]
-                    if link is not None
-                ],
-                supporting_materials=new_supporting_materials,
-                schools=[school] if school else [],
-                districts=[district] if district else [],
-                reported_on=created_on,
-                reporter_id=admin_user.id,
-                updated_on=updated_on,
-                occurred_on_year=occurred_on_year,
-                occurred_on_month=occurred_on_month,
-                occurred_on_day=occurred_on_day,
-                publish_details=publish_details,
-                types=[incident_type] if incident_type else [],
-                internal_source_types=(
-                    [internal_source_type] if internal_source_type else []
-                ),
-                source_types=(
-                    [
-                        IncidentSourceAssociation(
-                            source_type=source_type, source_id=source_id
-                        )
-                    ]
-                    if source_type
-                    else []
-                ),
-                reported_to_school=reported_to_school,
-                school_response=SchoolResponse() if school_responded else None,
+            airtable_id_number = fields.get("Incident-Number")
+            summary = fields.get("Incident-Summary")
+            details = fields.get("Incident-Details")
+            related_link_1 = fields.get("Related-Link-1")
+            related_link_2 = fields.get("Related-Link-2")
+            related_link_3 = fields.get("Related-Link-3")
+            internal_note_0 = fields.get("INTERNAL-Notes")
+            supporting_materials = fields.get("Supporting-Materials")
+            school_airtable_id = (
+                fields.get("School-Name")[0] if fields.get("School-Name") else None
             )
-            db.session.add(new_incident)
-        else:
-            existing_incident.summary = summary
-            existing_incident.details = details
-            existing_incident.schools = [school] if school else []
-            existing_incident.districts = [district] if district else []
-            existing_incident.occurred_on_year = occurred_on_year
-            existing_incident.occurred_on_month = occurred_on_month
-            existing_incident.occurred_on_day = occurred_on_day
+            school = (
+                School.query.filter_by(airtable_id=school_airtable_id).first()
+                if school_airtable_id
+                else None
+            )
+            district_airtable_id = (
+                fields.get("School-District")[0]
+                if fields.get("School-District")
+                else None
+            )
+            district = (
+                SchoolDistrict.query.filter_by(airtable_id=district_airtable_id).first()
+                if district_airtable_id
+                else None
+            )
+            created_on = fields.get("Created")
+            updated_on = fields.get("Last Modified")
+            occurred_on_year = (
+                fields.get("Year")
+                if fields.get("Year") and fields.get("Year") != "null"
+                else None
+            )
+            occurred_on_month = (
+                fields.get("Month")
+                if fields.get("Month") and fields.get("Month") != "null"
+                else None
+            )
+            occurred_on_day = (
+                fields.get("Day")
+                if fields.get("Day") and fields.get("Day") != "null"
+                else None
+            )
+
+            incident_type_name = (
+                fields.get("Incident-Type")[0] if fields.get("Incident-Type") else None
+            )
+            incident_type = IncidentType.query.filter_by(
+                name=incident_type_name
+            ).first()
+            internal_source_type_name = (
+                fields.get("Source-Internal")[0]
+                if fields.get("Source-Internal")
+                else None
+            )
+            internal_source_type = IncidentInternalSourceType.query.filter_by(
+                name=internal_source_type_name
+            ).first()
+            source_type_name = (
+                fields.get("Source-Attribution")[0]
+                if fields.get("Source-Attribution")
+                else None
+            )
+            source_type = IncidentSourceType.query.filter_by(
+                name=source_type_name
+            ).first()
+            source_id = fields.get("Source-ID")
+            reported_to_school = (
+                True if fields.get("Reported-To-School") == "Yes" else None
+            )
+            school_responded = fields.get("School-Responded") == "Yes"
+
+            # For now, things that require new object creation lets keep to only new incidents
+            if existing_incident == None:
+                admin_user = User.query.filter_by(
+                    email="admin@stophateinschools.org"
+                ).first()
+                publish_string = fields.get("Publish")
+                privacy_string = fields.get("Privacy")
+                publish_details = get_publish_details(publish_string, privacy_string)
+                internal_notes = (
+                    [InternalNote(note=internal_note_0, author_id=admin_user.id)]
+                    if internal_note_0
+                    else []
+                )
+                new_supporting_materials = []
+                for supporting_material in supporting_materials or []:
+                    airtable_url = supporting_material["url"]
+                    filename = supporting_material["filename"]
+                    new_url = simple_file_upload_from_url(airtable_url, filename)
+                    new_supporting_materials.append(SupportingMaterialFile(url=new_url))
+
+                new_incident = Incident(
+                    airtable_id=airtable_id,
+                    airtable_id_number=airtable_id_number,
+                    summary=summary,
+                    details=details,
+                    internal_notes=internal_notes,
+                    related_links=[
+                        RelatedLink(link=link)
+                        for link in [related_link_1, related_link_2, related_link_3]
+                        if link is not None
+                    ],
+                    supporting_materials=new_supporting_materials,
+                    schools=[school] if school else [],
+                    districts=[district] if district else [],
+                    reported_on=created_on,
+                    reporter_id=admin_user.id,
+                    updated_on=updated_on,
+                    occurred_on_year=occurred_on_year,
+                    occurred_on_month=occurred_on_month,
+                    occurred_on_day=occurred_on_day,
+                    publish_details=publish_details,
+                    types=[incident_type] if incident_type else [],
+                    internal_source_types=(
+                        [internal_source_type] if internal_source_type else []
+                    ),
+                    source_types=(
+                        [
+                            IncidentSourceAssociation(
+                                source_type=source_type, source_id=source_id
+                            )
+                        ]
+                        if source_type
+                        else []
+                    ),
+                    reported_to_school=reported_to_school,
+                    school_response=SchoolResponse() if school_responded else None,
+                )
+                db.session.add(new_incident)
+                created_count += 1
+            else:
+                existing_incident.summary = summary
+                existing_incident.details = details
+                existing_incident.schools = [school] if school else []
+                existing_incident.districts = [district] if district else []
+                existing_incident.occurred_on_year = occurred_on_year
+                existing_incident.occurred_on_month = occurred_on_month
+                existing_incident.occurred_on_day = occurred_on_day
+                updated_count += 1
 
         db.session.commit()
-
-    return redirect(url_for("incident.index_view"))
+        return (
+            f"Complete: {created_count} created and {updated_count} updated incidents"
+        )
+    except Exception as e:
+        db.session.rollback()
+        error_msg = f"Sync failed: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        return error_msg
