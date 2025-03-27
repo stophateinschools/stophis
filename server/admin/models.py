@@ -77,7 +77,6 @@ class RoleView(BaseModelView):
 class UserView(AuditModelView):
     can_delete = True
     column_list = [
-        "google_id",
         "first_name",
         "last_name",
         "email",

@@ -27,10 +27,8 @@ def upgrade() -> None:
         sa.Column("first_name", sa.String(), nullable=False),
         sa.Column("last_name", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False, unique=True),
-        sa.Column("profile_picture", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-
 
 def downgrade() -> None:
     op.drop_table("users")

@@ -1,5 +1,6 @@
 from enum import Enum
 from flask_login import UserMixin
+from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .models import State
@@ -30,7 +31,6 @@ class User(UserMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer(), primary_key=True)
-    google_id = db.Column(db.String(), nullable=True)
     first_name = db.Column(db.String(), nullable=False)
     last_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
@@ -61,14 +61,20 @@ class Role(db.Model):
         return self.name.value
 
 
+class OAuth(OAuthConsumerMixin, db.Model):
+    __tablename__ = "oauths"
+
+    provider_user_id = db.Column(db.String(256), nullable=True, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(User.id))
+    user = db.relationship(User)
+
+
 def create_user(user):
     existing_user = User.query.filter_by(email=user["email"]).first()
     if existing_user:
-        existing_user.google_id = user["id"]
         existing_user.profile_picture = user["picture"]
     else:
         new_user = User(
-            google_id=user["id"],
             first_name=user["given_name"],
             last_name=user["family_name"],
             email=user["email"],

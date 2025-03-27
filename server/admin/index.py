@@ -1,10 +1,12 @@
+from flask import Blueprint, flash, redirect, url_for
 from flask_admin import AdminIndexView, expose
 from flask_login import current_user
 from markupsafe import Markup
 from flask_admin.contrib.sqla import ModelView
+from server.auth import has_role, google_bp
+from flask_dance.contrib.google import google
 
-from ..auth import login_required
-
+from server.user import UserRole
 
 class BaseModelView(ModelView):
     can_view_details = True
@@ -13,6 +15,12 @@ class BaseModelView(ModelView):
 
     def search_placeholder(self):
         return ""
+    
+    def is_accessible(self):
+        return google.authorized and current_user.is_authenticated and has_role(["admin"])
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for("main.index"))
 
 
 def render_model_details_link(model_name, record_id, display_text=None):
@@ -32,13 +40,13 @@ def get_filters(self):
         key=lambda f: f.name,
     )
 
-
 class AdminView(AdminIndexView):
-    @login_required()
     def is_accessible(self):
-        return current_user.is_authenticated
+        return google.authorized and current_user.is_authenticated and has_role([UserRole.ADMIN])
 
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for("main.index")) 
+    
     @expose("/")
-    @login_required()
     def index(self):
         return self.render("/admin/index.html")

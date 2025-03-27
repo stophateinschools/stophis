@@ -20,9 +20,11 @@
       {{ macros.header() }}
       <div class="container">
          <div class="login-container">
-            <button type="button" class="login-with-google-btn" onclick="window.location.href = '/auth/login'">
+            <a  href="{{ url_for("google.login") }}">
+            <button type="button" class="login-with-google-btn">
                Sign in with Google
             </button>
+            </a>
             <span class="subtext">
                Need help?
                <a href="mailto:admin@stophateinschools.org">Contact Us</a>

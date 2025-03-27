@@ -1,11 +1,6 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask
 from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
-from rq import Queue
-from rq.job import Job
-
-from worker import conn
 
 from .audit import AuditLog, AuditLogView
 
@@ -25,25 +20,27 @@ from .user import Role, User
 from .models import (
     Incident,
     IncidentType,
-    RelatedLink,
     School,
     SchoolDistrict,
     SchoolType,
     Union,
 )
-from .database import db
 from .app import main
-from .auth import auth
+from .database import db
 from flask_login import LoginManager
+from flask_caching import Cache
 
 app = Flask(__name__)
-
 login_manager = LoginManager()
+login_manager.login_view = "google.login"
+
+from server import app
+from .auth import google_bp
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return User.query.get(int(user_id))
 
 
 @app.context_processor
@@ -51,7 +48,6 @@ def inject_env_vars():
     return {
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
     }
-
 
 def create_app():
     # Create the Flask app instance
@@ -69,9 +65,10 @@ def create_app():
     db.init_app(app)
 
     # Register Blueprints (routes)
+    app.register_blueprint(google_bp, url_prefix="/login")
     app.register_blueprint(main)
-    app.register_blueprint(auth, url_prefix="/auth")
-    admin = Admin(app)
+
+    admin = Admin(app, index_view=AdminView())
 
     # Configure flask login for session management
     login_manager.init_app(app)

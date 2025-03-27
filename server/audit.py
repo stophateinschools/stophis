@@ -51,7 +51,7 @@ def create_audit_log(action, instance, changes=None):
         model_name=AuditModel(instance.__class__.__name__),
         action=action,
         record_id=instance.id,
-        user_id=current_user.id if current_user else None,
+        user_id=current_user.id if current_user.is_authenticated else None,
         changes=json.dumps(changes) if changes else None,
     )
     db.session.add(audit_log)
