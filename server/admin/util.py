@@ -146,7 +146,7 @@ def simple_file_upload_from_url(url, filename):
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Error downloading file: {str(e)}"}), 400
 
-    file = {"file": (filename, image_response.content)}
+    file = {"file": (filename, image_response.content), "tag": "logos"}
     try:
         print(API_URL, API_TOKEN, API_SECRET)
         response = requests.post(

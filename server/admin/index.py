@@ -1,32 +1,26 @@
-from flask import Blueprint, flash, redirect, url_for
 from flask_admin import AdminIndexView, expose
 from flask_login import current_user
 from markupsafe import Markup
-from flask_admin.contrib.sqla import ModelView
-from server.auth import has_role, google_bp
+from server.auth import has_role
 from flask_dance.contrib.google import google
+from flask_admin.contrib.sqla import ModelView
 
 from server.user import UserRole
 
-
 class BaseModelView(ModelView):
-    can_view_details = True
-    # Human-readable names for filters in URL parameters
-    named_filter_urls = True
-
-    def search_placeholder(self):
-        return ""
+    def __init__(self, model, session, roles_required=None, **kwargs):
+        super().__init__(model, session, **kwargs)
+        self.roles_required = roles_required
 
     def is_accessible(self):
-        return (
-            google.authorized
-            and current_user.is_authenticated
-            and has_role([UserRole.ADMIN])
-        )
+        return super().is_accessible and google.authorized and current_user.is_authenticated and has_role(self.roles_required)
+    
 
-    def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for("main.index"))
-
+    def is_visible(self):
+        return self.is_accessible()
+    
+    can_view_details = True
+    named_filter_urls = True
 
 def render_model_details_link(model_name, record_id, display_text=None):
     if not record_id:
@@ -54,11 +48,9 @@ class AdminView(AdminIndexView):
         return (
             google.authorized
             and current_user.is_authenticated
-            and has_role([UserRole.ADMIN])
+            and has_role([UserRole.ADMIN, UserRole.EDITOR])
         )
 
-    def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for("main.index"))
 
     @expose("/")
     def index(self):

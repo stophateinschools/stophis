@@ -41,8 +41,8 @@
       function syncData(event) {
         event.preventDefault();
         var formData = new FormData();
-        formData.append("state", document.getElementById("states").value);
-        formData.append("table", document.getElementById("tables").value);
+        formData.append("region", document.getElementById("region").value);
+        formData.append("table", document.getElementById("table").value);
 
         fetch("/admin/manage_data/sync", {
           method: "POST",
@@ -68,14 +68,15 @@
     </form>
     <h2>Sync from Airtable</h2>
     <form method="POST" enctype="multipart/form-data" onsubmit=syncData(event)>
-      <label for="state">Choose a state:</label>
-      <select name="state" id="states" required>
+      <label for="region">Choose a region:</label>
+      <select name="region" id="region" required>
         <option value="WA">WA</option>
         <option value="MI">MI</option>
         <option value="CA">CA</option>
+        <option value="NATIONAL">National</option>
       </select>
       <label for="table">Select a table:</label>
-      <select name="table" id="tables" required>
+      <select name="table" id="table" required>
         <option value="District-Table">District</option>
         <option value="School-Table">School</option>
         <option value="Incident-Table">Incident</option>

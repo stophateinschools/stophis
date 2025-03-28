@@ -210,6 +210,8 @@ class Incident(db.Model):
         "RelatedLink", cascade="all, delete-orphan", single_parent=True
     )
     supporting_materials = db.relationship("SupportingMaterialFile", single_parent=True)
+    city = db.Column(db.String(), nullable=True)
+    state = db.Column(db.Enum(State, name="state"), nullable=False)
     schools = db.relationship(
         "School", secondary=incident_schools, back_populates="incidents"
     )

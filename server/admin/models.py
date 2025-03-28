@@ -5,6 +5,9 @@ from flask import jsonify, request
 from flask_login import current_user
 import requests
 
+from server.auth import has_role
+from server.user import UserRole
+
 from .index import BaseModelView, render_model_details_link
 from ..audit import AuditModelView
 from flask_admin.form import Select2Widget
@@ -59,14 +62,11 @@ from ..models import (
     incident_to_incident_types,
 )
 from ..database import db
+from flask_dance.contrib.google import google
 
 API_URL = "https://app.simplefileupload.com/api/v1/file"
 API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]
 API_SECRET = os.environ["SIMPLE_FILE_UPLOAD_API_SECRET"]
-
-
-class BaseModelView(ModelView):
-    can_view_details = True
 
 
 class RoleView(BaseModelView):
@@ -228,6 +228,13 @@ class ManyToManyFilter(FilterInList):
 
 
 class IncidentView(AuditModelView):
+    def get_query(self):
+        """Modify the default query to filter by the user's states."""
+        query = super().get_query()
+        if not has_role([UserRole.ADMIN]):  # Allow admins to see everything
+            query = query.filter(Incident.state == current_user.region)
+        return query
+    
     # Define the route to fetch school details (district and union)
     @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
     @expose("/new/get_school_details/<int:school_id>", methods=["GET"])

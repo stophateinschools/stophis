@@ -9,14 +9,13 @@ from .admin.models import (
     IncidentView,
     UnionView,
     UserView,
-    BaseModelView,
     RoleView,
     SchoolDistrictView,
     SchoolView,
 )
 from .admin.manage_data import ManageDataView
 
-from .user import Role, User
+from .user import Role, User, UserRole
 from .models import (
     Incident,
     IncidentType,
@@ -32,18 +31,21 @@ from flask_login import LoginManager
 app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
+admin = Admin(app, index_view=AdminView())
 
 from server import app
-from .auth import google_bp
+from .auth import  google_bp, has_role
 
 
 @login_manager.user_loader
 def load_user(user_id):
+    """Gets user upon flask-login login so we can use current_user"""
     return User.query.get(int(user_id))
 
 
 @app.context_processor
 def inject_env_vars():
+    """Inject variables automatically into the context of templates"""
     return {
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
     }
@@ -68,32 +70,33 @@ def create_app():
     app.register_blueprint(google_bp, url_prefix="/login")
     app.register_blueprint(main)
 
-    admin = Admin(app, index_view=AdminView())
-
     # Configure flask login for session management
     login_manager.init_app(app)
 
+    # All admin registered views below - if a view requires a certain role to be visible AND
+    # accessible, pass in a roles_required param.
     # Incidents
     admin.add_view(
         IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
     )
-    admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents"))
     admin.add_view(SchoolView(School, db.session, category="Incidents"))
-    admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents"))
     admin.add_view(SchoolDistrictView(SchoolDistrict, db.session, category="Incidents"))
     admin.add_view(UnionView(Union, db.session, category="Incidents"))
 
-    # Users
-    admin.add_view(UserView(User, db.session, category="Users"))
-    admin.add_view(RoleView(Role, db.session, category="Users"))
+    # Incident Metadata
+    admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents", roles_required=[UserRole.ADMIN]))
+    admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents", roles_required=[UserRole.ADMIN]))
 
-    admin.add_view(AuditLogView(AuditLog, db.session))
+    # Users
+    admin.add_view(UserView(User, db.session, category="Users", roles_required=[UserRole.ADMIN]))
+    admin.add_view(RoleView(Role, db.session, category="Users", roles_required=[UserRole.ADMIN]))
 
     # Data Management
+    admin.add_view(AuditLogView(AuditLog, db.session, roles_required=[UserRole.ADMIN]))
     admin.add_view(
         ManageDataView(
             name="Manage Data",
-            endpoint="manage_data",
+            endpoint="manage_data", roles_required=[UserRole.ADMIN]
         )
     )
 

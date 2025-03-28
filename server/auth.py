@@ -1,9 +1,10 @@
 import os
-from flask import flash, redirect, url_for, abort
+from flask import current_app, flash, redirect, url_for, abort
 from flask_dance.contrib.google import google, make_google_blueprint
 from functools import wraps
 from flask_login import current_user, login_user
-from .user import OAuth, User, create_user
+
+from .user import OAuth, User, UserRole
 from .database import db
 from flask_dance.contrib.google import make_google_blueprint
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
@@ -22,6 +23,7 @@ google_bp = make_google_blueprint(
 
 
 def has_role(roles_required):
+    """Determines if the current_user has a role in a given list of roles"""
     if current_user:
         # If current user has no roles, don't allow access.
         if not current_user.roles:

@@ -1,14 +1,16 @@
 import os
 from io import StringIO
-import time
 from flask import jsonify, request
 
 from flask_admin import expose, BaseView
+from flask_login import current_user
 from pyairtable import Api
-from redis import Redis
 from rq import Queue
 from rq.job import Job
+from server.auth import has_role
+from server.user import UserRole
 from worker import conn
+from flask_dance.contrib.google import google
 
 from ..admin.util import (
     sync_school_districts,
@@ -25,6 +27,17 @@ def handle_job(job):
 
 
 class ManageDataView(BaseView):
+    def __init__(self, roles_required=None, **kwargs):
+        super().__init__(**kwargs)
+        self.roles_required = roles_required
+
+    def is_accessible(self):
+        return super().is_accessible and google.authorized and current_user.is_authenticated and has_role(self.roles_required)
+    
+    def is_visible(self):
+        return self.is_accessible()
+    
+    
     @expose("/")
     def index(cls):
         return cls.render("admin/manage_data.html")
@@ -57,11 +70,11 @@ class ManageDataView(BaseView):
     @expose("/sync", methods=["POST"])
     def sync(cls):
         # Sync existing district rows with airtable metadata
-        state = request.form["state"]
+        region = request.form["region"]
         table_name = request.form["table"]
         api = Api(os.environ["AIRTABLE_READ_TOKEN"])
         try:
-            table = api.table(os.environ[f"AIRTABLE_APP_ID_{state}"], table_name)
+            table = api.table(os.environ[f"AIRTABLE_APP_ID_{region}"], table_name)
             data = table.all()
         except Exception as e:
             raise ValueError("Invalid Airtable ID")

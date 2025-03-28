@@ -26,25 +26,29 @@
       {% block main_menu %}
         <ul class="navbar-nav bg-white">
           {% for item in admin_view.admin.menu() %}
-          {% if item._children %}
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle text-primary {% if 'map' in segment %} active {% endif %}" href="#" id="dropdown{{ loop.index }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="ni ni-pin-3"></i>
-                <span class="nav-link-text">{{ item.name }}</span>
-              </a>
-              <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdown{{ loop.index }}">
-                {% for child in item._children %}
-                  <li><a class="dropdown-item" href="{{ child._view.url }}">{{ child.name }}</a></li>
-                {% endfor %}
-              </ul>
-            </li>
-          {% else %}
-            <li class="nav-item {% if item.is_active(admin_view) %} active {% endif %}">
-              <a class="nav-link" href="{{ item._view.url }}">
-                <i class="ni {{ item.icon_class }}"></i>
-                <span class="nav-link-text text-primary">{{ item.name }}</span>
-              </a>
-            </li>
+          {% if item.is_visible() %}
+            {% if item._children %}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle text-primary {% if 'map' in segment %} active {% endif %}" href="#" id="dropdown{{ loop.index }}" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="ni ni-pin-3"></i>
+                  <span class="nav-link-text">{{ item.name }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-left" aria-labelledby="dropdown{{ loop.index }}">
+                  {% for child in item._children %}
+                  {% if child.is_visible() %}
+                    <li><a class="dropdown-item" href="{{ child._view.url }}">{{ child.name }}</a></li>
+                  {% endif %}
+                  {% endfor %}
+                </ul>
+              </li>
+            {% else %}
+              <li class="nav-item {% if item.is_active(admin_view) %} active {% endif %}">
+                <a class="nav-link" href="{{ item._view.url }}">
+                  <i class="ni {{ item.icon_class }}"></i>
+                  <span class="nav-link-text text-primary">{{ item.name }}</span>
+                </a>
+              </li>
+            {% endif %}
           {% endif %}
           {% endfor %}
         </ul>
