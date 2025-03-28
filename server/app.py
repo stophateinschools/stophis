@@ -7,10 +7,11 @@ import requests
 
 main = Blueprint("main", __name__)
 
+
 @main.route("/")
 def index():
-    print("Current user ", current_user.__dict__)
     return render_template("login.html")
+
 
 @main.route("/logout")
 @login_required()
@@ -29,6 +30,7 @@ def logout():
     # Redirect to login screen after logout
     return redirect(url_for("main.index"))
 
-# @main.route("/debug")
-# def debug():
-#     return f"User logged in? {current_user.is_authenticated}, Google authorized? {google.authorized}, token: {google_bp.token}"
+
+@main.route("/debug")
+def debug():
+    return f"User logged in? {current_user.is_authenticated}, Google authorized? {google.authorized}, token: {google_bp.token}"

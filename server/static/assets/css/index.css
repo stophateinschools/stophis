@@ -86,6 +86,13 @@ a:not([href]) {
     align-items: center;
     justify-content: space-between; }
 
+.navbar .logout-button {
+  display: flex;
+  position: absolute;
+  right: 0;
+  margin-right: 45px;
+}
+
 .navbar-brand {
   display: inline-block;
   padding-top: 0.0625rem;

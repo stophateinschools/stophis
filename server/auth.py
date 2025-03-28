@@ -15,8 +15,11 @@ google_bp = make_google_blueprint(
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
     scope=["profile", "email"],
     redirect_to="admin.index",
-    storage=SQLAlchemyStorage(OAuth, db.session, user=current_user, user_required=False),
+    storage=SQLAlchemyStorage(
+        OAuth, db.session, user=current_user, user_required=False
+    ),
 )
+
 
 def has_role(roles_required):
     if current_user:
@@ -33,24 +36,28 @@ def has_role(roles_required):
                 return True
     return False
 
+
 def login_required(roles=None):
     def decorator(function):
         @wraps(function)
         def wrapper(*args, **kwargs):
             if not google.authorized or not current_user.is_authenticated:
-               return redirect(url_for("main.index"))
+                return redirect(url_for("main.index"))
 
             if not has_role(roles):
                 return abort(403)
             return function(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 @oauth_authorized.connect_via(google_bp)
 def logged_in(blueprint, token):
     if not google_bp.session.authorized:
         return redirect(url_for("google.login"))
-    
+
     resp = google_bp.session.get("/oauth2/v2/userinfo")
     user_info = resp.json()
 
@@ -59,12 +66,21 @@ def logged_in(blueprint, token):
     if not oauth:
         user = User.query.filter_by(email=user_info["email"]).first()
         if not user:
-            user = User(email=user_info["email"], first_name=user_info["given_name"], last_name=user_info["family_name"])
+            user = User(
+                email=user_info["email"],
+                first_name=user_info["given_name"],
+                last_name=user_info["family_name"],
+            )
             db.session.add(user)
             db.session.commit()
 
         user.profile_picture = user_info["picture"]
-        oauth = OAuth(provider=blueprint.name, provider_user_id=user_info["id"], token=token, user=user)
+        oauth = OAuth(
+            provider=blueprint.name,
+            provider_user_id=user_info["id"],
+            token=token,
+            user=user,
+        )
         db.session.add(oauth)
         db.session.commit()
     else:
@@ -76,8 +92,8 @@ def logged_in(blueprint, token):
         return redirect(url_for("google.login"))
     return False
 
+
 @oauth_error.connect
 def handle_error(blueprint, error, error_description=None, error_uri=None):
-    flash('Login failed', 'error')
-    return redirect(url_for('google.login'))
-
+    flash("Login failed", "error")
+    return redirect(url_for("google.login"))

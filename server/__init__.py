@@ -28,7 +28,6 @@ from .models import (
 from .app import main
 from .database import db
 from flask_login import LoginManager
-from flask_caching import Cache
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -48,6 +47,7 @@ def inject_env_vars():
     return {
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
     }
+
 
 def create_app():
     # Create the Flask app instance

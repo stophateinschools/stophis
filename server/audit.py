@@ -1,6 +1,5 @@
 import datetime
 from flask import json, request
-from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from markupsafe import Markup
 from sqlalchemy import DateTime, event
@@ -47,6 +46,7 @@ class AuditLog(db.Model):
 
 def create_audit_log(action, instance, changes=None):
     """Helper function to create and add an audit log entry."""
+    # Access current_user from g, set during the request context
     audit_log = AuditLog(
         model_name=AuditModel(instance.__class__.__name__),
         action=action,
@@ -97,20 +97,21 @@ class AuditModelView(BaseModelView):
     """
 
     column_list = [
-        "audit_log_link",
+        "audit_log",
     ]
+    named_filter_urls = True
 
     def _audit_log_link(view, context, model, name):
         record_id = model.id
         model_name = model.__class__.__name__
         return Markup(
-            f'<a href="/admin/auditlog/?record_id={record_id}&model_name_equals={model_name}">View Audit Logs</a>'
+            f'<a href="/admin/auditlog/?record_id={record_id}&model_name={model_name}">View Audit Logs</a>'
         )
 
-    column_formatters = {"audit_log_link": _audit_log_link}
+    column_formatters = {"audit_log": _audit_log_link}
 
 
-class AuditLogView(ModelView):
+class AuditLogView(BaseModelView):
     can_delete = False
 
     column_list = (
@@ -125,7 +126,7 @@ class AuditLogView(ModelView):
     column_formatters = {
         "user_id": lambda v, c, m, n: render_model_details_link("user", m.user_id),
     }
-    column_filters = ("model_name", "record_id", "action")
+    column_filters = ("model_name", "record_id", "action", "user_id")
 
     def get_query(self):
         # Enable query string filter of "record_id" so we can link

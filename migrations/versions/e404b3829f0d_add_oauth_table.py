@@ -35,5 +35,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.add_column("users", sa.Column("google_id", sa.String(), nullable=True))
-    
+
     op.drop_table("oauths")

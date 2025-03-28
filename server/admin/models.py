@@ -84,6 +84,19 @@ class UserView(AuditModelView):
         *AuditModelView.column_list,
     ]
     form_columns = ["first_name", "last_name", "email", "roles"]
+    named_filter_urls = True
+
+    def _all_audit_log_link(view, context, model, name):
+        """For users, lets link to all audit activity and not just audits on the user model."""
+        record_id = model.id
+        model_name = model.__class__.__name__
+
+        # TODO Figure out how to make the filter
+        return Markup(
+            f'<div><a href="/admin/auditlog/?record_id={record_id}&model_name={model_name}">View Audit Logs</a><br/><a href="/admin/auditlog/?flt1_user_equals={model.id}">View All Audit Logs</a></div>'
+        )
+
+    column_formatters = {"audit_log": _all_audit_log_link}
 
 
 def simple_file_delete_from_url(mapper, connection, target):
@@ -442,7 +455,7 @@ class IncidentView(AuditModelView):
         ],
         "supporting_materials": _render_supporting_material_links,
         "internal_notes": lambda v, c, m, n: [note.note for note in m.internal_notes],
-        "audit_log_link": AuditModelView._audit_log_link,
+        "audit_log": AuditModelView._audit_log_link,
         "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
         "occurred_on": _format_occurred_on,
         "reported_on": lambda v, c, m, n: m.reported_on.strftime("%B, %-d, %Y"),

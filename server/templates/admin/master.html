@@ -48,6 +48,11 @@
           {% endif %}
           {% endfor %}
         </ul>
+        <a  href="{{ url_for("main.logout") }}" class="logout-button" id="logout-button">
+        <button>
+          Logout
+        </button>
+        </a>
       {% endblock %}
 
       </div>
