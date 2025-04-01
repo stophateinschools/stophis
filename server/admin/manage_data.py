@@ -32,12 +32,16 @@ class ManageDataView(BaseView):
         self.roles_required = roles_required
 
     def is_accessible(self):
-        return super().is_accessible and google.authorized and current_user.is_authenticated and has_role(self.roles_required)
-    
+        return (
+            super().is_accessible
+            and google.authorized
+            and current_user.is_authenticated
+            and has_role(self.roles_required)
+        )
+
     def is_visible(self):
         return self.is_accessible()
-    
-    
+
     @expose("/")
     def index(cls):
         return cls.render("admin/manage_data.html")

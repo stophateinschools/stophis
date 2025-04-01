@@ -64,9 +64,34 @@ a:not([href]) {
     text-decoration: none; }
 
 .container {
-  width: 100%;
-  margin-right: 10px;
-  margin-left: 10px; }
+  width: 100%; 
+}
+
+.incident-details-container {
+  display: flex;
+  flex-direction: row;
+}
+.incident-details-container .internal-notes {
+  width: 30%;
+}
+.incident-details-container .add-note {
+  font-weight: bold;
+  padding-left: 10px;
+  cursor: pointer;
+}
+.incident-details-container .internal-notes ul {
+  list-style-type: none;
+}
+.incident-details-container .internal-notes li {
+  margin-top: 20px;
+}
+.incident-details-container .internal-notes .header {
+  padding-left: 10px;
+  font-weight: bold;
+}
+.incident-details-container .internal-notes .author {
+  color: var(--light);
+}
 
 .navbar {
   position: relative;

@@ -95,6 +95,7 @@ class AuditModelView(BaseModelView):
     """
     Add this as a base view (opposed to ModelView) to models that desire audit logging.
     """
+
     column_list = [
         "audit_log",
     ]

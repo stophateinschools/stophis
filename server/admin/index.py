@@ -7,20 +7,26 @@ from flask_admin.contrib.sqla import ModelView
 
 from server.user import UserRole
 
+
 class BaseModelView(ModelView):
     def __init__(self, model, session, roles_required=None, **kwargs):
         super().__init__(model, session, **kwargs)
         self.roles_required = roles_required
 
     def is_accessible(self):
-        return super().is_accessible and google.authorized and current_user.is_authenticated and has_role(self.roles_required)
-    
+        return (
+            super().is_accessible
+            and google.authorized
+            and current_user.is_authenticated
+            and has_role(self.roles_required)
+        )
 
     def is_visible(self):
         return self.is_accessible()
-    
+
     can_view_details = True
     named_filter_urls = True
+
 
 def render_model_details_link(model_name, record_id, display_text=None):
     if not record_id:
@@ -50,7 +56,6 @@ class AdminView(AdminIndexView):
             and current_user.is_authenticated
             and has_role([UserRole.ADMIN, UserRole.EDITOR])
         )
-
 
     @expose("/")
     def index(self):

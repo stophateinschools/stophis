@@ -168,7 +168,9 @@ class InternalNote(db.Model):
     note = db.Column(db.Text(), nullable=False)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     author = db.relationship("User", back_populates="notes")
-    created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
+    created_on = db.Column(
+        DateTime(timezone=True), default=datetime.datetime.now, nullable=False
+    )
     updated_on = db.Column(DateTime(timezone=True))
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
     incident = db.relationship("Incident", back_populates="internal_notes")
@@ -205,7 +207,9 @@ class Incident(db.Model):
     airtable_id_number = db.Column(db.String(), unique=True)
     summary = db.Column(db.Text(), nullable=False)
     details = db.Column(db.Text())
-    internal_notes = db.relationship("InternalNote", single_parent=True)
+    internal_notes = db.relationship(
+        "InternalNote", single_parent=True, order_by="desc(InternalNote.created_on)"
+    )
     related_links = db.relationship(
         "RelatedLink", cascade="all, delete-orphan", single_parent=True
     )
@@ -247,20 +251,6 @@ class Incident(db.Model):
     )
 
     @hybrid_property
-    def state(self):
-        """
-        Return the state associated with the incident based on the school, district, or union.
-        """
-        if self.schools:
-            return self.schools[0].state
-        elif self.districts:
-            return self.districts[0].state
-        elif self.unions:
-            return self.unions[0].state
-        else:
-            return None
-
-    @hybrid_property
     def occurred_on(self):
         """
         Return the occurred_on date and for sorting purposes, if day or month is NULL,
@@ -274,38 +264,6 @@ class Incident(db.Model):
             )
             return datetime.date(self.occurred_on_year, month, day)
         return None
-
-    @state.expression
-    def state(cls):
-        school_state = (
-            select(School.state)
-            .join(incident_schools, incident_schools.c.school_id == School.id)
-            .where(incident_schools.c.incident_id == cls.id)
-            .limit(1)
-            .scalar_subquery()
-        )
-
-        district_state = (
-            select(SchoolDistrict.state)
-            .join(
-                incident_districts,
-                incident_districts.c.district_id == SchoolDistrict.id,
-            )
-            .where(incident_districts.c.incident_id == cls.id)
-            .limit(1)
-            .scalar_subquery()
-        )
-
-        union_state = (
-            select(Union.state)
-            .join(incident_unions, incident_unions.c.union_id == Union.id)
-            .where(incident_unions.c.incident_id == cls.id)
-            .limit(1)
-            .scalar_subquery()
-        )
-
-        # Return first non null value between all of the selects
-        return func.coalesce(school_state, district_state, union_state)
 
     @occurred_on.expression
     def occurred_on(cls):

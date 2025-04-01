@@ -7,6 +7,7 @@ from .audit import AuditLog, AuditLogView
 from .admin.index import AdminView, BaseModelView
 from .admin.models import (
     IncidentView,
+    InternalNoteView,
     UnionView,
     UserView,
     RoleView,
@@ -19,6 +20,7 @@ from .user import Role, User, UserRole
 from .models import (
     Incident,
     IncidentType,
+    InternalNote,
     School,
     SchoolDistrict,
     SchoolType,
@@ -34,7 +36,7 @@ login_manager.login_view = "google.login"
 admin = Admin(app, index_view=AdminView())
 
 from server import app
-from .auth import  google_bp, has_role
+from .auth import google_bp, has_role
 
 
 @login_manager.user_loader
@@ -84,19 +86,44 @@ def create_app():
     admin.add_view(UnionView(Union, db.session, category="Incidents"))
 
     # Incident Metadata
-    admin.add_view(BaseModelView(IncidentType, db.session, category="Incidents", roles_required=[UserRole.ADMIN]))
-    admin.add_view(BaseModelView(SchoolType, db.session, category="Incidents", roles_required=[UserRole.ADMIN]))
+    admin.add_view(
+        BaseModelView(
+            IncidentType,
+            db.session,
+            category="Incidents",
+            roles_required=[UserRole.ADMIN],
+        )
+    )
+    admin.add_view(
+        BaseModelView(
+            SchoolType,
+            db.session,
+            category="Incidents",
+            roles_required=[UserRole.ADMIN],
+        )
+    )
+    admin.add_view(
+        InternalNoteView(
+            InternalNote,
+            db.session,
+            category="Incidents",
+            roles_required=[UserRole.ADMIN],
+        )
+    )
 
     # Users
-    admin.add_view(UserView(User, db.session, category="Users", roles_required=[UserRole.ADMIN]))
-    admin.add_view(RoleView(Role, db.session, category="Users", roles_required=[UserRole.ADMIN]))
+    admin.add_view(
+        UserView(User, db.session, category="Users", roles_required=[UserRole.ADMIN])
+    )
+    admin.add_view(
+        RoleView(Role, db.session, category="Users", roles_required=[UserRole.ADMIN])
+    )
 
     # Data Management
     admin.add_view(AuditLogView(AuditLog, db.session, roles_required=[UserRole.ADMIN]))
     admin.add_view(
         ManageDataView(
-            name="Manage Data",
-            endpoint="manage_data", roles_required=[UserRole.ADMIN]
+            name="Manage Data", endpoint="manage_data", roles_required=[UserRole.ADMIN]
         )
     )
 

@@ -1,0 +1,32 @@
+{% extends 'admin/model/details.html' %}
+
+{% block details_table %}
+<div class="incident-details-container">
+  <table class="table table-hover table-bordered searchable">
+  {% for c, name in details_columns %}
+    <tr>
+      <td>
+        <b>{{ name }}</b>
+      </td>
+      <td>
+      {{ get_value(model, c) }}
+      </td>
+    </tr>
+  {% endfor %}
+  </table>
+  <div class="internal-notes">
+    <p class="header">Incident Notes:</p>
+    <ul>
+        {% for note in model.internal_notes %}
+            <li>
+              <span class="author">[{{ note.author.first_name }}, {{ note.created_on.strftime('%b %d, %Y') }}]</span><br/>
+              <span class="note">{{ note.note }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+    <a href="/admin/internalnote/new/?incident_id={{model.id}}">
+      <p class="add-note">+ Add note</p>
+    </a>
+  </div>
+</div>
+{% endblock %}

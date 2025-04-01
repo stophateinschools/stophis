@@ -1,7 +1,7 @@
 import calendar
 from datetime import datetime, date
 import os
-from flask import jsonify, request
+from flask import jsonify, redirect, request, url_for
 from flask_login import current_user
 import requests
 
@@ -227,6 +227,49 @@ class ManyToManyFilter(FilterInList):
         return "equals"
 
 
+class InternalNoteView(BaseModelView):
+    def is_visible(self):
+        return False
+
+    column_formatters = {
+        "author": lambda v, c, m, n: (
+            render_model_details_link("user", m.author.id, m.author.first_name)
+            if m.author
+            else None
+        ),
+        "incident": lambda v, c, m, n: (
+            render_model_details_link("incident", m.incident.id, m.incident.id)
+            if m.incident
+            else None
+        ),
+        "updated_on": lambda v, c, m, n: (
+            m.updated_on.strftime("%B, %-d, %Y") if m.updated_on else None
+        ),
+        "created_on": lambda v, c, m, n: m.created_on.strftime("%B, %-d, %Y"),
+    }
+
+    form_excluded_columns = {
+        "author",
+        "incident",
+        "updated_on",
+        "created_on",
+    }
+
+    def on_model_change(self, form, model, is_created):
+        incident_id = request.args.get("incident_id")
+        if is_created:
+            incident = Incident.query.get(incident_id)
+            model.author = current_user
+            model.incident = incident
+        else:
+            model.updated_on = datetime.now()
+
+        return super().on_model_change(form, model, is_created)
+
+    def get_save_return_url(self, model, is_created):
+        return self.get_url("incident.details_view", id=model.incident.id)
+
+
 class IncidentView(AuditModelView):
     def get_query(self):
         """Modify the default query to filter by the user's states."""
@@ -234,7 +277,7 @@ class IncidentView(AuditModelView):
         if not has_role([UserRole.ADMIN]):  # Allow admins to see everything
             query = query.filter(Incident.state == current_user.region)
         return query
-    
+
     # Define the route to fetch school details (district and union)
     @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
     @expose("/new/get_school_details/<int:school_id>", methods=["GET"])
@@ -369,7 +412,8 @@ class IncidentView(AuditModelView):
 
         return ret
 
-    create_template = edit_template = "admin/create_edit_incident.html"
+    create_template = edit_template = "admin/incident/create_edit.html"
+    details_template = "admin/incident/details.html"
 
     column_list = [
         "summary",
@@ -405,7 +449,6 @@ class IncidentView(AuditModelView):
         "school_response",
         "airtable_id",
         "airtable_id_number",
-        "internal_notes",
         "state",
         *AuditModelView.column_list,
     ]
@@ -461,7 +504,6 @@ class IncidentView(AuditModelView):
             related_link.link for related_link in m.related_links
         ],
         "supporting_materials": _render_supporting_material_links,
-        "internal_notes": lambda v, c, m, n: [note.note for note in m.internal_notes],
         "audit_log": AuditModelView._audit_log_link,
         "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
         "occurred_on": _format_occurred_on,
@@ -812,7 +854,7 @@ class SchoolDistrictView(BaseModelView):
         "state",
     ]
 
-    create_template = edit_template = "admin/create_edit_school_district.html"
+    create_template = edit_template = "admin/school_district/create_edit.html"
 
     def on_model_change(self, form, model, is_created):
         # Custom logic to handle logo file upload before saving the model
