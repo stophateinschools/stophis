@@ -27,6 +27,7 @@ bs4 = "==0.0.2"
 wtforms-sqlalchemy = "==0.4.2"
 rq = "==2.2.0"
 redis = "==5.2.1"
+pyppeteer = "*"
 
 [dev-packages]
 

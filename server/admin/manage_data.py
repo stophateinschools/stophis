@@ -8,11 +8,11 @@ from pyairtable import Api
 from rq import Queue
 from rq.job import Job
 from server.auth import has_role
-from server.user import UserRole
 from worker import conn
 from flask_dance.contrib.google import google
 
 from ..admin.util import (
+    fetch_page,
     sync_school_districts,
     sync_schools,
     create_or_sync_incidents,
@@ -70,6 +70,10 @@ class ManageDataView(BaseView):
             return handle_job(q.enqueue(convert_file_to_data, file_io))
         else:
             return "Invalid file format", 400
+        
+    @expose("/fetch", methods=["POST"])
+    def fetch(cls):
+        return handle_job(q.enqueue(fetch_page, "https://nces.ed.gov/ccd/schoolsearch/?School="))
 
     @expose("/sync", methods=["POST"])
     def sync(cls):

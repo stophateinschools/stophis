@@ -4,6 +4,7 @@ import re
 import traceback
 
 from flask import jsonify
+from pyppeteer import launch
 import requests
 
 from server.user import User
@@ -597,3 +598,18 @@ def create_or_sync_incidents(data):
         error_msg = f"Sync failed: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         return error_msg
+    
+    
+async def fetch_page(url):
+    """Uses Puppeteer to load a webpage and return its content."""
+    print("in fetch page")
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
+    page = await browser.newPage()
+    
+    await page.goto(url, {"waitUntil": "networkidle2"})  # Wait for the page to fully load
+    content = await page.content()  # Get the HTML content
+
+    print(content)
+    
+    await browser.close()
+    return content
