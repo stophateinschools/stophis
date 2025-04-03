@@ -16,7 +16,7 @@
                 <div class="controls-inline">
                     {% for subfield in field %}
                         {% if subfield.id == 'school_response-school_response_materials' %}
-                            {{ file_upload_field(subfield, true, true) }}
+                            {{ file_upload_field(subfield, true, true, ENV) }}
                         {% else %}
                             <div id="{{ subfield.id }}">
                                 <label for="{{ subfield.id }}">{{ subfield.label.text }}</label>
@@ -44,7 +44,7 @@
             </div>
             <hr class="solid">
         {% elif field.name == 'supporting_materials' %}
-            {{ file_upload_field(field, true, false) }}
+            {{ file_upload_field(field, true, false, ENV) }}
             <hr class="solid">
         {% elif field.name == 'publish_details' %}
             <div class="control-group">

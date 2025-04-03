@@ -9,7 +9,7 @@
 <form action method="POST" class="admin-form form-horizontal custom-form" enctype="multipart/form-data">
     {% for field in form %}
         {% if field.name == 'logo' %}
-            {{ file_upload_field(field, false, false) }}
+            {{ file_upload_field(field, false, false, ENV) }}
         {% else %}
             {{ lib.render_field(form, field) }}
         {% endif %}

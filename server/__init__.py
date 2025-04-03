@@ -50,6 +50,7 @@ def inject_env_vars():
     """Inject variables automatically into the context of templates"""
     return {
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
+        "ENV": os.getenv("ENV"),
     }
 
 

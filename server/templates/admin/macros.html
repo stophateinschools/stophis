@@ -1,4 +1,4 @@
-{% macro file_upload_field(field, multiple, subfield) %}
+{% macro file_upload_field(field, multiple, subfield, env) %}
   <div class="control-group">
     <label class="{{ '' if subfield else 'control-label' }}" for="{{ field.id }}">{{ field.label.text }}</label>
     {# Display existing images #}
@@ -22,7 +22,7 @@
       {% endif %}
     {% endif %}
     <div>
-        <input id="{{field.id}}[]" name="{{field.id}}[]" class="simple-file-upload form-control" type="hidden" data-tag="{{field.id}}" data-multiple="{{ 'true' if multiple else 'false' }}" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
+        <input id="{{field.id}}[]" name="{{field.id}}[]" class="simple-file-upload form-control" type="hidden" data-tag="{{ env }}-{{field.id}}" data-multiple="{{ 'true' if multiple else 'false' }}" data-max-files="10" data-remove-links="true" data-button-color="#017bf8" data-button-size= "btn-sm" data-maxFileSize="5" data-id="widget0">
     </div>
     <!-- Hidden input to track removed files -->
     <input type="hidden" id="removed_{{field.id}}" name="removed_{{field.id}}">

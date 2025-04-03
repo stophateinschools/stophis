@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 import os
 import re
@@ -33,6 +34,7 @@ from bs4 import BeautifulSoup, Tag
 from io import StringIO
 import csv
 from ..database import db
+import urllib.request
 
 
 class DataType(Enum):
@@ -140,6 +142,7 @@ def simple_file_upload_from_url(url, filename):
     API_URL = "https://app.simplefileupload.com/api/v1/file"
     API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]
     API_SECRET = os.environ["SIMPLE_FILE_UPLOAD_API_SECRET"]
+    ENV = os.environ["ENV"]
 
     try:
         image_response = requests.get(url)
@@ -147,9 +150,8 @@ def simple_file_upload_from_url(url, filename):
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Error downloading file: {str(e)}"}), 400
 
-    file = {"file": (filename, image_response.content), "tag": "logos"}
+    file = {"file": (filename, image_response.content), "tag": f"{ENV}-logo"}
     try:
-        print(API_URL, API_TOKEN, API_SECRET)
         response = requests.post(
             API_URL,
             files=file,
@@ -197,11 +199,12 @@ def sync_school_districts(districts):
             if logo:
                 airtable_url = logo["url"]
                 filename = logo["filename"]
-                new_url = simple_file_upload_from_url(airtable_url, filename)
-                if existing_district.logo:
-                    existing_district.logo.url = new_url
-                else:
+                if existing_district.logo and existing_district.logo.filename != filename:
+                    # This would have created a S3 file everytime we sync - so if
+                    # the file already exists, don't create a new one.
+                    new_url = simple_file_upload_from_url(airtable_url, filename)
                     existing_district.logo = SchoolDistrictLogo(url=new_url)
+                    existing_district.logo.url = new_url
 
             airtable_name = district["fields"].get("District-Name")
             existing_district.display_name = (
@@ -316,9 +319,12 @@ def create_school(data, is_public):
         high_grade = data["High Grade"].strip()
         level = categorize_school_level(low_grade, high_grade)
         types = (
-            [SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first()]
+            [
+                SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first(),
+                SchoolType.query.filter_by(name=SchoolTypes.CHARTER).first(),
+            ]
             if data["Charter"] == "No"
-            else []
+            else [SchoolType.query.filter_by(name=SchoolTypes.PUBLIC).first()]
         )
         district_nces_id = data["NCES District ID"].strip()
     else:
@@ -519,6 +525,8 @@ def create_or_sync_incidents(data):
                 True if fields.get("Reported-To-School") == "Yes" else None
             )
             school_responded = fields.get("School-Responded") == "Yes"
+            city = fields.get("School-City")
+            state = fields.get("School-State")
 
             # For now, things that require new object creation lets keep to only new incidents
             if existing_incident == None:
@@ -576,6 +584,8 @@ def create_or_sync_incidents(data):
                     ),
                     reported_to_school=reported_to_school,
                     school_response=SchoolResponse() if school_responded else None,
+                    city=city,
+                    state=state,
                 )
                 db.session.add(new_incident)
                 created_count += 1
@@ -587,6 +597,8 @@ def create_or_sync_incidents(data):
                 existing_incident.occurred_on_year = occurred_on_year
                 existing_incident.occurred_on_month = occurred_on_month
                 existing_incident.occurred_on_day = occurred_on_day
+                existing_incident.city = city
+                existing_incident.state = state
                 updated_count += 1
 
         db.session.commit()
@@ -598,18 +610,43 @@ def create_or_sync_incidents(data):
         error_msg = f"Sync failed: {str(e)}\n{traceback.format_exc()}"
         print(error_msg)
         return error_msg
-    
-    
-async def fetch_page(url):
-    """Uses Puppeteer to load a webpage and return its content."""
-    print("in fetch page")
-    browser = await launch(headless=True, args=['--no-sandbox', '--disable-gpu'])
-    page = await browser.newPage()
-    
-    await page.goto(url, {"waitUntil": "networkidle2"})  # Wait for the page to fully load
-    content = await page.content()  # Get the HTML content
 
-    print(content)
-    
-    await browser.close()
-    return content
+
+async def fetch_pages(urls):
+    """Uses Puppeteer to load a webpage and return its content."""
+    return_urls = []
+
+    for url in urls:
+        try:
+            browser = await launch(
+                headless=True, args=["--no-sandbox", "--disable-gpu"]
+            )
+            page = await browser.newPage()
+
+            await page.goto(url, {"waitUntil": "networkidle2", "timeout": 600000})
+            await page.waitForSelector(".excelclass")
+            await page.click(".excelclass")
+            popup = None
+            while not popup:
+                pages = await browser.pages()
+                if len(pages) > 1:
+                    popup = pages[-1]
+
+            # Extract the NCES file url from the popup
+            await popup.bringToFront()
+            await popup.waitForSelector('a[href*="excelcreator"]')
+            element = await popup.querySelector('a[href*="excelcreator"]')
+            file_url = await (await element.getProperty("href")).jsonValue()
+            file_content = (
+                urllib.request.urlopen(file_url).read().decode("utf-8", errors="ignore")
+            )
+            file_io = StringIO(file_content)
+            convert_file_to_data(file_io)
+
+            await browser.close()
+            return_urls.append(file_url)
+        except Exception as e:
+            print("Error fetching nces page ", e)
+            return e
+
+    return return_urls

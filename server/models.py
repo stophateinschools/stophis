@@ -69,6 +69,14 @@ class File(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     url = db.Column(db.String(), nullable=False)
 
+    @hybrid_property
+    def filename(self):
+        return self.url.rsplit('/', 1)[-1]
+
+    @filename.expression
+    def filename(cls):
+        return func.split_part(cls.url, '/', -1)
+
 
 incident_to_incident_types = db.Table(
     "incident_to_incident_types",

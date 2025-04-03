@@ -1,18 +1,22 @@
 import os
 from io import StringIO
+import re
+from bs4 import BeautifulSoup
 from flask import jsonify, request
 
 from flask_admin import expose, BaseView
 from flask_login import current_user
 from pyairtable import Api
+import requests
 from rq import Queue
 from rq.job import Job
 from server.auth import has_role
+from server.models import State
 from worker import conn
 from flask_dance.contrib.google import google
 
 from ..admin.util import (
-    fetch_page,
+    fetch_pages,
     sync_school_districts,
     sync_schools,
     create_or_sync_incidents,
@@ -21,9 +25,34 @@ from ..admin.util import (
 
 q = Queue(connection=conn)
 
+BASE_SCHOOL_URL = "https://nces.ed.gov/ccd/schoolsearch"
+BASE_PRIVATE_SCHOOL_URL = "https://nces.ed.gov/surveys/pss/privateschoolsearch"
+BASE_DISTRICT_URL = "https://nces.ed.gov/ccd/districtsearch"
+
 
 def handle_job(job):
     return jsonify({"job_id": job.get_id(), "status": "loading"})
+
+
+def get_state_id(state):
+    """Fetches the NCES State ID for a given state abbreviation."""
+    response = requests.get(BASE_SCHOOL_URL)
+
+    if response.status_code != 200:
+        raise Exception("Failed to fetch NCES page")
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    state_select = soup.find("select", {"name": "State"})
+
+    # Find the option that matches the full state name
+    for option in state_select.find_all("option"):
+        # Normalize strings with regular spaces
+        optionText = re.sub(r"\s+", " ", option.text).strip()
+        stateText = re.sub(r"\s+", " ", state).strip()
+        if optionText == stateText:
+            return option["value"]
+
+    raise ValueError(f"State ID not found for: {state}")
 
 
 class ManageDataView(BaseView):
@@ -44,7 +73,7 @@ class ManageDataView(BaseView):
 
     @expose("/")
     def index(cls):
-        return cls.render("admin/manage_data.html")
+        return cls.render("admin/manage_data.html", states=State)
 
     @expose("/job-status/<job_id>", methods=["GET"])
     def job_status(cls, job_id):
@@ -70,10 +99,23 @@ class ManageDataView(BaseView):
             return handle_job(q.enqueue(convert_file_to_data, file_io))
         else:
             return "Invalid file format", 400
-        
-    @expose("/fetch", methods=["POST"])
+
+    @expose("/fetch-by-state", methods=["POST"])
     def fetch(cls):
-        return handle_job(q.enqueue(fetch_page, "https://nces.ed.gov/ccd/schoolsearch/?School="))
+        state = request.form["state"]
+        state_id = get_state_id(state)
+
+        return handle_job(
+            q.enqueue(
+                fetch_pages,
+                [
+                    f"{BASE_DISTRICT_URL}/district_list.asp?State={state_id}",
+                    f"{BASE_SCHOOL_URL}/school_list.asp?State={state_id}",
+                    f"{BASE_PRIVATE_SCHOOL_URL}/school_list.asp?State={state_id}",
+                ],
+                job_timeout=1200, # 15 minutes
+            )
+        )
 
     @expose("/sync", methods=["POST"])
     def sync(cls):
