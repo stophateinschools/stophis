@@ -47,15 +47,12 @@ Run `pipenv run tox` to run entire test suite
 Run `pipenv run tox -- tests/_testfile_.py` or `pipenv run tox --tests/_testfile_.py::_testname_` if you would like to run a single test file or test, respectively
 
 # Data management
-The inital version of this application depends uploading data from the National Center for Education Statistics(NCES)[https://nces.ed.gov] and syncing with existing tables in our Airtable project. NOTE: These steps currently work with public school and district data ONLY.
-To upload from NCES:
-1. Go to [public school search](https://nces.ed.gov/ccd/schoolsearch/) or [district search](https://nces.ed.gov/ccd/districtsearch/)
-2. Select a state and click "Search"
-3. Scroll down to the bottom of the page and click "Download Excel File"
-4. A tiny popoup appears and once you see "Download Excel File" - click that
-5. Navigate to our admin page and click "Manage Data" tab
-6. Where you see "Upload from NCES File", select your file from (4) with "Choose File" and click "Upload"
-7. After upload is complete, you will be navigated to the list view of data you just uploaded
+The inital version of this application depends on fetching data from the National Center for Education Statistics(NCES)[https://nces.ed.gov] and syncing with existing tables in our Airtable project. NOTE: These steps currently work with public school and district data ONLY.
+To fetch from NCES:
+1. Navigate to our admin page and click "Manage Data" tab
+2. Where you see "Fetch NCES Data by State", select desired state and click "Submit"
+	a. NOTE: A popup will appear when the job starts and finishes - when it says "this may take several minutes" that is true! So just be patient - if an error occurs a popup will also alert on that
+3. After upload is complete, you will be able to see the fetched state's school and district data in the corresponding admin tables
 
 To sync from Airtable:
 1. Navigate to admin page and click "Manage Data" tab

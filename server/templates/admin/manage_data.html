@@ -99,7 +99,8 @@
   </head>
   <body>
     <h1>Manage Data</h1>
-    <h2>Upload from NCES File</h2>
+    <h2>Fetch NCES Data by State</h2>
+    <p>NCES data includes public schools, private schools, and school districts</p>
     <form method="POST" enctype="multipart/form-data" onsubmit=fetchData(event)>
       <select name="state" id="state">
         {% for state in states %}
