@@ -95,6 +95,33 @@
         .catch(error => console.error("Error syncing data:", error));
       }
 
+      function handleRegionChange() {
+        const region = document.getElementById("region").value;
+        const tableSelect = document.getElementById("table");
+        const tableOptions = tableSelect.options;
+
+        for (let option of tableOptions) {
+          // Enable all options by default
+          option.disabled = false;
+        }
+
+        if (region === "NAT") {
+          // Disable "District" and "School" if National is selected
+          for (let option of tableOptions) {
+            if (
+              option.value === "District-Table" ||
+              option.value === "School-Table"
+            ) {
+              option.disabled = true;
+            }
+          }
+
+          // If the current selected option is now disabled, change selection
+          if (tableSelect.selectedOptions[0].disabled) {
+            tableSelect.value = "Incident-Table";
+          }
+        }
+      }
     </script>
   </head>
   <body>
@@ -112,11 +139,11 @@
     <h2>Sync from Airtable</h2>
     <form method="POST" enctype="multipart/form-data" onsubmit=syncData(event)>
       <label for="region">Choose a region:</label>
-      <select name="region" id="region" required>
+      <select name="region" id="region" required onchange="handleRegionChange()">
         <option value="WA">WA</option>
         <option value="MI">MI</option>
         <option value="CA">CA</option>
-        <option value="NATIONAL">National</option>
+        <option value="NAT">National</option>
       </select>
       <label for="table">Select a table:</label>
       <select name="table" id="table" required>

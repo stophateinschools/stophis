@@ -450,6 +450,13 @@ def create_or_sync_incidents(data):
         updated_count = 0
         for incident in data:
             fields = incident["fields"]
+            nces_school_id = fields.get("NCES-School-ID")
+            if nces_school_id and "See" in nces_school_id[0]:
+                # These are specific records in the National Incidents database
+                # that Josh has already moved over to state specific tables so we
+                # don't want to create them twice.
+                continue
+
             airtable_id = incident["id"]
             existing_incident = Incident.query.filter_by(
                 airtable_id=airtable_id
