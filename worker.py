@@ -1,6 +1,7 @@
 import os
 from urllib.parse import urlparse
 
+from dotenv import load_dotenv
 from redis import Redis
 from rq import Queue
 from rq.worker import HerokuWorker as Worker
@@ -8,6 +9,8 @@ from rq.worker import HerokuWorker as Worker
 listen = ["high", "default", "low"]
 
 redis_url = os.getenv("REDIS_URL")
+
+load_dotenv()
 
 if not redis_url:
     raise RuntimeError(

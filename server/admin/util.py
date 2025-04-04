@@ -150,11 +150,13 @@ def simple_file_upload_from_url(url, filename):
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Error downloading file: {str(e)}"}), 400
 
-    file = {"file": (filename, image_response.content), "tag": f"{ENV}-logo"}
+    file = {"file": (filename, image_response.content)}
+    data = {"tag": f"{ENV}-logo"}
     try:
         response = requests.post(
             API_URL,
             files=file,
+            data=data,
             auth=(API_TOKEN, API_SECRET),
         )
     except requests.exceptions.RequestException as e:
@@ -199,12 +201,11 @@ def sync_school_districts(districts):
             if logo:
                 airtable_url = logo["url"]
                 filename = logo["filename"]
-                if existing_district.logo and existing_district.logo.filename != filename:
+                if (existing_district.logo and existing_district.logo.filename != filename) or (not existing_district.logo):
                     # This would have created a S3 file everytime we sync - so if
                     # the file already exists, don't create a new one.
                     new_url = simple_file_upload_from_url(airtable_url, filename)
                     existing_district.logo = SchoolDistrictLogo(url=new_url)
-                    existing_district.logo.url = new_url
 
             airtable_name = district["fields"].get("District-Name")
             existing_district.display_name = (
