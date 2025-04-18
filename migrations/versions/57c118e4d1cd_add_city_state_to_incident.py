@@ -9,7 +9,7 @@ Create Date: 2025-03-31 11:49:46.320448
 from alembic import op
 import sqlalchemy as sa
 
-from server.models import State
+from server.models.models import State
 
 
 # revision identifiers, used by Alembic.

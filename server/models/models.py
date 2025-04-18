@@ -1,7 +1,6 @@
-from sqlalchemy import DateTime, String, cast, select, case
+from sqlalchemy import DateTime, String, cast, case
 from sqlalchemy.sql import func
-from sqlalchemy.orm import aliased
-from .database import db
+from ..database import db
 import datetime
 from enum import Enum
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -71,11 +70,19 @@ class File(db.Model):
 
     @hybrid_property
     def filename(self):
-        return self.url.rsplit('/', 1)[-1]
+        return self.url.rsplit("/", 1)[-1]
 
     @filename.expression
     def filename(cls):
-        return func.split_part(cls.url, '/', -1)
+        return func.split_part(cls.url, "/", -1)
+
+    def jsonable(self):
+        """Return a JSON serializable version of the file."""
+        return {
+            "id": self.id,
+            "url": self.url,
+            "name": self.filename,
+        }
 
 
 incident_to_incident_types = db.Table(
@@ -91,15 +98,15 @@ incident_to_incident_types = db.Table(
     ),
 )
 
-incident_to_incident_internal_source_types = db.Table(
-    "incident_to_incident_internal_source_types",
+incident_to_incident_source_types = db.Table(
+    "incident_to_incident_source_types",
     db.Column(
         "incident_id", db.Integer(), db.ForeignKey("incidents.id"), primary_key=True
     ),
     db.Column(
-        "incident_internal_source_type_id",
+        "incident_source_type_id",
         db.Integer(),
-        db.ForeignKey("incident_internal_source_types.id"),
+        db.ForeignKey("incident_source_types.id"),
         primary_key=True,
     ),
 )
@@ -134,30 +141,30 @@ incident_unions = db.Table(
 )
 
 
-class IncidentSourceAssociation(db.Model):
-    """Association table for linking incidents to source types with an optional source ID."""
+class IncidentAttribution(db.Model):
+    """Association table for linking incidents to attributions with an optional attribution ID."""
 
-    __tablename__ = "incident_source_associations"
+    __tablename__ = "incident_attributions"
 
     id = db.Column(db.Integer, primary_key=True)
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"), nullable=False)
-    source_type_id = db.Column(
-        db.Integer, db.ForeignKey("incident_source_types.id"), nullable=False
+    attribution_type_id = db.Column(
+        db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
     )
-    source_id = db.Column(db.String(), nullable=True)
+    attribution_id = db.Column(db.String(), nullable=True)
 
-    incident = db.relationship("Incident", back_populates="source_types")
-    source_type = db.relationship("IncidentSourceType")
+    incident = db.relationship("Incident", back_populates="attributions")
+    attribution_type = db.relationship("AttributionType")
 
     def __str__(self):
         return f"{self.source_type.name}"
 
 
-class SupportingMaterialFile(File):
-    __tablename__ = "supporting_material_files"
+class IncidentDocument(File):
+    __tablename__ = "incident_documents"
 
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
-    incident = db.relationship("Incident", back_populates="supporting_materials")
+    incident = db.relationship("Incident", back_populates="documents")
 
 
 class RelatedLink(db.Model):
@@ -183,12 +190,41 @@ class InternalNote(db.Model):
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
     incident = db.relationship("Incident", back_populates="internal_notes")
 
+    def jsonable(self):
+        """Return a JSON serializable version of the internal note."""
+        return {
+            "id": self.id,
+            "note": self.note,
+            "createdOn": self.created_on.isoformat() if self.created_on else None,
+            "updatedOn": self.updated_on.isoformat() if self.updated_on else None,
+            "author": self.author.jsonable() if self.author else None,
+        }
 
-class SchoolResponseMaterial(File):
-    __tablename__ = "school_response_materials"
 
-    school_response_id = db.Column(db.Integer, db.ForeignKey("school_responses.id"))
-    school_response = db.relationship("SchoolResponse", back_populates="materials")
+class SchoolReport(db.Model):
+    __tablename__ = "school_reports"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
+    updated_on = db.Column(DateTime(timezone=True))
+    occurred_on = db.Column(DateTime(timezone=True))
+    report = db.Column(db.Text())
+    recipient = db.Column(db.String())
+    recipient_type = db.Column(db.String())
+    incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
+    incident = db.relationship("Incident", back_populates="school_reports")
+
+    def jsonable(self):
+        """Return a JSON serializable version of the school report."""
+        return {
+            "id": self.id,
+            "createdOn": self.created_on.isoformat() if self.created_on else None,
+            "updatedOn": self.updated_on.isoformat() if self.updated_on else None,
+            "date": self.occurred_on.isoformat() if self.occurred_on else None,
+            "note": self.report,
+            "recipient": self.recipient,
+            "recipientType": self.recipient_type,
+        }
 
 
 class SchoolResponse(db.Model):
@@ -199,10 +235,24 @@ class SchoolResponse(db.Model):
     updated_on = db.Column(DateTime(timezone=True))
     occurred_on = db.Column(DateTime(timezone=True))
     response = db.Column(db.Text())
-    materials = db.relationship("SchoolResponseMaterial", single_parent=True)
-
+    source = db.Column(db.String())
+    source_type = db.Column(db.String())
+    sentiment = db.Column(db.Integer())
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
-    incident = db.relationship("Incident", back_populates="school_response")
+    incident = db.relationship("Incident", back_populates="school_responses")
+
+    def jsonable(self):
+        """Return a JSON serializable version of the school response."""
+        return {
+            "id": self.id,
+            "createdOn": self.created_on.isoformat() if self.created_on else None,
+            "updatedOn": self.updated_on.isoformat() if self.updated_on else None,
+            "date": self.occurred_on.isoformat() if self.occurred_on else None,
+            "note": self.response,
+            "source": self.source,
+            "sourceType": self.source_type,
+            "sentiment": self.sentiment,
+        }
 
 
 class Incident(db.Model):
@@ -221,7 +271,7 @@ class Incident(db.Model):
     related_links = db.relationship(
         "RelatedLink", cascade="all, delete-orphan", single_parent=True
     )
-    supporting_materials = db.relationship("SupportingMaterialFile", single_parent=True)
+    documents = db.relationship("IncidentDocument", single_parent=True)
     city = db.Column(db.String(), nullable=True)
     state = db.Column(db.Enum(State, name="state"), nullable=False)
     schools = db.relationship(
@@ -233,29 +283,35 @@ class Incident(db.Model):
     unions = db.relationship(
         "Union", secondary=incident_unions, back_populates="incidents"
     )
-    reporter_id = db.Column(db.Integer(), db.ForeignKey("users.id"))
-    reporter = db.relationship("User", back_populates="incidents")
-    reported_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
+    owner_id = db.Column(db.Integer(), db.ForeignKey("users.id"))
+    owner = db.relationship("User", back_populates="incidents")
+    created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     occurred_on_year = db.Column(db.Integer())
-    occurred_on_month = db.Column(db.Integer())
-    occurred_on_day = db.Column(db.Integer())
+    occurred_on_month_start = db.Column(db.Integer())
+    occurred_on_month_end = db.Column(db.Integer())
+    occurred_on_day_start = db.Column(db.Integer())
+    occurred_on_day_end = db.Column(db.Integer())
     publish_details = db.relationship(
         "IncidentPublishDetails", back_populates="incident", uselist=False
     )
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
-    internal_source_types = db.relationship(
-        "IncidentInternalSourceType",
-        secondary=incident_to_incident_internal_source_types,
-    )
     source_types = db.relationship(
-        "IncidentSourceAssociation",
+        "IncidentSourceType",
+        secondary=incident_to_incident_source_types,
+    )
+    attributions = db.relationship(
+        "IncidentAttribution",
         back_populates="incident",
         cascade="all, delete-orphan",
     )
     reported_to_school = db.Column(db.Boolean())
-    school_response = db.relationship(
-        "SchoolResponse", back_populates="incident", uselist=False
+    school_reports = db.relationship(
+        "SchoolReport", back_populates="incident", single_parent=True
+    )
+    school_responded = db.Column(db.Boolean())
+    school_responses = db.relationship(
+        "SchoolResponse", back_populates="incident", single_parent=True
     )
 
     @hybrid_property
@@ -265,11 +321,8 @@ class Incident(db.Model):
         default to 1.
         """
         if self.occurred_on_year:
-            month = self.occurred_on_month if self.occurred_on_month else 1
-            day = self.occurred_on_day if self.occurred_on_day else 1
-            print(
-                "__________________", datetime.date(self.occurred_on_year, month, day)
-            )
+            month = self.occurred_on_month_start if self.occurred_on_month_start else 1
+            day = self.occurred_on_day_start if self.occurred_on_day_start else 1
             return datetime.date(self.occurred_on_year, month, day)
         return None
 
@@ -283,16 +336,68 @@ class Incident(db.Model):
                     cast(cls.occurred_on_year, String),
                     "-",
                     func.lpad(
-                        cast(func.coalesce(cls.occurred_on_month, 1), String), 2, "0"
+                        cast(func.coalesce(cls.occurred_on_month_start, 1), String),
+                        2,
+                        "0",
                     ),
                     "-",
                     func.lpad(
-                        cast(func.coalesce(cls.occurred_on_day, 1), String), 2, "0"
+                        cast(func.coalesce(cls.occurred_on_day_start, 1), String),
+                        2,
+                        "0",
                     ),
                 ),
                 "YYYY-MM-DD",
             ),
         )
+
+    def jsonable(self):
+        """Return a JSON serializable version of the incident."""
+        return {
+            "id": self.id,
+            "summary": self.summary,
+            "details": self.details,
+            # TODO actually add this
+            "status": "Active",
+            "date": {
+                "year": self.occurred_on_year,
+                "month": [
+                    self.occurred_on_month_start or "",
+                    self.occurred_on_month_end or "",
+                ],
+                "day": [
+                    self.occurred_on_day_start or "",
+                    self.occurred_on_day_end or "",
+                ],
+            },
+            "discussion": [note.jsonable() for note in self.internal_notes],
+            "documents": [document.jsonable() for document in self.documents],
+            "owner": self.owner.jsonable() if self.owner else None,
+            "links": [link.link for link in self.related_links],
+            "types": [type.name for type in self.types],
+            "city": self.city,
+            "state": self.state.value if self.state else None,
+            "schools": [school.jsonable() for school in self.schools],
+            "districts": [district.jsonable() for district in self.districts],
+            "unions": [union.jsonable() for union in self.unions],
+            "createdOn": self.created_on.isoformat() if self.created_on else None,
+            "updatedOn": self.updated_on.isoformat() if self.updated_on else None,
+            "publish_details": (
+                self.publish_details.jsonable() if self.publish_details else None
+            ),
+            "sourceTypes": [s.name for s in self.source_types],
+            "attributions": [a.attribution_type.name for a in self.attributions],
+            "schoolReport": {
+                "status": self.reported_to_school if self.reported_to_school else None,
+                "reports": [report.jsonable() for report in self.school_reports],
+            },
+            "schoolResponse": {
+                "status": self.school_responded if self.school_responded else None,
+                "responses": [
+                    response.jsonable() for response in self.school_responses
+                ],
+            },
+        }
 
 
 class IncidentStatus(db.Model):
@@ -344,6 +449,15 @@ class IncidentPublishDetails(db.Model):
         "Incident", back_populates="publish_details", single_parent=True
     )
 
+    def jsonable(self):
+        """Return a JSON serializable version of the incident publish details."""
+        return {
+            "id": self.id,
+            "publish": self.publish,
+            "status": self.status.name if self.status else None,
+            "privacy": self.privacy.name if self.privacy else None,
+        }
+
 
 class IncidentType(db.Model):
     """A type of incident."""
@@ -358,10 +472,10 @@ class IncidentType(db.Model):
         return f"{self.name}"
 
 
-class IncidentInternalSourceType(db.Model):
-    """An internal facing source type."""
+class IncidentSourceType(db.Model):
+    """An incident report source type."""
 
-    __tablename__ = "incident_internal_source_types"
+    __tablename__ = "incident_source_types"
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False, unique=True)
@@ -371,10 +485,10 @@ class IncidentInternalSourceType(db.Model):
         return f"{self.name}"
 
 
-class IncidentSourceType(db.Model):
-    """A public facing source type."""
+class AttributionType(db.Model):
+    """An incident report attribution type."""
 
-    __tablename__ = "incident_source_types"
+    __tablename__ = "attribution_types"
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(), nullable=False, unique=True)
@@ -432,6 +546,14 @@ class Union(db.Model):
     )
 
     __table_args__ = (db.UniqueConstraint("name", "state", name="uix_name_state"),)
+
+    def jsonable(self):
+        """Return a JSON serializable version of the union."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "state": self.state.value if self.state else None,
+        }
 
 
 class SchoolDistrictLogo(File):
@@ -491,6 +613,15 @@ class SchoolDistrict(db.Model):
 
     def __str__(self):
         return f"{self.display_name if self.display_name else self.name}"
+
+    def jsonable(self):
+        """Return a JSON serializable version of the school district."""
+        return {
+            "id": self.id,
+            "name": self.display_name if self.display_name else self.name,
+            "logo": self.logo.url if self.logo else None,
+            "state": self.state.value if self.state else None,
+        }
 
 
 class SchoolLevel(Enum):
@@ -566,3 +697,18 @@ class School(db.Model):
 
     def __str__(self):
         return self.name
+
+    def jsonable(self):
+        """Return a JSON serializable version of the school."""
+        return {
+            "id": self.id,
+            "name": self.display_name if self.display_name else self.name,
+            "district_id": self.district_id,
+            "street": self.street,
+            "city": self.city,
+            "state": self.state.value if self.state else None,
+            "postal_code": self.postal_code,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "level": self.level.value if self.level else None,
+        }

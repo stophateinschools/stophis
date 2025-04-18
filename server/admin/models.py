@@ -5,11 +5,11 @@ from flask import jsonify, redirect, request, url_for
 from flask_login import current_user
 import requests
 
-from server.auth import has_role
-from server.user import UserRole
+from server.routes.auth import has_role
+from server.models.user import UserRole
 
 from .index import BaseModelView, render_model_details_link
-from ..audit import AuditModelView
+from ..models.audit import AuditModelView
 from flask_admin.form import Select2Widget
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.contrib.sqla.filters import (
@@ -38,12 +38,12 @@ from requests.auth import HTTPBasicAuth
 from sqlalchemy import desc, event, func
 from sqlalchemy.orm import aliased
 
-from ..models import (
+from ..models.models import (
     File,
     Incident,
     IncidentPrivacyStatus,
     IncidentPublishDetails,
-    IncidentSourceAssociation,
+    IncidentAttribution,
     IncidentSourceType,
     IncidentStatus,
     IncidentType,
@@ -52,9 +52,8 @@ from ..models import (
     SchoolDistrict,
     SchoolDistrictLogo,
     SchoolResponse,
-    SchoolResponseMaterial,
     State,
-    SupportingMaterialFile,
+    IncidentDocument,
     Union,
     union_to_school_districts,
     incident_schools,
@@ -270,537 +269,537 @@ class InternalNoteView(BaseModelView):
         return self.get_url("incident.details_view", id=model.incident.id)
 
 
-class IncidentView(AuditModelView):
-    def get_query(self):
-        """Modify the default query to filter by the user's states."""
-        query = super().get_query()
-        if not has_role([UserRole.ADMIN]):  # Allow admins to see everything
-            query = query.filter(Incident.state == current_user.region)
-        return query
+# class IncidentView(AuditModelView):
+#     def get_query(self):
+#         """Modify the default query to filter by the user's states."""
+#         query = super().get_query()
+#         if not has_role([UserRole.ADMIN]):  # Allow admins to see everything
+#             query = query.filter(Incident.state == current_user.region)
+#         return query
 
-    # Define the route to fetch school details (district and union)
-    @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
-    @expose("/new/get_school_details/<int:school_id>", methods=["GET"])
-    def get_school_details(cls, school_id):
-        school = School.query.get(school_id)
-        # Return the related district and union information
-        return {
-            "district_id": school.district_id if school else None,
-        }
+#     # Define the route to fetch school details (district and union)
+#     @expose("/edit/get_school_details/<int:school_id>", methods=["GET"])
+#     @expose("/new/get_school_details/<int:school_id>", methods=["GET"])
+#     def get_school_details(cls, school_id):
+#         school = School.query.get(school_id)
+#         # Return the related district and union information
+#         return {
+#             "district_id": school.district_id if school else None,
+#         }
 
-    # Define the route to fetch union details (district and school)
-    @expose("/edit/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
-    @expose("/new/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
-    def get_district_details(cls, district_id):
-        schools = School.query.filter_by(district_id=district_id)
-        unions = (
-            Union.query.join(union_to_school_districts)
-            .filter(union_to_school_districts.c.district_id == district_id)
-            .all()
-        )
-        # Return the related school and union information
-        return {
-            "schools": [{"id": s.id, "name": s.name} for s in schools],
-            "unions": [{"id": u.id, "name": u.name} for u in unions],
-        }
+#     # Define the route to fetch union details (district and school)
+#     @expose("/edit/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
+#     @expose("/new/get_schools_unions_by_district/<int:district_id>", methods=["GET"])
+#     def get_district_details(cls, district_id):
+#         schools = School.query.filter_by(district_id=district_id)
+#         unions = (
+#             Union.query.join(union_to_school_districts)
+#             .filter(union_to_school_districts.c.district_id == district_id)
+#             .all()
+#         )
+#         # Return the related school and union information
+#         return {
+#             "schools": [{"id": s.id, "name": s.name} for s in schools],
+#             "unions": [{"id": u.id, "name": u.name} for u in unions],
+#         }
 
-    @expose("/")
-    def index_view(self):
-        self.dynamic_filters = [
-            ManyToManyFilter(
-                column=Incident.schools,
-                name="School Name",
-                options=[
-                    (school.name, school.name)
-                    for school in db.session.query(School).all()
-                ],
-                alias=aliased(School),
-                join_table=incident_schools,
-                join_column=incident_schools.c.school_id,
-            ),
-            ManyToManyFilter(
-                column=Incident.districts,
-                name="District Name",
-                options=(
-                    (district.name, district.name)
-                    for district in db.session.query(SchoolDistrict).all()
-                ),
-                alias=aliased(SchoolDistrict),
-                join_table=incident_districts,
-                join_column=incident_districts.c.district_id,
-            ),
-            ManyToManyFilter(
-                column=Incident.types,
-                name="Type",
-                options=(
-                    (type.name, type.name)
-                    for type in db.session.query(IncidentType).all()
-                ),
-                alias=aliased(IncidentType),
-                join_table=incident_to_incident_types,
-                join_column=incident_to_incident_types.c.incident_type_id,
-            ),
-            EnumEqualFilter(
-                column=Incident.state,
-                name="State",
-                options=[(state.name, state.value) for state in State],
-            ),
-            DateBetweenFilter(
-                column=Incident.occurred_on,
-                name="Occurred On",
-                # options={'class': 'datepicker'}
-            ),
-        ]
+#     @expose("/")
+#     def index_view(self):
+#         self.dynamic_filters = [
+#             ManyToManyFilter(
+#                 column=Incident.schools,
+#                 name="School Name",
+#                 options=[
+#                     (school.name, school.name)
+#                     for school in db.session.query(School).all()
+#                 ],
+#                 alias=aliased(School),
+#                 join_table=incident_schools,
+#                 join_column=incident_schools.c.school_id,
+#             ),
+#             ManyToManyFilter(
+#                 column=Incident.districts,
+#                 name="District Name",
+#                 options=(
+#                     (district.name, district.name)
+#                     for district in db.session.query(SchoolDistrict).all()
+#                 ),
+#                 alias=aliased(SchoolDistrict),
+#                 join_table=incident_districts,
+#                 join_column=incident_districts.c.district_id,
+#             ),
+#             ManyToManyFilter(
+#                 column=Incident.types,
+#                 name="Type",
+#                 options=(
+#                     (type.name, type.name)
+#                     for type in db.session.query(IncidentType).all()
+#                 ),
+#                 alias=aliased(IncidentType),
+#                 join_table=incident_to_incident_types,
+#                 join_column=incident_to_incident_types.c.incident_type_id,
+#             ),
+#             EnumEqualFilter(
+#                 column=Incident.state,
+#                 name="State",
+#                 options=[(state.name, state.value) for state in State],
+#             ),
+#             DateBetweenFilter(
+#                 column=Incident.occurred_on,
+#                 name="Occurred On",
+#                 # options={'class': 'datepicker'}
+#             ),
+#         ]
 
-        self._refresh_filters_cache()
-        return super().index_view()
+#         self._refresh_filters_cache()
+#         return super().index_view()
 
-    def get_filters(self):
-        filters = []
-        if hasattr(self, "dynamic_filters") and self.dynamic_filters:
-            for filter in self.dynamic_filters:
-                filters.append(filter)
+#     def get_filters(self):
+#         filters = []
+#         if hasattr(self, "dynamic_filters") and self.dynamic_filters:
+#             for filter in self.dynamic_filters:
+#                 filters.append(filter)
 
-        return filters
+#         return filters
 
-    def _format_occurred_on(view, context, model, name):
-        month = (
-            calendar.month_name[model.occurred_on_month]
-            if model.occurred_on_month
-            else ""
-        )
-        day = model.occurred_on_day or ""
-        year = model.occurred_on_year or ""
+#     def _format_occurred_on(view, context, model, name):
+#         month = (
+#             calendar.month_name[model.occurred_on_month]
+#             if model.occurred_on_month
+#             else ""
+#         )
+#         day = model.occurred_on_day or ""
+#         year = model.occurred_on_year or ""
 
-        if not any([month, day, year]):
-            return "Date not available"
+#         if not any([month, day, year]):
+#             return "Date not available"
 
-        # Format the date dynamically based on available values
-        if month and day and year:
-            return f"{month} {day}, {year}"
-        elif month and year:
-            return f"{month} {year}"
-        elif year:
-            return str(year)
+#         # Format the date dynamically based on available values
+#         if month and day and year:
+#             return f"{month} {day}, {year}"
+#         elif month and year:
+#             return f"{month} {year}"
+#         elif year:
+#             return str(year)
 
-        return f"{month} {day}"
+#         return f"{month} {day}"
 
-    def _sort_occurred_on(self, query, sort_desc):
-        sort_column = func.concat(
-            self.model.occurred_on_year,
-            "-",
-            self.model.occurred_on_month,
-            "-",
-            self.model.occurred_on_day,
-        )
+#     def _sort_occurred_on(self, query, sort_desc):
+#         sort_column = func.concat(
+#             self.model.occurred_on_year,
+#             "-",
+#             self.model.occurred_on_month,
+#             "-",
+#             self.model.occurred_on_day,
+#         )
 
-        return query.order_by(sort_column.desc() if sort_desc else sort_column.asc())
+#         return query.order_by(sort_column.desc() if sort_desc else sort_column.asc())
 
-    def _render_supporting_material_links(view, context, model, name):
-        if model.supporting_materials:
-            links = "".join(
-                f'<a href="{sp.url}" target="_blank">{sp.url.split("/")[-1]}</a><br>'
-                for sp in model.supporting_materials
-            )
-            return Markup(links)
+#     def _render_supporting_material_links(view, context, model, name):
+#         if model.supporting_materials:
+#             links = "".join(
+#                 f'<a href="{sp.url}" target="_blank">{sp.url.split("/")[-1]}</a><br>'
+#                 for sp in model.documents
+#             )
+#             return Markup(links)
 
-    def _publish_details_string(view, context, model, name):
-        if model.publish_details.publish:
-            ret = f"Published{f', {model.publish_details.privacy}' if model.publish_details.privacy else ''}"
-        else:
-            ret = f"Not Published{f', {model.publish_details.status}' if model.publish_details.status else ''}"
+#     def _publish_details_string(view, context, model, name):
+#         if model.publish_details.publish:
+#             ret = f"Published{f', {model.publish_details.privacy}' if model.publish_details.privacy else ''}"
+#         else:
+#             ret = f"Not Published{f', {model.publish_details.status}' if model.publish_details.status else ''}"
 
-        return ret
+#         return ret
 
-    create_template = edit_template = "admin/incident/create_edit.html"
-    details_template = "admin/incident/details.html"
+#     create_template = edit_template = "admin/incident/create_edit.html"
+#     details_template = "admin/incident/details.html"
 
-    column_list = [
-        "summary",
-        "schools",
-        "districts",
-        "types",
-        "publish_details",
-        "updated_on",
-        "occurred_on",
-        "reporter",
-    ]
+#     column_list = [
+#         "summary",
+#         "schools",
+#         "districts",
+#         "types",
+#         "publish_details",
+#         "updated_on",
+#         "occurred_on",
+#         "owner",
+#     ]
 
-    column_sortable_list = ["occurred_on"]
-    column_default_sort = "occurred_on"
+#     column_sortable_list = ["occurred_on"]
+#     column_default_sort = "occurred_on"
 
-    column_details_list = [
-        "summary",
-        "details",
-        "related_links",
-        "supporting_materials",
-        "districts",
-        "schools",
-        "unions",
-        "reporter",
-        "reported_on",
-        "updated_on",
-        "occurred_on",
-        "types",
-        "internal_source_types",
-        "source_types",
-        "publish_details",
-        "reported_to_school",
-        "school_response",
-        "airtable_id",
-        "airtable_id_number",
-        "state",
-        *AuditModelView.column_list,
-    ]
+#     column_details_list = [
+#         "summary",
+#         "details",
+#         "related_links",
+#         "supporting_materials",
+#         "districts",
+#         "schools",
+#         "unions",
+#         "owner",
+#         "created_on",
+#         "updated_on",
+#         "occurred_on",
+#         "types",
+#         "internal_source_types",
+#         "source_types",
+#         "publish_details",
+#         "reported_to_school",
+#         "school_response",
+#         "airtable_id",
+#         "airtable_id_number",
+#         "state",
+#         *AuditModelView.column_list,
+#     ]
 
-    column_searchable_list = [
-        "summary",
-        "details",
-    ]
+#     column_searchable_list = [
+#         "summary",
+#         "details",
+#     ]
 
-    form_columns = [
-        "summary",
-        "details",
-        "districts",
-        "schools",
-        "unions",
-        "reporter",
-        "reported_on",
-        "occurred_on_year",
-        "occurred_on_month",
-        "occurred_on_day",
-        "types",
-        "internal_source_types",
-        "source_types",
-        "reported_to_school",
-        "school_response",
-        "publish_details",
-        "related_links",
-        "supporting_materials",
-    ]
+#     form_columns = [
+#         "summary",
+#         "details",
+#         "districts",
+#         "schools",
+#         "unions",
+#         "owner",
+#         "created_on",
+#         "occurred_on_year",
+#         "occurred_on_month",
+#         "occurred_on_day",
+#         "types",
+#         "internal_source_types",
+#         "source_types",
+#         "reported_to_school",
+#         "school_response",
+#         "publish_details",
+#         "related_links",
+#         "supporting_materials",
+#     ]
 
-    column_formatters = {
-        "reporter": lambda v, c, m, n: (
-            render_model_details_link("user", m.reporter.id, m.reporter.first_name)
-            if m.reporter
-            else None
-        ),
-        # "district": lambda v, c, m, n: (
-        #     render_model_details_link("schooldistrict", m.district.id, m.district)
-        #     if m.district
-        #     else None
-        # ),
-        # "school": lambda v, c, m, n: (
-        #     render_model_details_link("school", m.school.id, m.school)
-        #     if m.school
-        #     else None
-        # ),
-        "source_types": lambda v, c, m, n: [
-            f"{type.source_type.name} {f'({type.source_id})' if type.source_id else ''}"
-            for type in m.source_types
-        ],
-        "publish_details": _publish_details_string,
-        "related_links": lambda v, c, m, n: [
-            related_link.link for related_link in m.related_links
-        ],
-        "supporting_materials": _render_supporting_material_links,
-        "audit_log": AuditModelView._audit_log_link,
-        "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
-        "occurred_on": _format_occurred_on,
-        "reported_on": lambda v, c, m, n: m.reported_on.strftime("%B, %-d, %Y"),
-    }
+#     column_formatters = {
+#         "owner": lambda v, c, m, n: (
+#             render_model_details_link("user", m.owner.id, m.owner.first_name)
+#             if m.owner
+#             else None
+#         ),
+#         # "district": lambda v, c, m, n: (
+#         #     render_model_details_link("schooldistrict", m.district.id, m.district)
+#         #     if m.district
+#         #     else None
+#         # ),
+#         # "school": lambda v, c, m, n: (
+#         #     render_model_details_link("school", m.school.id, m.school)
+#         #     if m.school
+#         #     else None
+#         # ),
+#         "source_types": lambda v, c, m, n: [
+#             f"{type.source_type.name} {f'({type.source_id})' if type.source_id else ''}"
+#             for type in m.source_types
+#         ],
+#         "publish_details": _publish_details_string,
+#         "related_links": lambda v, c, m, n: [
+#             related_link.link for related_link in m.related_links
+#         ],
+#         "supporting_materials": _render_supporting_material_links,
+#         "audit_log": AuditModelView._audit_log_link,
+#         "updated_on": lambda v, c, m, n: m.updated_on.strftime("%B, %-d, %Y"),
+#         "occurred_on": _format_occurred_on,
+#         "created_on": lambda v, c, m, n: m.created_on.strftime("%B, %-d, %Y"),
+#     }
 
-    form_overrides = {
-        "related_links": FieldList,
-        "supporting_materials": Field,
-        "reported_on": DateTimeField,
-        "occurred_on_year": YearSelectField,
-        "occurred_on_month": MonthSelectField,
-        "occurred_on_day": DaySelectField,
-    }
+#     form_overrides = {
+#         "related_links": FieldList,
+#         "supporting_materials": Field,
+#         "created_on": DateTimeField,
+#         "occurred_on_year": YearSelectField,
+#         "occurred_on_month": MonthSelectField,
+#         "occurred_on_day": DaySelectField,
+#     }
 
-    form_extra_fields = {
-        "source_types": QuerySelectMultipleField(
-            "Source Types",
-            query_factory=lambda: IncidentSourceType.query.all(),
-            get_label="name",
-            widget=Select2Widget(multiple=True),
-        )
-    }
+#     form_extra_fields = {
+#         "source_types": QuerySelectMultipleField(
+#             "Source Types",
+#             query_factory=lambda: IncidentSourceType.query.all(),
+#             get_label="name",
+#             widget=Select2Widget(multiple=True),
+#         )
+#     }
 
-    form_args = {
-        "related_links": {"unbound_field": StringField(), "min_entries": 1},
-        "reported_on": {"format": "%Y-%m-%d", "widget": DateInput()},
-        "occurred_on_year": {"start_year": 2000},
-    }
+#     form_args = {
+#         "related_links": {"unbound_field": StringField(), "min_entries": 1},
+#         "created_on": {"format": "%Y-%m-%d", "widget": DateInput()},
+#         "occurred_on_year": {"start_year": 2000},
+#     }
 
-    def scaffold_form(self):
-        form_class = super().scaffold_form()
-        form_class.school_responded = BooleanField("School Responded")
-        form_class.school_response = FormField(SchoolResponseForm)
-        form_class.related_links = FieldList(StringField("Link"), min_entries=1)
-        form_class.supporting_materials = Field()
-        form_class.publish_details = FormField(PublishDetailsForm)
+#     def scaffold_form(self):
+#         form_class = super().scaffold_form()
+#         form_class.school_responded = BooleanField("School Responded")
+#         form_class.school_response = FormField(SchoolResponseForm)
+#         form_class.related_links = FieldList(StringField("Link"), min_entries=1)
+#         form_class.supporting_materials = Field()
+#         form_class.publish_details = FormField(PublishDetailsForm)
 
-        return form_class
+#         return form_class
 
-    def on_model_change(self, form, model, is_created):
-        """
-        Perform some actions before a model is created OR updated.
-        Called from create_model and update_model. So you will see that in
-        create_model and update_model overrides we do things that Flask-admin
-        can't figure out.
-        """
-        if is_created:
-            model.reporter = current_user
+#     def on_model_change(self, form, model, is_created):
+#         """
+#         Perform some actions before a model is created OR updated.
+#         Called from create_model and update_model. So you will see that in
+#         create_model and update_model overrides we do things that Flask-admin
+#         can't figure out.
+#         """
+#         if is_created:
+#             model.owner = current_user
 
-        return super().on_model_change(form, model, is_created)
+#         return super().on_model_change(form, model, is_created)
 
-    def _create_edit_model(self, form, model):
-        """
-        Common logic between the update & create model methods.
-        Here we remove and manually populate the model with the data
-        from the form that Flask-admin can't map itself.
-        """
-        related_links_data = form.related_links.data if form.related_links else []
-        supporting_materials_data = request.form.getlist("supporting_materials[]") or []
-        school_response_materials_data = (
-            request.form.getlist("school_response-school_response_materials[]") or []
-        )
-        if form.school_responded.data:
-            existing_school_response = model.school_response
-            if existing_school_response:
-                school_response = existing_school_response
-                existing_school_response.updated_on = datetime.now()
-                existing_school_response.occurred_on = (
-                    form.school_response.school_responded_on.data
-                )
-                existing_school_response.response = (
-                    form.school_response.school_response.data
-                )
-            else:
-                school_response = SchoolResponse(
-                    updated_on=datetime.now(),
-                    occurred_on=form.school_response.school_responded_on.data,
-                    response=form.school_response.school_response.data,
-                )
-                model.school_response = school_response
-        else:
-            model.school_response = None
+#     def _create_edit_model(self, form, model):
+#         """
+#         Common logic between the update & create model methods.
+#         Here we remove and manually populate the model with the data
+#         from the form that Flask-admin can't map itself.
+#         """
+#         related_links_data = form.related_links.data if form.related_links else []
+#         supporting_materials_data = request.form.getlist("supporting_materials[]") or []
+#         school_response_materials_data = (
+#             request.form.getlist("school_response-school_response_materials[]") or []
+#         )
+#         if form.school_responded.data:
+#             existing_school_response = model.school_response
+#             if existing_school_response:
+#                 school_response = existing_school_response
+#                 existing_school_response.updated_on = datetime.now()
+#                 existing_school_response.occurred_on = (
+#                     form.school_response.school_responded_on.data
+#                 )
+#                 existing_school_response.response = (
+#                     form.school_response.school_response.data
+#                 )
+#             else:
+#                 school_response = SchoolResponse(
+#                     updated_on=datetime.now(),
+#                     occurred_on=form.school_response.school_responded_on.data,
+#                     response=form.school_response.school_response.data,
+#                 )
+#                 model.school_response = school_response
+#         else:
+#             model.school_response = None
 
-        if form.publish_details.publish:
-            existing_publish_details = model.publish_details
-            if existing_publish_details:
-                new_details = form.publish_details
-                existing_publish_details.publish = new_details.publish.data
-                existing_publish_details.status_id = (
-                    new_details.publish_status.data.id
-                    if new_details.publish_status.data and not new_details.publish.data
-                    else None
-                )
-                existing_publish_details.privacy_id = (
-                    new_details.publish_privacy.data.id
-                    if new_details.publish_privacy.data and new_details.publish.data
-                    else None
-                )
-            else:
-                publish_details = IncidentPublishDetails(
-                    publish=form.publish_details.publish.data,
-                    status_id=(
-                        form.publish_details.publish_status.data.id
-                        if not form.publish_details.publish.data
-                        else None
-                    ),
-                    privacy_id=(
-                        form.publish_details.publish_privacy.data.id
-                        if form.publish_details.publish.data
-                        else None
-                    ),
-                )
-                model.publish_details = publish_details
+#         if form.publish_details.publish:
+#             existing_publish_details = model.publish_details
+#             if existing_publish_details:
+#                 new_details = form.publish_details
+#                 existing_publish_details.publish = new_details.publish.data
+#                 existing_publish_details.status_id = (
+#                     new_details.publish_status.data.id
+#                     if new_details.publish_status.data and not new_details.publish.data
+#                     else None
+#                 )
+#                 existing_publish_details.privacy_id = (
+#                     new_details.publish_privacy.data.id
+#                     if new_details.publish_privacy.data and new_details.publish.data
+#                     else None
+#                 )
+#             else:
+#                 publish_details = IncidentPublishDetails(
+#                     publish=form.publish_details.publish.data,
+#                     status_id=(
+#                         form.publish_details.publish_status.data.id
+#                         if not form.publish_details.publish.data
+#                         else None
+#                     ),
+#                     privacy_id=(
+#                         form.publish_details.publish_privacy.data.id
+#                         if form.publish_details.publish.data
+#                         else None
+#                     ),
+#                 )
+#                 model.publish_details = publish_details
 
-        if form.source_types.data:
-            existing_source_type_ids = [
-                assoc.source_type_id for assoc in model.source_types
-            ]
-            new_source_type_ids = [new_type.id for new_type in form.source_types.data]
-            for source_type_id in new_source_type_ids:
-                if source_type_id not in existing_source_type_ids:
-                    model.source_types.append(
-                        IncidentSourceAssociation(source_type_id=source_type_id)
-                    )
-        model.occurred_on_day = (
-            None if form.occurred_on_day.data == "" else form.occurred_on_day.data
-        )
-        model.occurred_on_month = (
-            None if form.occurred_on_month.data == "" else form.occurred_on_month.data
-        )
-        model.occurred_on_year = (
-            None if form.occurred_on_year.data == "" else form.occurred_on_year.data
-        )
+#         if form.source_types.data:
+#             existing_source_type_ids = [
+#                 assoc.source_type_id for assoc in model.source_types
+#             ]
+#             new_source_type_ids = [new_type.id for new_type in form.source_types.data]
+#             for source_type_id in new_source_type_ids:
+#                 if source_type_id not in existing_source_type_ids:
+#                     model.source_types.append(
+#                         IncidentAttribution(attribution_type_id=source_type_id)
+#                     )
+#         model.occurred_on_day = (
+#             None if form.occurred_on_day.data == "" else form.occurred_on_day.data
+#         )
+#         model.occurred_on_month = (
+#             None if form.occurred_on_month.data == "" else form.occurred_on_month.data
+#         )
+#         model.occurred_on_year = (
+#             None if form.occurred_on_year.data == "" else form.occurred_on_year.data
+#         )
 
-        del form.school_responded
-        del form.school_response
-        del form.related_links
-        del form.supporting_materials
-        del form.source_types
-        del form.occurred_on_day
-        del form.occurred_on_month
-        del form.occurred_on_year
+#         del form.school_responded
+#         del form.school_response
+#         del form.related_links
+#         del form.supporting_materials
+#         del form.source_types
+#         del form.occurred_on_day
+#         del form.occurred_on_month
+#         del form.occurred_on_year
 
-        form.populate_obj(model)
+#         form.populate_obj(model)
 
-        return {
-            "related_links_data": related_links_data,
-            "supporting_materials_data": supporting_materials_data,
-            "school_response_materials_data": school_response_materials_data,
-        }
+#         return {
+#             "related_links_data": related_links_data,
+#             "supporting_materials_data": supporting_materials_data,
+#             "school_response_materials_data": school_response_materials_data,
+#         }
 
-    def _update_materials(
-        self,
-        model,
-        relationship_attr,
-        material_cls,
-        removed_materials,
-        new_materials_data,
-        foreign_key_attr,
-    ):
-        """
-        Generalized function to update material relationships.
+#     def _update_materials(
+#         self,
+#         model,
+#         relationship_attr,
+#         material_cls,
+#         removed_materials,
+#         new_materials_data,
+#         foreign_key_attr,
+#     ):
+#         """
+#         Generalized function to update material relationships.
 
-        :param model: The parent model instance (e.g., an Incident or SchoolResponse).
-        :param relationship_attr: Name of the relationship attribute on the model (string).
-        :param material_cls: The class of the material model (e.g., SupportingMaterialFile).
-        :param removed_materials: List of material URLs to be removed.
-        :param new_materials_data: List of new material URLs to be added.
-        :param foreign_key_attr: The attribute name to link new material instances to the parent model (e.g., "incident").
-        """
-        # Get existing materials, keeping only those that are NOT in the removed list
-        existing_materials = [
-            material
-            for material in getattr(model, relationship_attr)
-            if material.url not in removed_materials
-        ]
+#         :param model: The parent model instance (e.g., an Incident or SchoolResponse).
+#         :param relationship_attr: Name of the relationship attribute on the model (string).
+#         :param material_cls: The class of the material model (e.g., IncidentDocument).
+#         :param removed_materials: List of material URLs to be removed.
+#         :param new_materials_data: List of new material URLs to be added.
+#         :param foreign_key_attr: The attribute name to link new material instances to the parent model (e.g., "incident").
+#         """
+#         # Get existing materials, keeping only those that are NOT in the removed list
+#         existing_materials = [
+#             material
+#             for material in getattr(model, relationship_attr)
+#             if material.url not in removed_materials
+#         ]
 
-        # Filter out empty strings or None values from new materials
-        new_materials = [url for url in new_materials_data if url]
+#         # Filter out empty strings or None values from new materials
+#         new_materials = [url for url in new_materials_data if url]
 
-        # Create new material instances, dynamically setting the foreign key relationship
-        materials_to_add = [
-            material_cls(url=url, **{foreign_key_attr: model}) for url in new_materials
-        ]
+#         # Create new material instances, dynamically setting the foreign key relationship
+#         materials_to_add = [
+#             material_cls(url=url, **{foreign_key_attr: model}) for url in new_materials
+#         ]
 
-        # Assign the updated list back to the model
-        setattr(model, relationship_attr, existing_materials + materials_to_add)
+#         # Assign the updated list back to the model
+#         setattr(model, relationship_attr, existing_materials + materials_to_add)
 
-    def on_form_prefill(self, form, id):
-        """
-        Perform additional actions to prefill the edit form.
-        This only needs to be overriden with logic about custom fields that depend
-        on the database in a way that Flask-admin can't figure out by itself
-        """
-        model = self.model.query.get(id)
+#     def on_form_prefill(self, form, id):
+#         """
+#         Perform additional actions to prefill the edit form.
+#         This only needs to be overriden with logic about custom fields that depend
+#         on the database in a way that Flask-admin can't figure out by itself
+#         """
+#         model = self.model.query.get(id)
 
-        if model.school_response:
-            form.school_responded.data = True
-            form.school_response.school_responded_on.data = (
-                model.school_response.occurred_on.date()
-                if model.school_response.occurred_on
-                else None
-            )
-            form.school_response.school_response.data = model.school_response.response
-            form.school_response.school_response_materials.data = (
-                model.school_response.materials
-            )
+#         if model.school_response:
+#             form.school_responded.data = True
+#             form.school_response.school_responded_on.data = (
+#                 model.school_response.occurred_on.date()
+#                 if model.school_response.occurred_on
+#                 else None
+#             )
+#             form.school_response.school_response.data = model.school_response.response
+#             form.school_response.school_response_materials.data = (
+#                 model.school_response.materials
+#             )
 
-        if model.publish_details:
-            form.publish_details.publish.data = model.publish_details.publish
-            form.publish_details.publish_status.data = model.publish_details.status
-            form.publish_details.publish_privacy.data = model.publish_details.privacy
+#         if model.publish_details:
+#             form.publish_details.publish.data = model.publish_details.publish
+#             form.publish_details.publish_status.data = model.publish_details.status
+#             form.publish_details.publish_privacy.data = model.publish_details.privacy
 
-        if model.source_types:
-            form.source_types.data = [assoc.source_type for assoc in model.source_types]
+#         if model.source_types:
+#             form.source_types.data = [assoc.source_type for assoc in model.source_types]
 
-        return form
+#         return form
 
-    def create_model(self, form):
-        """Create model from the form"""
-        try:
-            model = self.model()
-            data = self._create_edit_model(form, model)
-            related_links_data = data["related_links_data"]
-            supporting_materials_data = data["supporting_materials_data"]
+#     def create_model(self, form):
+#         """Create model from the form"""
+#         try:
+#             model = self.model()
+#             data = self._create_edit_model(form, model)
+#             related_links_data = data["related_links_data"]
+#             supporting_materials_data = data["supporting_materials_data"]
 
-            # Convert related_links and supporting_materials from strings to ORM objects
-            model.related_links = [
-                RelatedLink(link=link, incident=model)
-                for link in related_links_data
-                if link
-            ]
-            model.supporting_materials = [
-                SupportingMaterialFile(url=url, incident=model)
-                for url in supporting_materials_data
-                if url
-            ]
+#             # Convert related_links and supporting_materials from strings to ORM objects
+#             model.related_links = [
+#                 RelatedLink(link=link, incident=model)
+#                 for link in related_links_data
+#                 if link
+#             ]
+#             model.documents = [
+#                 IncidentDocument(url=url, incident=model)
+#                 for url in supporting_materials_data
+#                 if url
+#             ]
 
-            self.session.add(model)
-            self.session.commit()
-            return model
-        except Exception as e:
-            self.session.rollback()
-            raise
+#             self.session.add(model)
+#             self.session.commit()
+#             return model
+#         except Exception as e:
+#             self.session.rollback()
+#             raise
 
-    def update_model(self, form, model):
-        """Update model from the form"""
-        try:
-            data = self._create_edit_model(form, model)
-            related_links_data = data["related_links_data"]
-            supporting_materials_data = data["supporting_materials_data"]
-            removed_supporting_materials_data = (
-                request.form.get("removed_supporting_materials") or []
-            )
-            school_response_materials_data = data["school_response_materials_data"]
-            removed_school_response_materials_data = (
-                request.form.get("removed_school_response-school_response_materials")
-                or []
-            )
+#     def update_model(self, form, model):
+#         """Update model from the form"""
+#         try:
+#             data = self._create_edit_model(form, model)
+#             related_links_data = data["related_links_data"]
+#             supporting_materials_data = data["supporting_materials_data"]
+#             removed_supporting_materials_data = (
+#                 request.form.get("removed_supporting_materials") or []
+#             )
+#             school_response_materials_data = data["school_response_materials_data"]
+#             removed_school_response_materials_data = (
+#                 request.form.get("removed_school_response-school_response_materials")
+#                 or []
+#             )
 
-            existing_links = [rl for rl in model.related_links]
-            new_links = filter(None, related_links_data)
+#             existing_links = [rl for rl in model.related_links]
+#             new_links = filter(None, related_links_data)
 
-            links_to_add = [
-                (
-                    existing_links[link]
-                    if link in existing_links
-                    else RelatedLink(link=link, incident=model)
-                )
-                for link in new_links
-            ]
-            model.related_links = links_to_add
+#             links_to_add = [
+#                 (
+#                     existing_links[link]
+#                     if link in existing_links
+#                     else RelatedLink(link=link, incident=model)
+#                 )
+#                 for link in new_links
+#             ]
+#             model.related_links = links_to_add
 
-            # TODO Fix these
-            self._update_materials(
-                model=model,
-                relationship_attr="supporting_materials",
-                material_cls=SupportingMaterialFile,
-                removed_materials=removed_supporting_materials_data,
-                new_materials_data=supporting_materials_data,
-                foreign_key_attr="incident",
-            )
-            self._update_materials(
-                model=model.school_response,
-                relationship_attr="materials",
-                material_cls=SchoolResponseMaterial,
-                removed_materials=removed_school_response_materials_data,
-                new_materials_data=school_response_materials_data,
-                foreign_key_attr="school_response",
-            )
+#             # TODO Fix these
+#             self._update_materials(
+#                 model=model,
+#                 relationship_attr="supporting_materials",
+#                 material_cls=IncidentDocument,
+#                 removed_materials=removed_supporting_materials_data,
+#                 new_materials_data=supporting_materials_data,
+#                 foreign_key_attr="incident",
+#             )
+#             # self._update_materials(
+#             #     model=model.school_response,
+#             #     relationship_attr="materials",
+#             #     material_cls=SchoolResponseMaterial,
+#             #     removed_materials=removed_school_response_materials_data,
+#             #     new_materials_data=school_response_materials_data,
+#             #     foreign_key_attr="school_response",
+#             # )
 
-            self.session.commit()
-            return model
-        except Exception as e:
-            self.session.rollback()
-            raise
+#             self.session.commit()
+#             return model
+#         except Exception as e:
+#             self.session.rollback()
+#             raise
 
 
 class SchoolView(BaseModelView):

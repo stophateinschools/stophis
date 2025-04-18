@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, render_template, url_for
 from flask_login import current_user, logout_user
-from .auth import login_required, google_bp
+from .routes.auth import login_required, google_bp
 
 from flask_dance.contrib.google import google
 import requests

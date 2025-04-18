@@ -10,8 +10,8 @@ from pyairtable import Api
 import requests
 from rq import Queue
 from rq.job import Job
-from server.auth import has_role
-from server.models import State
+from server.routes.auth import has_role
+from server.models.models import State
 from worker import conn
 from flask_dance.contrib.google import google
 
@@ -113,7 +113,7 @@ class ManageDataView(BaseView):
                     f"{BASE_SCHOOL_URL}/school_list.asp?State={state_id}",
                     f"{BASE_PRIVATE_SCHOOL_URL}/school_list.asp?State={state_id}",
                 ],
-                job_timeout=1200, # 15 minutes
+                job_timeout=1200,  # 15 minutes
             )
         )
 
@@ -130,8 +130,10 @@ class ManageDataView(BaseView):
             raise ValueError("Invalid Airtable ID")
 
         if table_name == "District-Table":
-            return handle_job(q.enqueue(sync_school_districts, data))
+            return handle_job(q.enqueue(sync_school_districts, data, job_timeout=1200))
         elif table_name == "School-Table":
-            return handle_job(q.enqueue(sync_schools, data))
+            return handle_job(q.enqueue(sync_schools, data, job_timeout=1200))
         elif table_name == "Incident-Table":
-            return handle_job(q.enqueue(create_or_sync_incidents, data))
+            return handle_job(
+                q.enqueue(create_or_sync_incidents, data, job_timeout=1200)
+            )

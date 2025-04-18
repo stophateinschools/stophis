@@ -4,8 +4,8 @@ from flask_dance.contrib.google import google, make_google_blueprint
 from functools import wraps
 from flask_login import current_user, login_user
 
-from .user import OAuth, User, UserRole
-from .database import db
+from ..models.user import OAuth, User, UserRole
+from ..database import db
 from flask_dance.contrib.google import make_google_blueprint
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
 from flask_dance.consumer import oauth_authorized, oauth_error

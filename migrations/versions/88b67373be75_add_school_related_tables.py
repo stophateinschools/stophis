@@ -9,7 +9,7 @@ Create Date: 2025-02-17 11:30:12.015833
 from alembic import op
 import sqlalchemy as sa
 
-from server.models import SchoolTypes
+from server.models.models import SchoolTypes
 
 
 # revision identifiers, used by Alembic.

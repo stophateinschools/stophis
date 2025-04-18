@@ -1,4 +1,3 @@
-import asyncio
 from enum import Enum
 import os
 import re
@@ -8,14 +7,14 @@ from flask import jsonify
 from pyppeteer import launch
 import requests
 
-from server.user import User
+from server.models.user import User
 
-from ..models import (
+from ..models.models import (
     Incident,
-    IncidentInternalSourceType,
+    IncidentSourceType,
     IncidentPrivacyStatus,
     IncidentPublishDetails,
-    IncidentSourceAssociation,
+    IncidentAttribution,
     IncidentSourceType,
     IncidentStatus,
     IncidentType,
@@ -28,7 +27,7 @@ from ..models import (
     SchoolResponse,
     SchoolType,
     SchoolTypes,
-    SupportingMaterialFile,
+    IncidentDocument,
 )
 from bs4 import BeautifulSoup, Tag
 from io import StringIO
@@ -201,7 +200,10 @@ def sync_school_districts(districts):
             if logo:
                 airtable_url = logo["url"]
                 filename = logo["filename"]
-                if (existing_district.logo and existing_district.logo.filename != filename) or (not existing_district.logo):
+                if (
+                    existing_district.logo
+                    and existing_district.logo.filename != filename
+                ) or (not existing_district.logo):
                     # This would have created a S3 file everytime we sync - so if
                     # the file already exists, don't create a new one.
                     new_url = simple_file_upload_from_url(airtable_url, filename)
@@ -445,16 +447,19 @@ def create_or_sync_incidents(data):
     """
     Get incident data from Airtable and create or sync records.
     """
+    # print("In create or sync incidents ", data)
     try:
         created_count = 0
         updated_count = 0
         for incident in data:
             fields = incident["fields"]
             nces_school_id = fields.get("NCES-School-ID")
+            # print(incident)
             if nces_school_id and "See" in nces_school_id[0]:
                 # These are specific records in the National Incidents database
                 # that Josh has already moved over to state specific tables so we
                 # don't want to create them twice.
+                print("CONTNIUE ", nces_school_id)
                 continue
 
             airtable_id = incident["id"]
@@ -554,7 +559,7 @@ def create_or_sync_incidents(data):
                     airtable_url = supporting_material["url"]
                     filename = supporting_material["filename"]
                     new_url = simple_file_upload_from_url(airtable_url, filename)
-                    new_supporting_materials.append(SupportingMaterialFile(url=new_url))
+                    new_supporting_materials.append(IncidentDocument(url=new_url))
 
                 new_incident = Incident(
                     airtable_id=airtable_id,
@@ -567,23 +572,23 @@ def create_or_sync_incidents(data):
                         for link in [related_link_1, related_link_2, related_link_3]
                         if link is not None
                     ],
-                    supporting_materials=new_supporting_materials,
+                    documents=new_supporting_materials,
                     schools=[school] if school else [],
                     districts=[district] if district else [],
-                    reported_on=created_on,
-                    reporter_id=admin_user.id,
+                    created_on=created_on,
+                    owner_id=admin_user.id,
                     updated_on=updated_on,
                     occurred_on_year=occurred_on_year,
                     occurred_on_month=occurred_on_month,
                     occurred_on_day=occurred_on_day,
                     publish_details=publish_details,
                     types=[incident_type] if incident_type else [],
-                    internal_source_types=(
+                    source_types=(
                         [internal_source_type] if internal_source_type else []
                     ),
-                    source_types=(
+                    attributions=(
                         [
-                            IncidentSourceAssociation(
+                            IncidentAttribution(
                                 source_type=source_type, source_id=source_id
                             )
                         ]

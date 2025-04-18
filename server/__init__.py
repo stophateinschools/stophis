@@ -2,11 +2,11 @@ import os
 from flask import Flask
 from flask_admin import Admin
 
-from .audit import AuditLog, AuditLogView
+from .models.audit import AuditLog, AuditLogView
 
 from .admin.index import AdminView, BaseModelView
 from .admin.models import (
-    IncidentView,
+    # IncidentView,
     InternalNoteView,
     UnionView,
     UserView,
@@ -16,8 +16,8 @@ from .admin.models import (
 )
 from .admin.manage_data import ManageDataView
 
-from .user import Role, User, UserRole
-from .models import (
+from .models.user import Role, User, UserRole
+from .models.models import (
     Incident,
     IncidentType,
     InternalNote,
@@ -26,17 +26,22 @@ from .models import (
     SchoolType,
     Union,
 )
+from .routes.incident import incident
+from .routes.school import school
+from .routes.district import district
 from .app import main
 from .database import db
 from flask_login import LoginManager
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
 admin = Admin(app, index_view=AdminView())
 
 from server import app
-from .auth import google_bp, has_role
+from .routes.auth import google_bp, has_role
 
 
 @login_manager.user_loader
@@ -52,6 +57,10 @@ def inject_env_vars():
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
         "ENV": os.getenv("ENV"),
     }
+
+
+def register_api_blueprint(app, blueprint):
+    app.register_blueprint(blueprint, url_prefix="/api" + blueprint.url_prefix)
 
 
 def create_app():
@@ -72,6 +81,9 @@ def create_app():
     # Register Blueprints (routes)
     app.register_blueprint(google_bp, url_prefix="/login")
     app.register_blueprint(main)
+    register_api_blueprint(app, incident)
+    register_api_blueprint(app, school)
+    register_api_blueprint(app, district)
 
     # Configure flask login for session management
     login_manager.init_app(app)
@@ -79,9 +91,9 @@ def create_app():
     # All admin registered views below - if a view requires a certain role to be visible AND
     # accessible, pass in a roles_required param.
     # Incidents
-    admin.add_view(
-        IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
-    )
+    # admin.add_view(
+    #     IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
+    # )
     admin.add_view(SchoolView(School, db.session, category="Incidents"))
     admin.add_view(SchoolDistrictView(SchoolDistrict, db.session, category="Incidents"))
     admin.add_view(UnionView(Union, db.session, category="Incidents"))

@@ -1,11 +1,11 @@
 from flask_admin import AdminIndexView, expose
 from flask_login import current_user
 from markupsafe import Markup
-from server.auth import has_role
 from flask_dance.contrib.google import google
 from flask_admin.contrib.sqla import ModelView
 
-from server.user import UserRole
+from server.routes.auth import has_role
+from server.models.user import UserRole
 
 
 class BaseModelView(ModelView):
