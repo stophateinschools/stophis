@@ -34,7 +34,7 @@ from .database import db
 from flask_login import LoginManager
 from flask_cors import CORS
 
-app = Flask(__name__, template_folder='templates', static_folder='static')
+app = Flask(__name__)
 CORS(app)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
@@ -62,10 +62,12 @@ def inject_env_vars():
 @app.route('/<path:path>')
 def serve_react(path):
     client_dist_path = os.path.join(app.root_path, '../client/dist')
-    print("CLIENT ", client_dist_path, "PATH ", path)
-    try:
+    full_path = os.path.join(client_dist_path, path)
+
+    print(f"Serving path: {path} does exist: {os.path.exists(full_path)}")
+    if path != "" and os.path.exists(full_path):
         return send_from_directory(client_dist_path, path)
-    except Exception:
+    else:
         return send_from_directory(client_dist_path, 'index.html')
 
 
