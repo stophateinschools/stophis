@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_admin import Admin
 
 from .models.audit import AuditLog, AuditLogView
@@ -34,7 +34,7 @@ from .database import db
 from flask_login import LoginManager
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
@@ -57,6 +57,16 @@ def inject_env_vars():
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
         "ENV": os.getenv("ENV"),
     }
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    client_dist_path = os.path.join(app.root_path, '../client/dist')
+    print("CLIENT ", client_dist_path, "PATH ", path)
+    try:
+        return send_from_directory(client_dist_path, path)
+    except Exception:
+        return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):
