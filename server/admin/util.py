@@ -454,12 +454,10 @@ def create_or_sync_incidents(data):
         for incident in data:
             fields = incident["fields"]
             nces_school_id = fields.get("NCES-School-ID")
-            # print(incident)
             if nces_school_id and "See" in nces_school_id[0]:
                 # These are specific records in the National Incidents database
                 # that Josh has already moved over to state specific tables so we
                 # don't want to create them twice.
-                print("CONTNIUE ", nces_school_id)
                 continue
 
             airtable_id = incident["id"]
@@ -474,7 +472,7 @@ def create_or_sync_incidents(data):
             related_link_2 = fields.get("Related-Link-2")
             related_link_3 = fields.get("Related-Link-3")
             internal_note_0 = fields.get("INTERNAL-Notes")
-            supporting_materials = fields.get("Supporting-Materials")
+            documents = fields.get("Supporting-Materials")
             school_airtable_id = (
                 fields.get("School-Name")[0] if fields.get("School-Name") else None
             )
@@ -500,12 +498,12 @@ def create_or_sync_incidents(data):
                 if fields.get("Year") and fields.get("Year") != "null"
                 else None
             )
-            occurred_on_month = (
+            occurred_on_month_start = (
                 fields.get("Month")
                 if fields.get("Month") and fields.get("Month") != "null"
                 else None
             )
-            occurred_on_day = (
+            occurred_on_day_start = (
                 fields.get("Day")
                 if fields.get("Day") and fields.get("Day") != "null"
                 else None
@@ -517,21 +515,21 @@ def create_or_sync_incidents(data):
             incident_type = IncidentType.query.filter_by(
                 name=incident_type_name
             ).first()
-            internal_source_type_name = (
+            source_type_name = (
                 fields.get("Source-Internal")[0]
                 if fields.get("Source-Internal")
                 else None
             )
-            internal_source_type = IncidentInternalSourceType.query.filter_by(
-                name=internal_source_type_name
+            source_type = IncidentSourceType.query.filter_by(
+                name=source_type_name
             ).first()
-            source_type_name = (
+            attribution_name = (
                 fields.get("Source-Attribution")[0]
                 if fields.get("Source-Attribution")
                 else None
             )
-            source_type = IncidentSourceType.query.filter_by(
-                name=source_type_name
+            attribution = IncidentAttribution.query.filter_by(
+                name=attribution_name
             ).first()
             source_id = fields.get("Source-ID")
             reported_to_school = (
@@ -554,12 +552,12 @@ def create_or_sync_incidents(data):
                     if internal_note_0
                     else []
                 )
-                new_supporting_materials = []
-                for supporting_material in supporting_materials or []:
-                    airtable_url = supporting_material["url"]
-                    filename = supporting_material["filename"]
+                new_documents = []
+                for document in documents or []:
+                    airtable_url = document["url"]
+                    filename = document["filename"]
                     new_url = simple_file_upload_from_url(airtable_url, filename)
-                    new_supporting_materials.append(IncidentDocument(url=new_url))
+                    new_documents.append(IncidentDocument(url=new_url))
 
                 new_incident = Incident(
                     airtable_id=airtable_id,
@@ -572,31 +570,31 @@ def create_or_sync_incidents(data):
                         for link in [related_link_1, related_link_2, related_link_3]
                         if link is not None
                     ],
-                    documents=new_supporting_materials,
+                    documents=new_documents,
                     schools=[school] if school else [],
                     districts=[district] if district else [],
                     created_on=created_on,
                     owner_id=admin_user.id,
                     updated_on=updated_on,
                     occurred_on_year=occurred_on_year,
-                    occurred_on_month=occurred_on_month,
-                    occurred_on_day=occurred_on_day,
+                    occurred_on_month_start=occurred_on_month_start,
+                    occurred_on_day_start=occurred_on_day_start,
                     publish_details=publish_details,
                     types=[incident_type] if incident_type else [],
                     source_types=(
-                        [internal_source_type] if internal_source_type else []
+                        [source_type] if source_type else []
                     ),
                     attributions=(
                         [
                             IncidentAttribution(
-                                source_type=source_type, source_id=source_id
+                                attribution_type=attribution, attribution_id=source_id
                             )
                         ]
-                        if source_type
+                        if attribution
                         else []
                     ),
                     reported_to_school=reported_to_school,
-                    school_response=SchoolResponse() if school_responded else None,
+                    school_responded=school_responded,
                     city=city,
                     state=state,
                 )
@@ -608,8 +606,8 @@ def create_or_sync_incidents(data):
                 existing_incident.schools = [school] if school else []
                 existing_incident.districts = [district] if district else []
                 existing_incident.occurred_on_year = occurred_on_year
-                existing_incident.occurred_on_month = occurred_on_month
-                existing_incident.occurred_on_day = occurred_on_day
+                existing_incident.occurred_on_month_start = occurred_on_month_start
+                existing_incident.occurred_on_day_start = occurred_on_day_start
                 existing_incident.city = city
                 existing_incident.state = state
                 updated_count += 1
@@ -631,9 +629,10 @@ async def fetch_pages(urls):
 
     for url in urls:
         try:
-            browser = await launch(
-                headless=True, args=["--no-sandbox", "--disable-gpu"]
-            )
+            print("Opening browser for ", url)
+            # executablePath: string = await new Promise(resolve => locateChrome((arg: any) => resolve(arg))) || '';
+
+            browser = await launch(args=["--no-sandbox"])
             page = await browser.newPage()
 
             await page.goto(url, {"waitUntil": "networkidle2", "timeout": 600000})

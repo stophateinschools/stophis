@@ -1,6 +1,8 @@
 import os
-from flask import Flask, send_from_directory
+from flask import Flask
 from flask_admin import Admin
+
+from .admin.manage_data import ManageDataView
 
 from .models.audit import AuditLog, AuditLogView
 
@@ -14,7 +16,6 @@ from .admin.models import (
     SchoolDistrictView,
     SchoolView,
 )
-from .admin.manage_data import ManageDataView
 
 from .models.user import Role, User, UserRole
 from .models.models import (
@@ -43,7 +44,6 @@ admin = Admin(app, index_view=AdminView())
 from server import app
 from .routes.auth import google_bp, has_role
 
-
 @login_manager.user_loader
 def load_user(user_id):
     """Gets user upon flask-login login so we can use current_user"""
@@ -57,18 +57,6 @@ def inject_env_vars():
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
         "ENV": os.getenv("ENV"),
     }
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react(path):
-    client_dist_path = os.path.join(app.root_path, '../client/dist')
-    full_path = os.path.join(client_dist_path, path)
-
-    print(f"Serving path: {path} does exist: {os.path.exists(full_path)}")
-    if path != "" and os.path.exists(full_path):
-        return send_from_directory(client_dist_path, path)
-    else:
-        return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):

@@ -28,11 +28,11 @@ def upgrade() -> None:
         existing_nullable=False,
         postgresql_using="upper(name)::user_role",
     )
-    op.drop_constraint("roles_name_key", "roles", type_="unique")
+    op.drop_constraint("uq_roles_name", "roles", type_="unique")
 
 
 def downgrade() -> None:
-    op.create_unique_constraint("roles_name_key", "roles", ["name"])
+    op.create_unique_constraint("uq_roles_name", "roles", ["name"])
     op.alter_column(
         "roles",
         "name",

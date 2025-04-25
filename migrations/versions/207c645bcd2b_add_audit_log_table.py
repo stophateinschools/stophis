@@ -46,12 +46,12 @@ def upgrade() -> None:
     op.rename_table("incident_type", "incident_types")
     # And fix foreign key constraint on incidents
     op.drop_constraint(
-        constraint_name="incident_to_incident_types_incident_type_id_fkey",
+        constraint_name="fk_incident_to_incident_types_incident_type_id_incident_type",
         table_name="incident_to_incident_types",
         type_="foreignkey",
     )
     op.create_foreign_key(
-        constraint_name="incident_to_incident_types_incident_type_id_fkey",
+        constraint_name="fk_incident_type_id",
         source_table="incident_to_incident_types",
         referent_table="incident_types",
         local_cols=["incident_type_id"],
@@ -63,12 +63,12 @@ def downgrade() -> None:
     # Revert back to singular table name
     op.rename_table("incident_types", "incident_type")
     op.drop_constraint(
-        constraint_name="incident_to_incident_types_incident_type_id_fkey",
+        constraint_name="fk_incident_type_id",
         table_name="incident_to_incident_types",
         type_="foreignkey",
     )
     op.create_foreign_key(
-        constraint_name="incident_to_incident_types_incident_type_id_fkey",
+        constraint_name="fk_incident_to_incident_types_incident_type_id_incident_type",
         source_table="incident_to_incident_types",
         referent_table="incident_type",
         local_cols=["incident_type_id"],

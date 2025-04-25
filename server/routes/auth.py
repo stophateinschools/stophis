@@ -76,7 +76,7 @@ def logged_in(blueprint, token):
             db.session.add(user)
             db.session.commit()
 
-        user.profile_picture = user_info["picture"]
+        # user.profile_picture = user_info["picture"]
         oauth = OAuth(
             provider=blueprint.name,
             provider_user_id=user_info["id"],
@@ -87,7 +87,7 @@ def logged_in(blueprint, token):
         db.session.commit()
     else:
         user = oauth.user
-        user.profile_picture = user_info["picture"]
+        # user.profile_picture = user_info["picture"]
 
     login_user(user)
     if not google.authorized:

@@ -34,7 +34,7 @@ class User(UserMixin, db.Model):
     first_name = db.Column(db.String(), nullable=False)
     last_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
-    profile_picture = db.Column(db.String())
+    # profile_picture = db.Column(db.String())
     region = db.Column(db.Enum(State, name="state"))
     attribution_type_id = db.Column(
         db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
@@ -58,7 +58,7 @@ class User(UserMixin, db.Model):
             "firstName": self.first_name,
             "lastName": self.last_name,
             "email": self.email,
-            "profilePicture": self.profile_picture,
+            # "profilePicture": self.profile_picture,
             "region": self.region,
             "organization": (
                 self.attribution_type.name if self.attribution_type else None
@@ -89,13 +89,14 @@ class OAuth(OAuthConsumerMixin, db.Model):
 def create_user(user):
     existing_user = User.query.filter_by(email=user["email"]).first()
     if existing_user:
-        existing_user.profile_picture = user["picture"]
+        print(user)
+        # existing_user.profile_picture = user["picture"]
     else:
         new_user = User(
             first_name=user["given_name"],
             last_name=user["family_name"],
             email=user["email"],
-            profile_picture=user["picture"],
+            # profile_picture=user["picture"],
         )
         db.session.add(new_user)
 

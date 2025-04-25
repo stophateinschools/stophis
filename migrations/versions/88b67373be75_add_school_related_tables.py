@@ -54,7 +54,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     # Insert Type values into the school_types table
-    for type_enum in SchoolTypes:
+    for type_enum in (SchoolTypes.JEWISH, SchoolTypes.PRIVATE, SchoolTypes.PUBLIC):
         op.execute(f"INSERT INTO school_types(name) VALUES ('{type_enum.name}')")
 
     op.create_table(

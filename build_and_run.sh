@@ -10,4 +10,4 @@ echo "Building client app..."
 
 # Now run Flask app
 echo "Starting gunicorn..."
-gunicorn wsgi:app
+gunicorn server.wsgi:app
