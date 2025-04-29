@@ -36,10 +36,11 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(), nullable=False, unique=True)
     # profile_picture = db.Column(db.String())
     region = db.Column(db.Enum(State, name="state"))
-    attribution_type_id = db.Column(
-        db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
-    )
-    attribution_type = db.relationship("AttributionType")
+    # TODO Add this via alembic
+    # attribution_type_id = db.Column(
+    #     db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
+    # )
+    # attribution_type = db.relationship("AttributionType")
 
     roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="owner")
@@ -60,9 +61,9 @@ class User(UserMixin, db.Model):
             "email": self.email,
             # "profilePicture": self.profile_picture,
             "region": self.region,
-            "organization": (
-                self.attribution_type.name if self.attribution_type else None
-            ),
+            # "organization": (
+            #     self.attribution_type.name if self.attribution_type else None
+            # ),
         }
 
 

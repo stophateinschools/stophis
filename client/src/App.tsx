@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { DataProvider } from "./contexts/DataContext";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Layouts
 import MainLayout from "./components/Layout/MainLayout";
@@ -45,43 +46,47 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+console.log("ID ", import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <DataProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/terms" element={
-                <ProtectedRoute>
-                  <TermsOfService />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="incidents" element={<AllIncidents />} />
-                <Route path="incidents/:id" element={<IncidentDetails />} />
-                <Route path="incidents/add" element={<AddEditIncident />} />
-                <Route path="incidents/edit/:id" element={<AddEditIncident />} />
-                <Route path="admin/users" element={<UserManagement />} />
-                <Route path="admin/audit-log" element={<AuditLog />} />
-                <Route path="guidelines" element={<Guidelines />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </DataProvider>
-      </AuthProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <AuthProvider>
+          <DataProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/terms" element={
+                  <ProtectedRoute>
+                    <TermsOfService />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <MainLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="incidents" element={<AllIncidents />} />
+                  <Route path="incidents/:id" element={<IncidentDetails />} />
+                  <Route path="incidents/add" element={<AddEditIncident />} />
+                  <Route path="incidents/edit/:id" element={<AddEditIncident />} />
+                  <Route path="admin/users" element={<UserManagement />} />
+                  <Route path="admin/audit-log" element={<AuditLog />} />
+                  <Route path="guidelines" element={<Guidelines />} />
+                </Route>
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </DataProvider>
+        </AuthProvider>
+      </GoogleOAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

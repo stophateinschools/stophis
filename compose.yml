@@ -1,29 +1,28 @@
 services:
-  # client:
-  #   image: client
-  #   build:
-  #     context: ./client
-  #   ports:
-  #     - "3000:3000"
-  #   env_file: .env
-  #   depends_on:
-  #     - server
+  client:
+    container_name: client
+    build:
+      context: ./client
+    ports:
+      - "3000:80"
+    env_file: .env
+    depends_on:
+      - server
 
   server:
-    image: server
+    container_name: server
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: server/Dockerfile
     volumes:
       - .:/app
-    ports:
-      - "5000:5000"
     env_file: .env
     depends_on:
       - db
       - redis
 
   db:
+    container_name: db
     image: postgres:alpine
     environment:
       POSTGRES_USER: postgres
@@ -35,15 +34,17 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   worker:
+    container_name: worker
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: server/Dockerfile
     command: python worker.py
     depends_on:
       - redis
     env_file: .env
 
   redis:
+    container_name: redis
     image: redis:alpine
     ports:
       - "6379:6379"

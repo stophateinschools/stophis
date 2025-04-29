@@ -29,6 +29,8 @@ rq = "==2.2.0"
 redis = "==5.2.1"
 pyppeteer = "*"
 flask-cors = "*"
+werkzeug = "*"
+google-auth-oauthlib = "*"
 
 [dev-packages]
 

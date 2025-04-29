@@ -1,3 +1,3 @@
-web: bash ./build_and_run.sh
+web: bin/start-nginx-solo
 release: alembic upgrade head
 worker: python worker.py

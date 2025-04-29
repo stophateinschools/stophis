@@ -1,5 +1,5 @@
 import os
-from flask import current_app, flash, redirect, url_for, abort
+from flask import Blueprint, current_app, flash, jsonify, redirect, request, url_for, abort
 from flask_dance.contrib.google import google, make_google_blueprint
 from functools import wraps
 from flask_login import current_user, login_user
@@ -9,6 +9,8 @@ from ..database import db
 from flask_dance.contrib.google import make_google_blueprint
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
 from flask_dance.consumer import oauth_authorized, oauth_error
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 # Google OAuth Blueprint
 google_bp = make_google_blueprint(
@@ -20,6 +22,8 @@ google_bp = make_google_blueprint(
         OAuth, db.session, user=current_user, user_required=False
     ),
 )
+
+auth = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 def has_role(roles_required):
@@ -99,3 +103,51 @@ def logged_in(blueprint, token):
 def handle_error(blueprint, error, error_description=None, error_uri=None):
     flash("Login failed", "error")
     return redirect(url_for("google.login"))
+
+@auth.route("/login", methods=["POST"])
+def login():
+    """Store and verify token."""
+    token = request.json.get('token')
+    print("Token ", token)
+    try:
+        # Verify the token with Google
+        # idinfo = google_bp.session.get(
+        #     'https://oauth2.googleapis.com/tokeninfo',
+        #     params={'id_token': token}
+        # ).json()
+        user_info = id_token.verify_oauth2_token(token, google_requests.Request(), os.getenv("GOOGLE_CLIENT_ID"))
+
+        print("User info:", user_info)
+        oauth = OAuth.query.filter_by(provider_user_id=user_info['sub']).first()
+
+        if not oauth:
+            user = User.query.filter_by(email=user_info["email"]).first()
+            if not user:
+                user = User(
+                    email=user_info["email"],
+                    first_name=user_info["given_name"],
+                    last_name=user_info["family_name"],
+                )
+                db.session.add(user)
+                db.session.commit()
+
+            # user.profile_picture = user_info["picture"]
+            oauth = OAuth(
+                provider="Google",
+                provider_user_id=user_info["sub"],
+                token={"access_token": token},
+                user=user,
+            )
+            db.session.add(oauth)
+            db.session.commit()
+        else:
+            user = oauth.user
+            # user.profile_picture = user_info["picture"]
+            
+        login_user(user)
+        # If the user exists, log them in
+        return user.jsonable()
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    

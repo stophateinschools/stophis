@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, TermsOfService } from '@/lib/types';
+import api from '@/utils/api';
 
 // Mock data for initial development
 const MOCK_USER: User = {
@@ -19,7 +20,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   termsAccepted: boolean;
-  signIn: () => Promise<void>;
+  signIn: (token: string) => Promise<void>;
   signOut: () => Promise<void>;
   acceptTerms: () => void;
 }
@@ -29,22 +30,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
 
-  // Mock sign in function
-  const signIn = async () => {
-    console.log("Signing in with Google...");
-    // In a real implementation, this would integrate with Google OAuth
-    setCurrentUser(MOCK_USER);
-    
+  const signIn = async (token: string) => {
+    console.log("Signing in with Google... ", token);
+    const response = await api.post(`/auth/login`, { token });
+    console.log("Response from login server:", response.data);
+    setCurrentUser(response.data);
+
     // Check if user has accepted terms
-    const terms: TermsOfService = {
-      accepted: false,
-      version: "1.0",
-      acceptedDate: "",
-    };
+    // const terms: TermsOfService = {
+    //   accepted: false,
+    //   version: "1.0",
+    //   acceptedDate: "",
+    // };
     
-    setTermsAccepted(terms.accepted);
+    // setTermsAccepted(terms.accepted);
     setLoading(false);
   };
 

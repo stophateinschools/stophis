@@ -33,16 +33,21 @@ from .routes.district import district
 from .app import main
 from .database import db
 from flask_login import LoginManager
-from flask_cors import CORS
+# from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
-CORS(app)
+
+# VERY IMPORTANT to trust nginx proxy headers
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# CORS(app)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
-admin = Admin(app, index_view=AdminView())
+admin = Admin(app, index_view=AdminView(), url="/admin")
 
 from server import app
-from .routes.auth import google_bp, has_role
+from .routes.auth import google_bp, has_role, auth
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -81,6 +86,7 @@ def create_app():
     # Register Blueprints (routes)
     app.register_blueprint(google_bp, url_prefix="/login")
     app.register_blueprint(main)
+    register_api_blueprint(app, auth)
     register_api_blueprint(app, incident)
     register_api_blueprint(app, school)
     register_api_blueprint(app, district)

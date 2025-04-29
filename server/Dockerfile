@@ -29,8 +29,8 @@ RUN python -c "from pyppeteer import chromium_downloader; chromium_downloader.do
 # Copy the rest of the application code
 COPY . .
 
-# Expose port (Gunicorn default port)
-EXPOSE 8000
+# Expose port
+EXPOSE 5000
 
 # Run using gunicorn
 CMD ["/bin/sh", "-c", "\
