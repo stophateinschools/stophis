@@ -3,8 +3,7 @@
   "buildpacks": [
     {"url": "heroku/nodejs"},
     {"url": "heroku/python"},
-    {"url": "jontewks/puppeteer"},
-    {"url": "heroku-community/nginx"}
+    {"url": "jontewks/puppeteer"}
     ],
   "environments": {
     "test": {

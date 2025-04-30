@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_admin import Admin
 
 from .admin.manage_data import ManageDataView
@@ -62,6 +62,16 @@ def inject_env_vars():
         "SIMPLE_FILE_UPLOAD_KEY": os.getenv("SIMPLE_FILE_UPLOAD_KEY"),
         "ENV": os.getenv("ENV"),
     }
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    client_dist_path = os.path.join(app.root_path, '../client/dist')
+    print("CLIENT ", client_dist_path, "PATH ", path)
+    try:
+        return send_from_directory(client_dist_path, path)
+    except Exception:
+        return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):
