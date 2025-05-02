@@ -3,19 +3,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, TermsOfService } from '@/lib/types';
 import api from '@/utils/api';
 
-// Mock data for initial development
-const MOCK_USER: User = {
-  id: "user1",
-  name: "Demo User",
-  email: "demo@example.com",
-  profilePicture: "https://i.pravatar.cc/150?u=demo@example.com",
-  organization: "Stop Hate in Schools",
-  regions: ["California", "New York"],
-  isAdmin: true,
-  isArchived: false,
-  incidentCount: 5,
-};
-
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;

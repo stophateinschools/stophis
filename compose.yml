@@ -3,8 +3,11 @@ services:
     container_name: client
     build:
       context: ./client
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     ports:
-      - "3000:80"
+      - "3000:3000"
     env_file: .env
     depends_on:
       - server
@@ -14,6 +17,8 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
+    ports:
+      - "5000:5000"
     volumes:
       - .:/app
     env_file: .env

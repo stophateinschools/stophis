@@ -46,8 +46,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-console.log("ID ", import.meta.env.VITE_GOOGLE_CLIENT_ID);
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -70,7 +68,7 @@ const App = () => (
                     <MainLayout />
                   </ProtectedRoute>
                 }>
-                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="incidents" element={<AllIncidents />} />
                   <Route path="incidents/:id" element={<IncidentDetails />} />

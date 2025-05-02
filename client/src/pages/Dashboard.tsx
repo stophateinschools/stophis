@@ -9,8 +9,12 @@ import { Incident } from '@/lib/types';
 import { useIncidents } from '@/hooks/useIncidents';
 
 export default function Dashboard() {
+
+  console.log("DASHBOARD");
   const { data: incidents, isLoading } = useIncidents();
   const { currentUser } = useAuth();
+
+  console.log("Current user ", currentUser)
   
   // Display Washington as the default region
   const userRegions = currentUser?.regions || ["Washington State"];

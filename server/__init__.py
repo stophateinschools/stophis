@@ -33,7 +33,6 @@ from .routes.district import district
 from .app import main
 from .database import db
 from flask_login import LoginManager
-# from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -41,7 +40,6 @@ app = Flask(__name__)
 # VERY IMPORTANT to trust nginx proxy headers
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# CORS(app)
 login_manager = LoginManager()
 login_manager.login_view = "google.login"
 admin = Admin(app, index_view=AdminView(), url="/admin")
@@ -63,15 +61,20 @@ def inject_env_vars():
         "ENV": os.getenv("ENV"),
     }
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_react(path):
-    client_dist_path = os.path.join(app.root_path, '../client/dist')
-    print("CLIENT ", client_dist_path, "PATH ", path)
-    try:
-        return send_from_directory(client_dist_path, path)
-    except Exception:
-        return send_from_directory(client_dist_path, 'index.html')
+@app.route('/api/data')
+def get_data():
+    return {'message': 'Data from Flask API'}
+
+if os.getenv('FLASK_ENV') == 'production':
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_react(path):
+        client_dist_path = os.path.join(app.root_path, '../client/dist')
+        print("CLIENT ", client_dist_path, "PATH ", path)
+        try:
+            return send_from_directory(client_dist_path, path)
+        except Exception:
+            return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):

@@ -55,7 +55,7 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer border-2 border-shisp-blue">
                   <UserRound className="h-5 w-5 text-shisp-blue" />
-                  <AvatarFallback className="bg-shisp-blue text-white">{currentUser.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-shisp-blue text-white">{currentUser.firstName?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

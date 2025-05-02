@@ -3,13 +3,16 @@ import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 
 export default function SignIn() {
   const { currentUser, loading, signIn } = useAuth();
+  const navigate = useNavigate();
 
   const handleSignIn = async (token: string) => {
     try {
       await signIn(token);
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error("Error signing in:", error);
     }

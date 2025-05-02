@@ -8,8 +8,16 @@ incident = Blueprint("incidents", __name__, url_prefix="/incidents")
 @incident.route("/", methods=["GET"])
 def get_all_incidents():
     """Get all incidents."""
-    incidents = Incident.query.all()
-    return jsonify([incident.jsonable() for incident in incidents]), 200
+    # return jsonify({"message": "GET ALL INCIDENTS"}), 200
+    try:
+
+        print("GETTING ALL INCIDENTS")
+        incidents = Incident.query.all()
+        print("INCIDENTS ", incidents)
+        return jsonify([incident.jsonable() for incident in incidents]), 200
+    except Exception as e:
+        print("Error getting incidents: ", e)
+        return jsonify({"error": e}), 500
 
 
 @incident.route("/<int:incident_id>", methods=["GET"])

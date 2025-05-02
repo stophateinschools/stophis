@@ -28,7 +28,6 @@ wtforms-sqlalchemy = "==0.4.2"
 rq = "==2.2.0"
 redis = "==5.2.1"
 pyppeteer = "*"
-flask-cors = "*"
 werkzeug = "*"
 google-auth-oauthlib = "*"
 
