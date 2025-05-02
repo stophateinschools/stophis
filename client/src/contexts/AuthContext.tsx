@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // In production, this would check if the user is logged in with Google
       // For now, we'll simulate a logged-in state
       const response = await api.get(`/auth/status`);
-      console.log("Response from auth status:", response.data);
       setCurrentUser(response.data);
       setLoading(false);
     };
