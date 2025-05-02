@@ -10,6 +10,7 @@ import requests
 from server.models.user import User
 
 from ..models.models import (
+    AttributionType,
     Incident,
     IncidentSourceType,
     IncidentPrivacyStatus,
@@ -447,7 +448,7 @@ def create_or_sync_incidents(data):
     """
     Get incident data from Airtable and create or sync records.
     """
-    # print("In create or sync incidents ", data)
+    print("In create or sync incidents ", data)
     try:
         created_count = 0
         updated_count = 0
@@ -528,7 +529,7 @@ def create_or_sync_incidents(data):
                 if fields.get("Source-Attribution")
                 else None
             )
-            attribution = IncidentAttribution.query.filter_by(
+            attribution_type = AttributionType.query.filter_by(
                 name=attribution_name
             ).first()
             source_id = fields.get("Source-ID")
@@ -587,10 +588,10 @@ def create_or_sync_incidents(data):
                     attributions=(
                         [
                             IncidentAttribution(
-                                attribution_type=attribution, attribution_id=source_id
+                                attribution_type=attribution_type, attribution_id=source_id
                             )
                         ]
-                        if attribution
+                        if attribution_type
                         else []
                     ),
                     reported_to_school=reported_to_school,

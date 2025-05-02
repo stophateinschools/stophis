@@ -47,6 +47,7 @@ class AuditLog(db.Model):
 def create_audit_log(action, instance, changes=None):
     """Helper function to create and add an audit log entry."""
     # Access current_user from g, set during the request context
+    print(current_user)
     audit_log = AuditLog(
         model_name=AuditModel(instance.__class__.__name__),
         action=action,
@@ -66,7 +67,8 @@ def is_audit_model(instance):
 def log_audit(session):
     for instance in session.deleted:
         if isinstance(instance, db.Model) and is_audit_model(instance):
-            create_audit_log(AuditAction.DELETE, instance)
+            print(instance)
+            # create_audit_log(AuditAction.DELETE, instance)
 
     for instance in session.dirty:
         if isinstance(instance, db.Model) and is_audit_model(instance):
@@ -83,8 +85,8 @@ def log_audit(session):
                     "new": current_value,
                 }
 
-            if changes:
-                create_audit_log(AuditAction.UPDATE, instance, changes)
+            # if changes:
+            #     create_audit_log(AuditAction.UPDATE, instance, changes)
 
 
 # Listen for the update and delete events

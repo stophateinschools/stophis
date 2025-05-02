@@ -45,7 +45,7 @@ login_manager.login_view = "google.login"
 admin = Admin(app, index_view=AdminView(), url="/admin")
 
 from server import app
-from .routes.auth import google_bp, has_role, auth
+from .routes.auth import has_role, auth
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -96,7 +96,6 @@ def create_app():
     db.init_app(app)
 
     # Register Blueprints (routes)
-    app.register_blueprint(google_bp, url_prefix="/login")
     app.register_blueprint(main)
     register_api_blueprint(app, auth)
     register_api_blueprint(app, incident)

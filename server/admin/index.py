@@ -1,7 +1,6 @@
 from flask_admin import AdminIndexView, expose
 from flask_login import current_user
 from markupsafe import Markup
-from flask_dance.contrib.google import google
 from flask_admin.contrib.sqla import ModelView
 
 from server.routes.auth import has_role
@@ -16,7 +15,6 @@ class BaseModelView(ModelView):
     def is_accessible(self):
         return (
             super().is_accessible
-            and google.authorized
             and current_user.is_authenticated
             and has_role(self.roles_required)
         )
@@ -52,8 +50,7 @@ def get_filters(self):
 class AdminView(AdminIndexView):
     def is_accessible(self):
         return (
-            google.authorized
-            and current_user.is_authenticated
+            current_user.is_authenticated
             and has_role([UserRole.ADMIN, UserRole.EDITOR])
         )
 

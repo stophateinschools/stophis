@@ -61,7 +61,6 @@ from ..models.models import (
     incident_to_incident_types,
 )
 from ..database import db
-from flask_dance.contrib.google import google
 
 API_URL = "https://app.simplefileupload.com/api/v1/file"
 API_TOKEN = os.environ["SIMPLE_FILE_UPLOAD_API_TOKEN"]

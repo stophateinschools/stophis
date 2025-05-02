@@ -13,7 +13,6 @@ from rq.job import Job
 from server.routes.auth import has_role
 from server.models.models import State
 from worker import conn
-from flask_dance.contrib.google import google
 
 from ..admin.util import (
     fetch_pages,
@@ -63,7 +62,6 @@ class ManageDataView(BaseView):
     def is_accessible(self):
         return (
             super().is_accessible
-            and google.authorized
             and current_user.is_authenticated
             and has_role(self.roles_required)
         )

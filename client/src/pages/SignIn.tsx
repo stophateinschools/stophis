@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
@@ -12,7 +11,6 @@ export default function SignIn() {
   const handleSignIn = async (token: string) => {
     try {
       await signIn(token);
-      navigate('/dashboard', { replace: true });
     } catch (error) {
       console.error("Error signing in:", error);
     }
@@ -20,8 +18,7 @@ export default function SignIn() {
 
   useEffect(() => {
     if (currentUser) {
-      console.log("CHANGE User is already signed in:", currentUser);
-      // return <Navigate to="/dashboard" replace />;
+      navigate('/dashboard', { replace: true });
     }
   }, [currentUser]);
 
@@ -41,7 +38,6 @@ export default function SignIn() {
         <CardContent className="grid gap-4">
           <GoogleLogin
               onSuccess={credentialResponse => {
-                console.log("CHANGE RESPONSE ", credentialResponse);
                 handleSignIn(credentialResponse.credential);
               }}
               onError={() => {

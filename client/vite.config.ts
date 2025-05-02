@@ -13,6 +13,10 @@ export default defineConfig({
       '/api': {
         target: 'http://server:5000',
         changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
       }
     }
   },
