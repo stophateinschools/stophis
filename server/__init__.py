@@ -65,16 +65,15 @@ def inject_env_vars():
 def get_data():
     return {'message': 'Data from Flask API'}
 
-if os.getenv('FLASK_ENV') == 'production':
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve_react(path):
-        client_dist_path = os.path.join(app.root_path, '../client/dist')
-        print("CLIENT ", client_dist_path, "PATH ", path)
-        try:
-            return send_from_directory(client_dist_path, path)
-        except Exception:
-            return send_from_directory(client_dist_path, 'index.html')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react(path):
+    client_dist_path = os.path.join(app.root_path, '../client/dist')
+    print("CLIENT ", client_dist_path, "PATH ", path)
+    try:
+        return send_from_directory(client_dist_path, path)
+    except Exception:
+        return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):

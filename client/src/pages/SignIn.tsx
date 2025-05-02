@@ -18,11 +18,9 @@ export default function SignIn() {
     }
   };
 
-
-
   useEffect(() => {
     if (currentUser) {
-      console.log("User is already signed in:", currentUser);
+      console.log("CHANGE User is already signed in:", currentUser);
       // return <Navigate to="/dashboard" replace />;
     }
   }, [currentUser]);
@@ -43,7 +41,7 @@ export default function SignIn() {
         <CardContent className="grid gap-4">
           <GoogleLogin
               onSuccess={credentialResponse => {
-                console.log("RESPONSE ", credentialResponse);
+                console.log("CHANGE RESPONSE ", credentialResponse);
                 handleSignIn(credentialResponse.credential);
               }}
               onError={() => {

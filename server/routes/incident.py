@@ -5,7 +5,7 @@ from server.models.models import Incident
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
 
 
-@incident.route("/", methods=["GET"])
+@incident.route("/all", methods=["GET"])
 def get_all_incidents():
     """Get all incidents."""
     # return jsonify({"message": "GET ALL INCIDENTS"}), 200
