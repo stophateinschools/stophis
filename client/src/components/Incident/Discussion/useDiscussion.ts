@@ -20,7 +20,7 @@ export const useDiscussion = (incident: Incident) => {
     
     addComment(incident.id, {
       userId: currentUser.id,
-      userName: currentUser.name,
+      userName: currentUser.firstName + ' ' + currentUser.lastName,
       userPhotoURL: currentUser.profilePicture,
       timestamp: new Date().toISOString(),
       content: newComment

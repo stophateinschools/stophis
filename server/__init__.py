@@ -73,6 +73,8 @@ def serve_react(path):
     try:
         return send_from_directory(client_dist_path, path)
     except Exception:
+        # TODO Specific error handling
+        # TODO Check for caching
         return send_from_directory(client_dist_path, 'index.html')
 
 

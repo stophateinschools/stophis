@@ -5,7 +5,7 @@ import { Incident, IncidentStatus } from '@/lib/types';
 export function useIncidentDashboard(incidents: Incident[]) {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Toggle sort direction when clicking on the same column
   const handleSort = (column: string) => {
@@ -56,7 +56,7 @@ export function useIncidentDashboard(incidents: Incident[]) {
           comparison = new Date(b.updatedOn).getTime() - new Date(a.updatedOn).getTime();
           break;
         case 'owner':
-          comparison = a.owner.name.localeCompare(b.owner.name);
+          comparison = a.owner.firstName.localeCompare(b.owner.firstName);
           break;
         case 'school':
           comparison = (a.schools?.[0].name || '').localeCompare(b.schools?.[0].name || '');

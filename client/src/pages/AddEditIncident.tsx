@@ -12,12 +12,13 @@ import { useIncidentAccess } from '@/utils/incidentUtils';
 import { useData } from '@/contexts/DataContext';
 import { getSampleViewOnlyIncident } from '@/components/Dashboard/SampleIncidentData';
 import { IncidentStatus } from '@/lib/types';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 const AddEditIncident = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { canEditIncident } = useIncidentAccess();
-  const { incidents } = useData();
+  const { incidents } = useIncidentData();
   
   const {
     form,
@@ -29,8 +30,9 @@ const AddEditIncident = () => {
     documents,
     documentNameError,
     activeTab,
-    schoolSearchValue,
+    searchValue,
     filteredSchools,
+    filteredDistricts,
     uploadingFile,
     addLink,
     setNewLink,
@@ -40,8 +42,8 @@ const AddEditIncident = () => {
     handleUpdateDocument,
     handleFileUpload,
     setActiveTab,
-    setSchoolSearchValue,
-    onSubmit
+    setSearchValue,
+    onSubmit,
   } = useIncidentForm();
 
   const [status, setStatus] = useState<IncidentStatus>(
@@ -95,9 +97,10 @@ const AddEditIncident = () => {
             handleUpdateDocument={handleUpdateDocument}
             handleFileUpload={handleFileUpload}
             uploadingFile={uploadingFile}
-            schoolSearchValue={schoolSearchValue}
-            setSchoolSearchValue={setSchoolSearchValue}
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
             filteredSchools={filteredSchools}
+            filteredDistricts={filteredDistricts}
           />
         </form>
       </Form>

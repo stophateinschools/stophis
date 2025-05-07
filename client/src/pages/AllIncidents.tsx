@@ -7,16 +7,11 @@ import IncidentTable from '@/components/AllIncidents/IncidentTable';
 import IncidentPagination from '@/components/AllIncidents/IncidentPagination';
 import { useAllIncidents } from '@/hooks/useAllIncidents';
 import { getSampleRestrictedIncident, getSampleViewOnlyIncident } from '@/components/Dashboard/SampleIncidentData';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function AllIncidents() {
-  const { incidents: baseIncidents } = useData();
-  
-  // Add sample incidents to demonstrate different access levels
-  const incidents = [
-    ...baseIncidents, 
-    getSampleRestrictedIncident(),
-    getSampleViewOnlyIncident() // Add the view-only incident
-  ];
+  const { incidents } = useIncidentData();
+
   
   const { 
     search, 

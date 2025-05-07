@@ -5,12 +5,13 @@ import { Save, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { IncidentStatus } from '@/lib/types';
 
 interface IncidentFormHeaderProps {
   isEditing: boolean;
   handleSave: () => void;
-  status: 'active' | 'filed';
-  setStatus: (status: 'active' | 'filed') => void;
+  status: IncidentStatus;
+  setStatus: (status: IncidentStatus) => void;
 }
 
 const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
@@ -35,8 +36,8 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
             </Label>
             <Switch
               id="status-toggle"
-              checked={status === 'filed'}
-              onCheckedChange={(checked) => setStatus(checked ? 'filed' : 'active')}
+              checked={status === IncidentStatus.FILED}
+              onCheckedChange={(checked) => setStatus(checked ? IncidentStatus.FILED : IncidentStatus.ACTIVE)}
             />
             <Label htmlFor="status-toggle" className="text-sm">
               Filed

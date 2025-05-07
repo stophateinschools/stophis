@@ -102,7 +102,7 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
         </div>
       </TableCell>
       <TableCell>
-        {incident.city}, {incident.state} {incident.id}
+        {incident.city}, {incident.state}
       </TableCell>
       <TableCell>
         {incident.schools?.map((school: School, idx: number) => (

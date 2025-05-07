@@ -22,7 +22,7 @@ export const useFilteredIncidents = (
   const incidentTypes = useMemo(() => {
     const uniqueTypes = new Set<string>();
     incidents.forEach(incident => {
-      incident.type.forEach(type => {
+      incident.types.forEach(type => {
         uniqueTypes.add(type);
       });
     });
@@ -47,7 +47,7 @@ export const useFilteredIncidents = (
       const searchMatch = search === '' || 
         incident.summary.toLowerCase().includes(search.toLowerCase()) ||
         incident.details.toLowerCase().includes(search.toLowerCase()) ||
-        (incident.school && incident.school.some(s => s.toLowerCase().includes(search.toLowerCase()))) ||
+        (incident.schools && incident.schools.some(s => s.name.toLowerCase().includes(search.toLowerCase()))) ||
         (incident.city && incident.city.toLowerCase().includes(search.toLowerCase()));
       
       // Region filter
@@ -83,7 +83,7 @@ export const useFilteredIncidents = (
       
       // Incident type filter
       const typeMatch = selectedTypes.length === 0 || 
-        incident.type.some(type => selectedTypes.includes(type));
+        incident.types.some(type => selectedTypes.includes(type));
       
       // State filter
       const stateMatch = selectedStates.length === 0 || 

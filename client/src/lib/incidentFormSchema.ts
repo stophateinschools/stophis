@@ -1,5 +1,5 @@
-
-import { z } from "zod";
+import { IncidentStatus } from '@/lib/types';
+import { z } from 'zod';
 
 export interface ReportToEntry {
   recipient: string;
@@ -16,6 +16,9 @@ export interface ResponseFormEntry {
   sentiment?: number;
 }
 
+const incidentStatusValues = Object.values(IncidentStatus) as [string, ...string[]];
+
+// TODO Match this to the backend
 export const formSchema = z.object({
   year: z.coerce.number().int().min(2000).max(new Date().getFullYear()),
   month: z.array(z.string()).min(1, "At least one month is required"),

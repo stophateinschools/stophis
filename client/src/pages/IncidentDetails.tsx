@@ -14,20 +14,19 @@ import { useIncident } from '@/hooks/useIncident';
 export default function IncidentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: incident, isLoading } = useIncident(id);
+  // const { data: incident, isLoading } = useIncident(id);
+  const { getIncidentById } = useData();
   const { canViewIncident } = useIncidentAccess();
   
   const [isViewOnly, setIsViewOnly] = useState(false);
+  const incident = getIncidentById(id);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  console.log("Incident Details", incident);
 
   // Check if user has access to this incident
   const hasAccess = true;
   // canViewIncident(incident);
 
-  console.log("incident ", incident)
 
   if (!hasAccess) {
     return (

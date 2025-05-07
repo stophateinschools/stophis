@@ -2,12 +2,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useAuth } from '@/contexts/AuthContext';
 import { useData } from '@/contexts/DataContext';
 import { formSchema, FormValues } from '@/lib/incidentFormSchema';
 import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 // Use export type for type re-exports when isolatedModules is enabled
 export type { FormValues } from '@/lib/incidentFormSchema';
@@ -18,34 +19,36 @@ export function useIncidentForm() {
   const isEditing = Boolean(id);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { getIncidentById, addIncident, updateIncident, schools, districts, organizations } = useData();
+  const { schools, districts, organizations } = useData();
+  const { addIncident, updateIncident } = useIncidentData();
   
   const [activeTab, setActiveTab] = useState("overview");
-  const [schoolSearchValue, setSchoolSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState('');
   const [filteredSchools, setFilteredSchools] = useState(schools);
+  const [filteredDistricts, setFilteredDistricts] = useState(districts);
 
   const incident = isEditing && id ? getIncidentById(id) : undefined;
 
   const initialReportedToList = useMemo(() => {
-    if (isEditing && incident && incident.reportedToSchool.status === "yes") {
+    if (isEditing && incident && incident.schoolReport.status === true) {
       return [{
-        recipient: incident.reportedToSchool.recipientType || "School Administration",
-        otherRecipient: incident.reportedToSchool.recipientType ? undefined : "School Administration",
-        date: incident.reportedToSchool.date,
-        note: incident.reportedToSchool.note,
+        recipient: incident.schoolReport.reports[0].recipientType || "School Administration",
+        otherRecipient: incident.schoolReport.reports[0].recipientType ? undefined : "School Administration",
+        date: incident.schoolReport[0].date,
+        note: incident.schoolReport[0].note,
       }];
     }
     return [];
   }, [isEditing, incident]);
 
   const initialResponses = useMemo(() => {
-    if (isEditing && incident && incident.schoolResponse.status === "yes") {
+    if (isEditing && incident && incident.schoolResponse.status === true) {
       return [{
-        source: incident.schoolResponse.sourceType || "School",
-        otherSource: incident.schoolResponse.sourceType ? undefined : "School",
-        date: incident.schoolResponse.date,
-        note: incident.schoolResponse.note,
-        sentiment: incident.schoolResponse.sentiment,
+        source: incident.schoolResponse.responses[0].sourceType || "School",
+        otherSource: incident.schoolResponse.responses[0].sourceType ? undefined : "School",
+        date: incident.schoolResponse.responses[0].date,
+        note: incident.schoolResponse.responses[0].note,
+        sentiment: incident.schoolResponse.responses[0].sentiment,
       }];
     }
     return [];
@@ -62,29 +65,28 @@ export function useIncidentForm() {
         ? String(incident.date.day[0]) : undefined,
       endDay: Array.isArray(incident.date.day) && incident.date.day.length > 1
         ? String(incident.date.day[1]) : undefined,
-      isSchoolSpecific: Boolean(incident.school),
-      school: incident.school,
-      district: incident.district,
+      isSchoolSpecific: Boolean(incident.schools),
+      school: incident.schools,
+      district: incident.districts,
       city: incident.city,
       state: incident.state,
-      type: incident.type,
+      type: incident.types,
       summary: incident.summary,
       details: incident.details,
-      source: incident.source,
-      otherSourceType: incident.source === "other" ? incident.otherSourceType : undefined,
-      shareWithJewishOrgs: incident.sourcePermissions?.shareWithJewishOrgs || false,
-      shareOnWebsite: incident.sourcePermissions?.shareOnWebsite || false,
+      source: incident.sourceTypes,
+      // shareWithJewishOrgs: incident.sourcePermissions?.shareWithJewishOrgs || false,
+      // shareOnWebsite: incident.sourcePermissions?.shareOnWebsite || false,
       reporterName: incident.reporterInfo?.name,
       reporterEmail: incident.reporterInfo?.email,
       reporterPhone: incident.reporterInfo?.phone,
-      reportedToSchoolStatus: incident.reportedToSchool.status,
-      reportedToSchoolDate: incident.reportedToSchool.date,
-      reportedToSchoolNote: incident.reportedToSchool.note,
+      reportedToSchoolStatus: incident.schoolReport.status,
+      reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
+      reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
       reportedToList: initialReportedToList,
       schoolResponseStatus: incident.schoolResponse.status,
-      schoolResponseDate: incident.schoolResponse.date,
-      schoolResponseNote: incident.schoolResponse.note,
-      schoolResponseSentiment: incident.schoolResponse.sentiment,
+      schoolResponseDate: incident.schoolResponse.responses[0]?.date,
+      schoolResponseNote: incident.schoolResponse.responses[0]?.note,
+      schoolResponseSentiment: incident.schoolResponse.responses[0]?.sentiment,
       responses: initialResponses,
       shareWithOrganizations: incident.sharing.organizations || [],
       organizationAccessLevel: incident.sharing.allowOrganizationsEdit ? "edit" : "view",
@@ -120,7 +122,7 @@ export function useIncidentForm() {
       status: "active" as const,
     },
   });
-
+  const isSchoolSpecific = form.watch("isSchoolSpecific");
   const {
     links,
     newLink,
@@ -153,16 +155,26 @@ export function useIncidentForm() {
   });
 
   useEffect(() => {
-    if (schoolSearchValue) {
-      setFilteredSchools(
+    if (searchValue) {
+      isSchoolSpecific ? setFilteredSchools(
         schools.filter(school => 
-          school.name.toLowerCase().includes(schoolSearchValue.toLowerCase())
+          school.name.toLowerCase().includes(searchValue.toLowerCase())
         )
-      );
+      ) : setFilteredDistricts(
+        districts.filter(district =>
+          district.name.toLowerCase().includes(searchValue.toLowerCase())
+      ));
     } else {
-      setFilteredSchools(schools);
+      isSchoolSpecific ? setFilteredSchools(schools) : setFilteredDistricts(districts);
     }
-  }, [schoolSearchValue, schools]);
+  }, [searchValue, schools, districts]);
+
+  useEffect(() => {
+    // If the user switches between school and district, reset the selected fields
+    console.log("toggle school specific ", form.getValues("school"), isSchoolSpecific)
+    form.setValue(isSchoolSpecific ? "district" : "school", []);
+    setSearchValue('');
+  }, [isSchoolSpecific]);
 
   return {
     form,
@@ -174,8 +186,9 @@ export function useIncidentForm() {
     documents,
     documentNameError,
     activeTab,
-    schoolSearchValue,
+    searchValue,
     filteredSchools,
+    filteredDistricts,
     uploadingFile,
     addLink,
     setNewLink,
@@ -185,7 +198,7 @@ export function useIncidentForm() {
     handleUpdateDocument,
     handleFileUpload,
     setActiveTab,
-    setSchoolSearchValue,
+    setSearchValue,
     onSubmit
   };
 }

@@ -23,7 +23,7 @@ export const useIncidentAccess = () => {
       return true;
     }
     
-    if (currentUser.regions.includes(incident.state) && incident.sharing.region) {
+    if (currentUser.regions?.includes(incident.state) && incident.sharing.region) {
       return true;
     }
     

@@ -6,16 +6,18 @@ import SearchBox from '@/components/Dashboard/SearchBox';
 import IncidentSection from '@/components/Dashboard/IncidentSection';
 import { useIncidentDashboard } from '@/hooks/useIncidentDashboard';
 import { Incident } from '@/lib/types';
-import { useIncidents } from '@/hooks/useIncidents';
+import { useData } from '@/contexts/DataContext';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function Dashboard() {
-  const { data: incidents, isLoading } = useIncidents();
   const { currentUser } = useAuth();
   
   // Display Washington as the default region
   const userRegions = currentUser?.regions || ["Washington State"];
   const userOrganization = currentUser?.organization || "Stop Hate in Schools";
-  
+
+  const { incidents } = useIncidentData();
+
   const {
     search,
     setSearch,
@@ -24,14 +26,13 @@ export default function Dashboard() {
     handleSort,
     activeIncidents,
     filedIncidents
-  } = useIncidentDashboard(isLoading ? [] : incidents);
-
-  if (isLoading) return <div>Loading...</div>
+  } = useIncidentDashboard(incidents);
 
   // Use sample incidents if none are found
   const displayActiveIncidents: Incident[] = activeIncidents;
     
   const displayFiledIncidents: Incident[] = filedIncidents;
+
 
   return (
     <div>

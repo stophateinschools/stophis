@@ -1,4 +1,5 @@
 
+import { useIncidentData } from '@/contexts/IncidentContext';
 import { FormValues } from '@/lib/incidentFormSchema';
 import { Incident, IncidentDocument, IncidentStatus, ReportEntry, ResponseEntry } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
@@ -9,8 +10,6 @@ interface UseIncidentSubmitProps {
   id?: string;
   links: string[];
   documents: IncidentDocument[];
-  updateIncident: (id: string, data: Omit<Incident, "id" | "lastUpdated">) => void;
-  addIncident: (data: Omit<Incident, "id" | "lastUpdated">) => void;
   currentUser: { id: string; name: string; organization: string; } | null;
   incident?: Incident;
 }
@@ -20,14 +19,16 @@ export function useIncidentSubmit({
   id,
   links,
   documents,
-  updateIncident,
-  addIncident,
   currentUser,
   incident
 }: UseIncidentSubmitProps) {
   const navigate = useNavigate();
+
+  const { addIncident, updateIncident } = useIncidentData();
   
   const onSubmit = (values: FormValues, status?: IncidentStatus) => {
+    console.log("In on submit: ", values, status)
+
     const finalStatus = status || values.status;
     
     const invalidDocuments = documents.filter(doc => !doc.name.trim());
@@ -60,69 +61,69 @@ export function useIncidentSubmit({
           [values.startDay ? parseInt(values.startDay) : 0, 
            values.endDay ? parseInt(values.endDay) : 0].filter(day => day !== 0) : []
       },
-      school: values.isSchoolSpecific ? values.school : undefined,
+      school: values.school,
       district: !values.isSchoolSpecific ? values.district : undefined,
       city: values.city,
       state: values.state,
       type: values.type,
       summary: values.summary,
       details: values.details || "",
-      links,
-      documents,
-      sourceTypes: values.source,
-      otherSourceType: values.source === "other" ? values.otherSourceType : undefined,
-      sourcePermissions: (values.source === "first-person" || values.source === "not-first-person") ? {
-        shareWithJewishOrgs: values.shareWithJewishOrgs,
-        shareOnWebsite: values.shareOnWebsite
-      } : undefined,
-      reporterInfo: values.reporterName || values.reporterEmail || values.reporterPhone ? {
-        name: values.reporterName || '',
-        email: values.reporterEmail || '',
-        phone: values.reporterPhone || ''
-      } : undefined,
-      reportedToSchool: {
-        status: values.reportedToSchoolStatus,
-        date: primaryReport?.date || values.reportedToSchoolDate,
-        note: primaryReport?.note || values.reportedToSchoolNote,
-        recipientType: primaryReport?.recipient || undefined,
-        reports: values.reportedToList.map(report => ({
-          recipient: report.recipient || "Other",
-          otherRecipient: report.otherRecipient,
-          date: report.date,
-          note: report.note
-        })) as ReportEntry[]
-      },
-      schoolResponse: {
-        status: values.schoolResponseStatus,
-        date: primaryResponse?.date || values.schoolResponseDate,
-        note: primaryResponse?.note || values.schoolResponseNote,
-        sentiment: primaryResponse?.sentiment || values.schoolResponseSentiment,
-        sourceType: primaryResponse?.source || undefined,
-        responses: values.responses.map(response => ({
-          source: response.source || "Other",
-          otherSource: response.otherSource,
-          date: response.date,
-          note: response.note,
-          sentiment: response.sentiment
-        })) as ResponseEntry[],
-        ratings: incident?.schoolResponse.ratings || []
-      },
-      sharing: {
-        organizations: values.shareWithOrganizations,
-        allowOrganizationsEdit: values.organizationAccessLevel === "edit",
-        region: regionSharing,
-        allowRegionEdit: values.allowUserEdit,
-        otherRegions: otherRegionsSharing
-      },
-      publishing: values.publishing,
-      owner: {
-        id: currentUser.id,
-        name: currentUser.name,
-        organization: currentUser.organization
-      },
-      status: finalStatus,
-      discussion: incident?.discussion || [],
-      isNew: !isEditing
+      status: finalStatus as IncidentStatus,
+      // links,
+      // documents,
+      // sourceTypes: values.source,
+      // otherSourceType: values.source === "other" ? values.otherSourceType : undefined,
+      // sourcePermissions: (values.source === "first-person" || values.source === "not-first-person") ? {
+      //   shareWithJewishOrgs: values.shareWithJewishOrgs,
+      //   shareOnWebsite: values.shareOnWebsite
+      // } : undefined,
+      // reporterInfo: values.reporterName || values.reporterEmail || values.reporterPhone ? {
+      //   name: values.reporterName || '',
+      //   email: values.reporterEmail || '',
+      //   phone: values.reporterPhone || ''
+      // } : undefined,
+      // reportedToSchool: {
+      //   status: values.reportedToSchoolStatus,
+      //   date: primaryReport?.date || values.reportedToSchoolDate,
+      //   note: primaryReport?.note || values.reportedToSchoolNote,
+      //   recipientType: primaryReport?.recipient || undefined,
+      //   reports: values.reportedToList.map(report => ({
+      //     recipient: report.recipient || "Other",
+      //     otherRecipient: report.otherRecipient,
+      //     date: report.date,
+      //     note: report.note
+      //   })) as ReportEntry[]
+      // },
+      // schoolResponse: {
+      //   status: values.schoolResponseStatus,
+      //   date: primaryResponse?.date || values.schoolResponseDate,
+      //   note: primaryResponse?.note || values.schoolResponseNote,
+      //   sentiment: primaryResponse?.sentiment || values.schoolResponseSentiment,
+      //   sourceType: primaryResponse?.source || undefined,
+      //   responses: values.responses.map(response => ({
+      //     source: response.source || "Other",
+      //     otherSource: response.otherSource,
+      //     date: response.date,
+      //     note: response.note,
+      //     sentiment: response.sentiment
+      //   })) as ResponseEntry[],
+      //   ratings: incident?.schoolResponse.ratings || []
+      // },
+      // sharing: {
+      //   organizations: values.shareWithOrganizations,
+      //   allowOrganizationsEdit: values.organizationAccessLevel === "edit",
+      //   region: regionSharing,
+      //   allowRegionEdit: values.allowUserEdit,
+      //   otherRegions: otherRegionsSharing
+      // },
+      // publishing: values.publishing,
+      // owner: {
+      //   id: currentUser.id,
+      //   name: currentUser.name,
+      //   organization: currentUser.organization
+      // },
+      // discussion: incident?.discussion || [],
+      // isNew: !isEditing
     };
 
     try {

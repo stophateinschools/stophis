@@ -44,7 +44,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
         <TableBody>
           {incidents.map(incident => {
             // Filter out Anti-Semitism from incident types
-            const displayTypes = incident.type.filter(t => t !== "Anti-Semitism");
+            const displayTypes = incident.types.filter(t => t !== "Anti-Semitism");
             const incidentTypes = displayTypes.length > 0 ? displayTypes : ["Other"];
             const hasAccess = canViewIncident(incident);
 
@@ -55,13 +55,13 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                   {incident.city}, {incident.state}
                 </TableCell>
                 <TableCell>
-                  {incident.school?.map((school, index) => (
-                    <div key={index}>{school}</div>
+                  {incident.schools?.map((school, index) => (
+                    <div key={index}>{school.name}</div>
                   ))}
                 </TableCell>
                 <TableCell>
-                  {incident.district?.map((district, index) => (
-                    <div key={index}>{district}</div>
+                  {incident.districts?.map((district, index) => (
+                    <div key={index}>{district.name}</div>
                   ))}
                 </TableCell>
                 <TableCell>

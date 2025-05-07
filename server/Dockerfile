@@ -33,8 +33,4 @@ COPY . .
 EXPOSE 5000
 
 # Run using gunicorn
-CMD ["/bin/sh", "-c", "\
-    echo 'Running in development mode'; \
-    pip install watchdog; \
-    watchmedo auto-restart --directory=./ --pattern='*.py' --recursive -- \
-    gunicorn --bind 0.0.0.0:5000 --reload server.wsgi:app;"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

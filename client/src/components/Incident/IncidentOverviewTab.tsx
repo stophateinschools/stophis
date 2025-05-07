@@ -14,19 +14,23 @@ import { UseFormReturn } from "react-hook-form";
 import { FormValues, months, incidentTypes } from "@/hooks/useIncidentForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import SearchSelect from '@/components/ui/search-select';
+import { USState } from '@/lib/types';
 
 interface IncidentOverviewTabProps {
   form: UseFormReturn<FormValues>;
-  schoolSearchValue: string;
-  setSchoolSearchValue: (value: string) => void;
+  searchValue: string;
+  setSearchValue: (value: string) => void;
   filteredSchools: Array<{ id: string; name: string }>;
+  filteredDistricts: Array<{ id: string; name: string }>;
 }
 
 export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
   form,
-  schoolSearchValue,
-  setSchoolSearchValue,
-  filteredSchools
+  searchValue,
+  setSearchValue,
+  filteredSchools,
+  filteredDistricts,
 }) => {
   return (
     <div className="space-y-4">
@@ -203,56 +207,8 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Alabama">Alabama</SelectItem>
-                    <SelectItem value="Alaska">Alaska</SelectItem>
-                    <SelectItem value="Arizona">Arizona</SelectItem>
-                    <SelectItem value="Arkansas">Arkansas</SelectItem>
-                    <SelectItem value="California">California</SelectItem>
-                    <SelectItem value="Colorado">Colorado</SelectItem>
-                    <SelectItem value="Connecticut">Connecticut</SelectItem>
-                    <SelectItem value="Delaware">Delaware</SelectItem>
-                    <SelectItem value="Florida">Florida</SelectItem>
-                    <SelectItem value="Georgia">Georgia</SelectItem>
-                    <SelectItem value="Hawaii">Hawaii</SelectItem>
-                    <SelectItem value="Idaho">Idaho</SelectItem>
-                    <SelectItem value="Illinois">Illinois</SelectItem>
-                    <SelectItem value="Indiana">Indiana</SelectItem>
-                    <SelectItem value="Iowa">Iowa</SelectItem>
-                    <SelectItem value="Kansas">Kansas</SelectItem>
-                    <SelectItem value="Kentucky">Kentucky</SelectItem>
-                    <SelectItem value="Louisiana">Louisiana</SelectItem>
-                    <SelectItem value="Maine">Maine</SelectItem>
-                    <SelectItem value="Maryland">Maryland</SelectItem>
-                    <SelectItem value="Massachusetts">Massachusetts</SelectItem>
-                    <SelectItem value="Michigan">Michigan</SelectItem>
-                    <SelectItem value="Minnesota">Minnesota</SelectItem>
-                    <SelectItem value="Mississippi">Mississippi</SelectItem>
-                    <SelectItem value="Missouri">Missouri</SelectItem>
-                    <SelectItem value="Montana">Montana</SelectItem>
-                    <SelectItem value="Nebraska">Nebraska</SelectItem>
-                    <SelectItem value="Nevada">Nevada</SelectItem>
-                    <SelectItem value="New Hampshire">New Hampshire</SelectItem>
-                    <SelectItem value="New Jersey">New Jersey</SelectItem>
-                    <SelectItem value="New Mexico">New Mexico</SelectItem>
-                    <SelectItem value="New York">New York</SelectItem>
-                    <SelectItem value="North Carolina">North Carolina</SelectItem>
-                    <SelectItem value="North Dakota">North Dakota</SelectItem>
-                    <SelectItem value="Ohio">Ohio</SelectItem>
-                    <SelectItem value="Oklahoma">Oklahoma</SelectItem>
-                    <SelectItem value="Oregon">Oregon</SelectItem>
-                    <SelectItem value="Pennsylvania">Pennsylvania</SelectItem>
-                    <SelectItem value="Rhode Island">Rhode Island</SelectItem>
-                    <SelectItem value="South Carolina">South Carolina</SelectItem>
-                    <SelectItem value="South Dakota">South Dakota</SelectItem>
-                    <SelectItem value="Tennessee">Tennessee</SelectItem>
-                    <SelectItem value="Texas">Texas</SelectItem>
-                    <SelectItem value="Utah">Utah</SelectItem>
-                    <SelectItem value="Vermont">Vermont</SelectItem>
-                    <SelectItem value="Virginia">Virginia</SelectItem>
-                    <SelectItem value="Washington">Washington</SelectItem>
-                    <SelectItem value="West Virginia">West Virginia</SelectItem>
-                    <SelectItem value="Wisconsin">Wisconsin</SelectItem>
-                    <SelectItem value="Wyoming">Wyoming</SelectItem>
+                    {/* TODO Extract to enum or get data from server */}
+                    {Object.entries(USState).map(([key, value]) => <SelectItem value={key}>{value}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </FormControl>
@@ -286,111 +242,26 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
       />
       
       {form.watch("isSchoolSpecific") ? (
-        <FormField
-          control={form.control}
+        <SearchSelect
+          key="school"
+          form={form}
           name="school"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>School</FormLabel>
-              <div className="flex flex-col space-y-4">
-                <div className="relative">
-                  <Input
-                    placeholder="Search for a school..."
-                    value={schoolSearchValue}
-                    onChange={(e) => setSchoolSearchValue(e.target.value)}
-                    className="mb-2"
-                  />
-                  {schoolSearchValue && (
-                    <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto z-10">
-                      {filteredSchools.length > 0 ? (
-                        filteredSchools.map((school) => (
-                          <div 
-                            key={school.id} 
-                            className="p-2 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => {
-                              if (!field.value?.includes(school.name)) {
-                                field.onChange(field.value ? [...field.value, school.name] : [school.name]);
-                              }
-                              setSchoolSearchValue('');
-                            }}
-                          >
-                            {school.name}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-2 text-gray-500">No schools found</div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                {field.value && field.value.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {field.value.map((schoolName) => (
-                      <div key={schoolName} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
-                        <span>{schoolName}</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-auto p-0 ml-1"
-                          onClick={() => {
-                            field.onChange(field.value?.filter(s => s !== schoolName));
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="School"
+          placeholder="Search for a school..."
+          options={filteredSchools}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
         />
       ) : (
-        <FormField
-          control={form.control}
+        <SearchSelect
+          key="district"
+          form={form}
           name="district"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>District</FormLabel>
-              <div className="flex flex-col space-y-4">
-                <div className="relative">
-                  <div className="flex items-center">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search for district..."
-                      className="pl-10 mb-2"
-                    />
-                  </div>
-                </div>
-                
-                {field.value && field.value.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {field.value.map((districtName, idx) => (
-                      <div key={idx} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
-                        <span>{districtName}</span>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-auto p-0 ml-1"
-                          onClick={() => {
-                            field.onChange(field.value?.filter(d => d !== districtName));
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="District"
+          placeholder="Search for a district..."
+          options={filteredDistricts}
+          searchValue={searchValue}
+          setSearchValue={setSearchValue}
         />
       )}
       

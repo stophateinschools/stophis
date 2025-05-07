@@ -23,6 +23,8 @@ import UserManagement from "./pages/UserManagement";
 import AuditLog from "./pages/AuditLog";
 import Guidelines from "./pages/Guidelines";
 import NotFound from "./pages/NotFound";
+import Loader from '@/components/ui/loader';
+import { IncidentProvider } from '@/contexts/IncidentContext';
 
 const queryClient = new QueryClient();
 
@@ -32,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <Loader />;
   }
 
   if (!currentUser) {
@@ -53,36 +55,39 @@ const App = () => (
       <Sonner />
       <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
         <AuthProvider>
-          <DataProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/signin" element={<SignIn />} />
-                <Route path="/terms" element={
-                  <ProtectedRoute>
-                    <TermsOfService />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <MainLayout />
-                  </ProtectedRoute>
-                }>
-                  {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="incidents" element={<AllIncidents />} />
-                  <Route path="incidents/:id" element={<IncidentDetails />} />
-                  <Route path="incidents/add" element={<AddEditIncident />} />
-                  <Route path="incidents/edit/:id" element={<AddEditIncident />} />
-                  <Route path="admin/users" element={<UserManagement />} />
-                  <Route path="admin/audit-log" element={<AuditLog />} />
-                  <Route path="guidelines" element={<Guidelines />} />
-                </Route>
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </DataProvider>
+          <IncidentProvider>
+            <DataProvider>
+              {/* <Loader /> */}
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/terms" element={
+                    <ProtectedRoute>
+                      <TermsOfService />
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <MainLayout />
+                    </ProtectedRoute>
+                  }>
+                    {/* <Route index element={<Navigate to="/dashboard" replace />} /> */}
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="incidents" element={<AllIncidents />} />
+                    <Route path="incidents/:id" element={<IncidentDetails />} />
+                    <Route path="incidents/add" element={<AddEditIncident />} />
+                    <Route path="incidents/edit/:id" element={<AddEditIncident />} />
+                    <Route path="admin/users" element={<UserManagement />} />
+                    <Route path="admin/audit-log" element={<AuditLog />} />
+                    <Route path="guidelines" element={<Guidelines />} />
+                  </Route>
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </DataProvider>
+          </IncidentProvider>
         </AuthProvider>
       </GoogleOAuthProvider>
     </TooltipProvider>
