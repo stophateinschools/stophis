@@ -260,8 +260,8 @@ const AuditLog = () => {
             <SelectContent>
               <SelectItem value="owner">Incident Owner</SelectItem>
               <SelectItem value="organization">Organization</SelectItem>
-              <SelectItem value="school">School</SelectItem>
-              <SelectItem value="district">District</SelectItem>
+              <SelectItem value="schools">School</SelectItem>
+              <SelectItem value="districts">District</SelectItem>
               <SelectItem value="state">State</SelectItem>
               <SelectItem value="incidentId">Incident ID</SelectItem>
             </SelectContent>

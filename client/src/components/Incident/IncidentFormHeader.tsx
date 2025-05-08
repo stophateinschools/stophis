@@ -58,7 +58,7 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
             onClick={handleSave}
           >
             <Save className="mr-2 h-4 w-4" />
-            Save
+            {isEditing ? "Save" : "Create"}
           </Button>
         </div>
       </div>

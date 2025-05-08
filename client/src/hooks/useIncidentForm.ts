@@ -9,6 +9,7 @@ import { formSchema, FormValues } from '@/lib/incidentFormSchema';
 import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
 import { useIncidentData } from '@/contexts/IncidentContext';
+import { USState } from '@/lib/types';
 
 // Use export type for type re-exports when isolatedModules is enabled
 export type { FormValues } from '@/lib/incidentFormSchema';
@@ -20,7 +21,7 @@ export function useIncidentForm() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { schools, districts, organizations } = useData();
-  const { addIncident, updateIncident } = useIncidentData();
+  const { addIncident, updateIncident, getIncidentById} = useIncidentData();
   
   const [activeTab, setActiveTab] = useState("overview");
   const [searchValue, setSearchValue] = useState('');
@@ -65,35 +66,35 @@ export function useIncidentForm() {
         ? String(incident.date.day[0]) : undefined,
       endDay: Array.isArray(incident.date.day) && incident.date.day.length > 1
         ? String(incident.date.day[1]) : undefined,
-      isSchoolSpecific: Boolean(incident.schools),
-      school: incident.schools,
-      district: incident.districts,
+      isSchoolSpecific: Boolean(incident.schools.length),
+      schools: incident.schools,
+      districts: incident.districts,
       city: incident.city,
       state: incident.state,
-      type: incident.types,
+      types: incident.types,
       summary: incident.summary,
       details: incident.details,
-      source: incident.sourceTypes,
+      // source: incident.sourceTypes,
       // shareWithJewishOrgs: incident.sourcePermissions?.shareWithJewishOrgs || false,
       // shareOnWebsite: incident.sourcePermissions?.shareOnWebsite || false,
-      reporterName: incident.reporterInfo?.name,
-      reporterEmail: incident.reporterInfo?.email,
-      reporterPhone: incident.reporterInfo?.phone,
-      reportedToSchoolStatus: incident.schoolReport.status,
-      reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
-      reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
-      reportedToList: initialReportedToList,
-      schoolResponseStatus: incident.schoolResponse.status,
-      schoolResponseDate: incident.schoolResponse.responses[0]?.date,
-      schoolResponseNote: incident.schoolResponse.responses[0]?.note,
-      schoolResponseSentiment: incident.schoolResponse.responses[0]?.sentiment,
-      responses: initialResponses,
-      shareWithOrganizations: incident.sharing.organizations || [],
-      organizationAccessLevel: incident.sharing.allowOrganizationsEdit ? "edit" : "view",
-      allowOrganizationsEdit: incident.sharing.allowOrganizationsEdit,
-      userSharingLevel: incident.sharing.region ? "full" : (incident.sharing.otherRegions ? "summary" : "none"),
-      allowUserEdit: incident.sharing.allowRegionEdit,
-      publishing: incident.publishing,
+      // reporterName: incident.reporterInfo?.name,
+      // reporterEmail: incident.reporterInfo?.email,
+      // reporterPhone: incident.reporterInfo?.phone,
+      // reportedToSchoolStatus: incident.schoolReport.status,
+      // reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
+      // reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
+      // reportedToList: initialReportedToList,
+      // schoolResponseStatus: incident.schoolResponse.status,
+      // schoolResponseDate: incident.schoolResponse.responses[0]?.date,
+      // schoolResponseNote: incident.schoolResponse.responses[0]?.note,
+      // schoolResponseSentiment: incident.schoolResponse.responses[0]?.sentiment,
+      // responses: initialResponses,
+      // shareWithOrganizations: incident.sharing?.organizations || [],
+      // organizationAccessLevel: incident.sharing?.allowOrganizationsEdit ? "edit" : "view",
+      // allowOrganizationsEdit: incident.sharing?.allowOrganizationsEdit,
+      // userSharingLevel: incident.sharing?.region ? "full" : (incident.sharing?.otherRegions ? "summary" : "none"),
+      // allowUserEdit: incident.sharing?.allowRegionEdit,
+      // publishing: incident.publishing,
       status: incident.status || "active",
     } : {
       year: new Date().getFullYear(),
@@ -103,7 +104,7 @@ export function useIncidentForm() {
       isSchoolSpecific: true,
       city: "",
       state: "",
-      type: [],
+      types: [],
       summary: "",
       details: "",
       source: "first-person" as const,
@@ -171,8 +172,7 @@ export function useIncidentForm() {
 
   useEffect(() => {
     // If the user switches between school and district, reset the selected fields
-    console.log("toggle school specific ", form.getValues("school"), isSchoolSpecific)
-    form.setValue(isSchoolSpecific ? "district" : "school", []);
+    form.setValue(isSchoolSpecific ? "districts" : "schools", []);
     setSearchValue('');
   }, [isSchoolSpecific]);
 
@@ -204,4 +204,4 @@ export function useIncidentForm() {
 }
 
 // Re-export constants from the constants file
-export { months, incidentTypes, otherSourceTypes } from '@/lib/incidentFormConstants';
+export { months, otherSourceTypes } from '@/lib/incidentFormConstants';

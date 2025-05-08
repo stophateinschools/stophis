@@ -3,11 +3,49 @@ from flask import Blueprint, jsonify, request
 from flask_login import current_user
 from server.models.models import Incident, IncidentAttribution, IncidentSourceType, IncidentType, School, SchoolDistrict
 from ..database import db
+from sqlalchemy.exc import SQLAlchemyError
 
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
 
+def apply_incident_data(incident, data):
+    """Apply data to an incident object."""
+    incident.summary = data.get("summary")
+    incident.details = data.get("details")
+    incident.city = data.get("city")
+    incident.state = data.get("state")
 
-@incident.route("/all", methods=["GET"])
+    date = data.get("date")
+    months = date.get("month", [])
+    days = date.get("day", [])
+    print("months ", date, months, days)
+    incident.occurred_on_year = date.get("year")
+    incident.occurred_on_month_start = months[0] if months else None
+    incident.occurred_on_month_end = months[1] if len(months) > 1 else None
+    incident.occurred_on_day_start = days[0] if days else None
+    incident.occurred_on_day_end = days[1] if len(days) > 1 else None
+
+    incident.owner_id = data.get("owner", {}).get("id") or current_user.id
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if not incident.id:
+        incident.created_on = now
+    incident.updated_on = now
+
+    incident.types = IncidentType.query.filter(IncidentType.name.in_(data.get("types"))).all()
+
+    # incident.source_types = IncidentSourceType.query.filter(
+    #     IncidentSourceType.name.in_(data.get("sourceTypes"))
+    # ).all()
+
+    incident.schools = School.query.filter(School.name.in_(data.get("schools"))).all()
+    
+    incident.districts = SchoolDistrict.query.filter(SchoolDistrict.name.in_(data.get("districts"))).all()
+
+    return incident
+
+
+
+@incident.route("", methods=["GET"])
 def get_all_incidents():
     """Get all incidents."""
     try:
@@ -42,53 +80,25 @@ def get_incident_metadata():
         return jsonify({"error": e}), 500
     
 
-@incident.route('', methods=['POST'])
+@incident.route("", methods=['POST'])
 def create_incident():
     print("Headers:", request.headers)
     print("Data:", request.data)
     data = request.get_json()
-
     print("create incident ", data, request.get_json())
-
-    date = data.get('date')
-
-    incident = Incident(
-        summary=data.get('summary'),
-        details=data.get('details'),
-        city=data.get('city'),
-        state=data.get('state'),
-        occurred_on_year=date.get('year'),
-        occurred_on_month_start=date.get('month')[0],
-        occurred_on_month_end=date.get('month')[1] if len(date.get('month')) > 1 else None,
-        occurred_on_day_start=date.get('day')[0] if len(date.get('day')) > 0 else None,
-        occurred_on_day_end=date.get('day')[1] if len(date.get('day')) > 1 else None,
-        # reported_to_school=data.get('reportedToSchool'),
-        # school_responded=data.get('school_responded'),
-        owner_id=data.get('owner').get('id') if data.get('owner') else current_user.id,
-        created_on=datetime.datetime.now(datetime.timezone.utc),
-        updated_on=datetime.datetime.now(datetime.timezone.utc),
-    )
-
-    # Look up relationships by name instead of ID
-    # if 'schools' in data:
-    #     incident.schools = School.query.filter(School.name.in_(data['schools'])).all()
-
-    # if 'districts' in data:
-    #     incident.districts = SchoolDistrict.query.filter(SchoolDistrict.name.in_(data['districts'])).all()
-
-    if 'types' in data:
-        incident.types = IncidentType.query.filter(IncidentType.name.in_(data.get('types'))).all()
-
-    if 'sourceTypes' in data:
-        incident.source_types = IncidentSourceType.query.filter(
-            IncidentSourceType.name.in_(data.get('sourceTypes'))
-        ).all()
-
-    if 'attributions' in data:
-        for attr in data.get('attributions'):
-            incident.attributions.append(IncidentAttribution(**attr))
-
+    incident = Incident()
+    apply_incident_data(incident, data)
     db.session.add(incident)
     db.session.commit()
 
     return jsonify({"id": incident.id, "message": "Incident created"}), 201
+
+
+@incident.route("/<int:incident_id>", methods=["PATCH"])
+def update_incident(incident_id):
+    incident = Incident.query.get_or_404(incident_id)
+    data = request.get_json()
+    print("update incident ", data)
+    apply_incident_data(incident, data)
+    db.session.commit()
+    return jsonify({"message": "Incident updated"}), 200

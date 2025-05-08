@@ -8,14 +8,12 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Mail, Eye } from 'lucide-react';
 import IncidentViewTabs from '@/components/Incident/IncidentViewTabs';
 import { useIncidentAccess } from '@/utils/incidentUtils';
-import { getSampleRestrictedIncident, getSampleViewOnlyIncident } from '@/components/Dashboard/SampleIncidentData';
-import { useIncident } from '@/hooks/useIncident';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function IncidentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  // const { data: incident, isLoading } = useIncident(id);
-  const { getIncidentById } = useData();
+  const { getIncidentById } = useIncidentData();;
   const { canViewIncident } = useIncidentAccess();
   
   const [isViewOnly, setIsViewOnly] = useState(false);
@@ -24,8 +22,7 @@ export default function IncidentDetails() {
   console.log("Incident Details", incident);
 
   // Check if user has access to this incident
-  const hasAccess = true;
-  // canViewIncident(incident);
+  const hasAccess = canViewIncident(incident);
 
 
   if (!hasAccess) {

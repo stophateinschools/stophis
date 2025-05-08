@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
 } from "@/components/ui/table";
-import { ExternalLink, Mail } from 'lucide-react';
+import { ExternalLink, Mail, EditIcon } from 'lucide-react';
 import { Incident } from '@/lib/types';
 import { getFormattedDate, useIncidentAccess } from '@/utils/incidentUtils';
 import SortableHeader from '@/components/Dashboard/SortableHeader';
@@ -34,11 +34,12 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
           <TableRow>
             <SortableHeader column="date" label="Date" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <SortableHeader column="location" label="Location" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
-            <SortableHeader column="school" label="School" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
-            <SortableHeader column="district" label="District" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
-            <SortableHeader column="type" label="Type" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
+            <SortableHeader column="schools" label="School" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
+            <SortableHeader column="districts" label="District" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
+            <SortableHeader column="types" label="Type" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <TableHead>Summary</TableHead>
-            <TableHead>View/Edit</TableHead>
+            <TableHead>View</TableHead>
+            <TableHead>Edit</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -56,12 +57,12 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                 </TableCell>
                 <TableCell>
                   {incident.schools?.map((school, index) => (
-                    <div key={index}>{school.name}</div>
+                    <div key={index}>{school}</div>
                   ))}
                 </TableCell>
                 <TableCell>
                   {incident.districts?.map((district, index) => (
-                    <div key={index}>{district.name}</div>
+                    <div key={index}>{district}</div>
                   ))}
                 </TableCell>
                 <TableCell>
@@ -84,6 +85,21 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                     <Link to={`/incidents/${incident.id}`}>
                       <Button variant="ghost" size="sm">
                         <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <a href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
+                      <Button variant="ghost" size="sm">
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                    </a>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {hasAccess ? (
+                    <Link to={`/incidents/edit/${incident.id}`}>
+                      <Button variant="ghost" size="sm">
+                        <EditIcon className="h-4 w-4" />
                       </Button>
                     </Link>
                   ) : (

@@ -3,7 +3,7 @@ import api from '@/utils/api';
 import { useQuery } from '@tanstack/react-query';
 
 const fetchIncidents = async (): Promise<Incident[]> => {
-  const res = await api.get('/incidents/all');
+  const res = await api.get('/incidents');
   return res.data;
 };
 

@@ -14,21 +14,6 @@ export const months = [
   { value: "12", label: "December" },
 ];
 
-export const incidentTypes = [
-  "Bullying or Harassment",
-  "Biased, False or Misleading Curriculum",
-  "Demonstration or Other Event",
-  "Erasure or Silencing",
-  "Graffiti or Vandalism",
-  "Other",
-  "Physical Assault",
-  "Professional Development",
-  "Published Materials",
-  "School Administration",
-  "School Board",
-  "Teacher Issue"
-];
-
 export const otherSourceTypes = [
   { value: "news", label: "News" },
   { value: "social-media", label: "Social Media" },

@@ -15,8 +15,8 @@ export const useIncidentAccess = () => {
   const canViewIncident = (incident: Incident) => {
     if (!currentUser) return false;
     if (currentUser.isAdmin) return true;
-    if (incident.owner.id === currentUser.id) return true;
-    if (incident.owner.organization === currentUser.organization) return true;
+    if (incident.owner.id == currentUser.id) return true;
+    if (incident.owner.organization == currentUser.organization) return true;
     
     // Check sharing settings
     if (currentUser.organization && incident.sharing.organizations.includes(currentUser.organization)) {

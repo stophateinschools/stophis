@@ -8,6 +8,7 @@ interface DataContextType {
   organizations: Organization[];
   schools: School[];
   districts: District[];
+  incidentTypes: string[];
   addComment: (incidentId: string, comment: Omit<DiscussionComment, "id">) => void;
   updateComment: (incidentId: string, commentId: string, updates: Partial<DiscussionComment>) => void;
   deleteComment: (incidentId: string, commentId: string) => void;
@@ -121,6 +122,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     organizations,
     schools: metadata?.schools || [],
     districts: metadata?.districts || [],
+    incidentTypes: metadata?.incidentTypes || [],
     addComment,
     updateComment,
     deleteComment,

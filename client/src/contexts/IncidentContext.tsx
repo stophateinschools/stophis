@@ -10,6 +10,7 @@ type IncidentContextType = {
   incidents: Incident[] | undefined;
   addIncident: (incident: IncidentInput) => Promise<void>;
   updateIncident: (id: string, updates: Partial<Incident>) => Promise<void>;
+  getIncidentById: (id: string) => Incident | null;
   isLoadingIncidents: boolean;
 };
 
@@ -26,7 +27,7 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
   } = useQuery({
     queryKey: ["incidents"],
     queryFn: async () => {
-      const res = await api.get("/incidents/all");
+      const res = await api.get("/incidents");
       return res.data;
     },
   });
@@ -60,12 +61,20 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
     await updateMutation.mutateAsync({ id, updates });
   };
 
+  const getIncidentById = (id: string) => {
+    if (!incidents) return null;
+    const incident = incidents.find((incident) => incident.id == id);
+    console.log("Getting incident by ID:", incidents, id);
+    return incident || null;
+  }
+
   return (
     <IncidentContext.Provider
       value={{
         incidents,
         addIncident,
         updateIncident,
+        getIncidentById,
         isLoadingIncidents,
         // refetchIncidents,
       }}
