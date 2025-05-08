@@ -42,30 +42,29 @@ export function useIncidentSubmit({
       return;
     }
 
-    const primaryReport = values.reportedToList && values.reportedToList.length > 0 
-      ? values.reportedToList[0] 
-      : null;
+    // const primaryReport = values.reportedToList && values.reportedToList.length > 0 
+    //   ? values.reportedToList[0] 
+    //   : null;
       
-    const primaryResponse = values.responses && values.responses.length > 0 
-      ? values.responses[0] 
-      : null;
+    // const primaryResponse = values.responses && values.responses.length > 0 
+    //   ? values.responses[0] 
+    //   : null;
 
-    const regionSharing = values.userSharingLevel === "full";
-    const otherRegionsSharing = values.userSharingLevel !== "none";
+    // const regionSharing = values.userSharingLevel === "full";
+    // const otherRegionsSharing = values.userSharingLevel !== "none";
 
     const incidentData: Omit<Incident, "id" | "lastUpdated"> = {
       date: {
         year: values.year,
-        month: values.month.map(Number),
-        day: (values.startDay || values.endDay) ? 
-          [values.startDay ? parseInt(values.startDay) : 0, 
-           values.endDay ? parseInt(values.endDay) : 0].filter(day => day !== 0) : []
+        month: values.month.map(Number).filter(month => month !== 0) as [number, number?],
+        day: [values.startDay ? parseInt(values.startDay) : 0, 
+           values.endDay ? parseInt(values.endDay) : 0].filter(day => day !== 0) as [number, number?]
       },
-      school: values.school,
-      district: !values.isSchoolSpecific ? values.district : undefined,
+      schools: values.schools,
+      districts: !values.isSchoolSpecific ? values.districts : undefined,
       city: values.city,
       state: values.state,
-      type: values.type,
+      types: values.types,
       summary: values.summary,
       details: values.details || "",
       status: finalStatus as IncidentStatus,
@@ -129,10 +128,10 @@ export function useIncidentSubmit({
     try {
       if (isEditing && id) {
         updateIncident(id, incidentData);
-        toast.success(`Incident updated successfully as ${finalStatus === 'active' ? 'Active' : 'Filed'}`);
+        toast.success(`Incident updated successfully as ${finalStatus}`);
       } else {
         addIncident(incidentData);
-        toast.success(`Incident added successfully as ${finalStatus === 'active' ? 'Active' : 'Filed'}`);
+        toast.success(`Incident added successfully as ${finalStatus}`);
       }
       navigate("/incidents");
     } catch (error) {

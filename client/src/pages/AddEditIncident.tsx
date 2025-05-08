@@ -10,7 +10,6 @@ import IncidentTabs from '@/components/Incident/IncidentTabs';
 import IncidentDiscussionSection from '@/components/Incident/IncidentDiscussionSection';
 import { useIncidentAccess } from '@/utils/incidentUtils';
 import { useData } from '@/contexts/DataContext';
-import { getSampleViewOnlyIncident } from '@/components/Dashboard/SampleIncidentData';
 import { IncidentStatus } from '@/lib/types';
 import { useIncidentData } from '@/contexts/IncidentContext';
 
@@ -51,18 +50,16 @@ const AddEditIncident = () => {
   );
 
   const handleSubmitForm = () => {
-    form.handleSubmit((values) => onSubmit(values, status))();
+    console.log("in handleSubmitForm: ", status);
+    form.handleSubmit((values) => {
+      console.log("in handle sumit form: ", values, status);
+      onSubmit(values, status)
+    }, (errors) => console.log("ERRORS ", errors))();
   };
 
   // Check if this is a view-only incident
   useEffect(() => {
-    // Add the sample view-only incident for access check
-    const allIncidents = [...incidents];
-    if (id === 'sample-view-only-1') {
-      allIncidents.push(getSampleViewOnlyIncident());
-    }
-    
-    const currentIncident = allIncidents.find(inc => inc.id === id);
+    const currentIncident = incidents.find(inc => inc.id === id);
     
     if (currentIncident && !canEditIncident(currentIncident)) {
       // Redirect to view page if user doesn't have edit permission

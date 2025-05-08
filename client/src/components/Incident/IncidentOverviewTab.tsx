@@ -11,11 +11,12 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, X, Info, Search } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { FormValues, months, incidentTypes } from "@/hooks/useIncidentForm";
+import { FormValues, months } from "@/hooks/useIncidentForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import SearchSelect from '@/components/ui/search-select';
 import { USState } from '@/lib/types';
+import { useData } from '@/contexts/DataContext';
 
 interface IncidentOverviewTabProps {
   form: UseFormReturn<FormValues>;
@@ -32,6 +33,8 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
   filteredSchools,
   filteredDistricts,
 }) => {
+  const { incidentTypes } = useData();
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Incident Overview</h3>
@@ -243,9 +246,9 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
       
       {form.watch("isSchoolSpecific") ? (
         <SearchSelect
-          key="school"
+          key="schools"
           form={form}
-          name="school"
+          name="schools"
           label="School"
           placeholder="Search for a school..."
           options={filteredSchools}
@@ -254,9 +257,9 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
         />
       ) : (
         <SearchSelect
-          key="district"
+          key="districts"
           form={form}
-          name="district"
+          name="districts"
           label="District"
           placeholder="Search for a district..."
           options={filteredDistricts}
@@ -299,7 +302,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
       
       <FormField
         control={form.control}
-        name="type"
+        name="types"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Incident Type</FormLabel>

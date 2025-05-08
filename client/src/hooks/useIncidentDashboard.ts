@@ -26,7 +26,7 @@ export function useIncidentDashboard(incidents: Incident[]) {
       // Create a modified incident with filtered types
       const modifiedIncident = {
         ...incident,
-        type: displayTypes.length > 0 ? displayTypes : ["Other"]
+        types: displayTypes.length > 0 ? displayTypes : ["Other"]
       };
       
       const inWashingtonState = modifiedIncident.state === "Washington";
@@ -36,7 +36,7 @@ export function useIncidentDashboard(incidents: Incident[]) {
         modifiedIncident.districts?.some(d => d.name.toLowerCase().includes(search.toLowerCase())) ||
         modifiedIncident.city.toLowerCase().includes(search.toLowerCase()) ||
         modifiedIncident.state.toLowerCase().includes(search.toLowerCase()) ||
-        modifiedIncident.type.some(t => t.toLowerCase().includes(search.toLowerCase()));
+        modifiedIncident.types.some(t => t.toLowerCase().includes(search.toLowerCase()));
 
       return inWashingtonState && matchesSearch;
     });
