@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory
+from flask import Flask, current_app, send_from_directory
 from flask_admin import Admin
 
 from .admin.manage_data import ManageDataView
@@ -68,14 +68,22 @@ def get_data():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
-    client_dist_path = os.path.join(app.root_path, '../client/dist')
-    print("CLIENT ", client_dist_path, "PATH ", path)
-    try:
+    client_dist_path = os.path.join(current_app.root_path, '../client/dist')
+    request_path = os.path.join(client_dist_path, path)
+    print("CLIENT ", client_dist_path, "PATH ", path, "REQUEST ", request_path)
+    if path and os.path.exists(request_path):
+        # If the path exists, serve the file
         return send_from_directory(client_dist_path, path)
-    except Exception:
-        # TODO Specific error handling
-        # TODO Check for caching
-        return send_from_directory(client_dist_path, 'index.html')
+    
+    # Otherwise, serve the index.html file
+    return send_from_directory(client_dist_path, 'index.html')
+
+    # try:
+    #     return send_from_directory(client_dist_path, path)
+    # except Exception:
+    #     # TODO Specific error handling
+    #     # TODO Check for caching
+    #     return send_from_directory(client_dist_path, 'index.html')
 
 
 def register_api_blueprint(app, blueprint):
