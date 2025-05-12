@@ -9,7 +9,9 @@ import { formSchema, FormValues } from '@/lib/incidentFormSchema';
 import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
 import { useIncidentData } from '@/contexts/IncidentContext';
-import { USState } from '@/lib/types';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const MAX_SEARCH_RESULTS = 100;
 
 // Use export type for type re-exports when isolatedModules is enabled
 export type { FormValues } from '@/lib/incidentFormSchema';
@@ -25,10 +27,23 @@ export function useIncidentForm() {
   
   const [activeTab, setActiveTab] = useState("overview");
   const [searchValue, setSearchValue] = useState('');
-  const [filteredSchools, setFilteredSchools] = useState(schools);
-  const [filteredDistricts, setFilteredDistricts] = useState(districts);
+  const debouncedSearch = useDebounce(searchValue, 300);
 
   const incident = isEditing && id ? getIncidentById(id) : undefined;
+
+  const filteredSchools = useMemo(() => {
+    if (!debouncedSearch) return [];
+    return schools.filter(school =>
+      school.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    ).slice(0, MAX_SEARCH_RESULTS);
+  }, [debouncedSearch, schools]);
+
+  const filteredDistricts = useMemo(() => {
+    if (!debouncedSearch) return districts.slice(0, MAX_SEARCH_RESULTS);
+    return districts.filter(district =>
+      district.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    ).slice(0, MAX_SEARCH_RESULTS);
+  }, [debouncedSearch, districts]);
 
   const initialReportedToList = useMemo(() => {
     if (isEditing && incident && incident.schoolReport.status === true) {
@@ -154,21 +169,6 @@ export function useIncidentForm() {
     currentUser,
     incident
   });
-
-  useEffect(() => {
-    if (searchValue) {
-      isSchoolSpecific ? setFilteredSchools(
-        schools.filter(school => 
-          school.name.toLowerCase().includes(searchValue.toLowerCase())
-        )
-      ) : setFilteredDistricts(
-        districts.filter(district =>
-          district.name.toLowerCase().includes(searchValue.toLowerCase())
-      ));
-    } else {
-      isSchoolSpecific ? setFilteredSchools(schools) : setFilteredDistricts(districts);
-    }
-  }, [searchValue, schools, districts]);
 
   useEffect(() => {
     // If the user switches between school and district, reset the selected fields

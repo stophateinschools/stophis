@@ -243,6 +243,8 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
           </FormItem>
         )}
       />
+
+      {console.log("Schools & districts ", filteredSchools, filteredDistricts)}
       
       {form.watch("isSchoolSpecific") ? (
         <SearchSelect

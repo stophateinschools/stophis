@@ -68,6 +68,8 @@ def get_data():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_react(path):
+    # TODO Specific error handling
+    # TODO Check for caching
     client_dist_path = os.path.join(current_app.root_path, '../client/dist')
     request_path = os.path.join(client_dist_path, path)
     print("CLIENT ", client_dist_path, "PATH ", path, "REQUEST ", request_path)
@@ -77,14 +79,6 @@ def serve_react(path):
     
     # Otherwise, serve the index.html file
     return send_from_directory(client_dist_path, 'index.html')
-
-    # try:
-    #     return send_from_directory(client_dist_path, path)
-    # except Exception:
-    #     # TODO Specific error handling
-    #     # TODO Check for caching
-    #     return send_from_directory(client_dist_path, 'index.html')
-
 
 def register_api_blueprint(app, blueprint):
     app.register_blueprint(blueprint, url_prefix="/api" + blueprint.url_prefix)

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Incident, User, AuditLogEntry, Organization, School, District, DiscussionComment, IncidentDocument } from '@/lib/types';
 import { useIncidents } from '@/hooks/useIncidents';
 import { useIncidentFormMetadata } from '@/hooks/useIncidentFormMetadata';
+import Loader from '@/components/ui/loader';
 
 interface DataContextType {
   users: User[];
@@ -132,7 +133,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     isLoading:  isMetadataLoading,
   };
 
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+  return (
+    <DataContext.Provider value={value}>
+      {isMetadataLoading ? <Loader /> : children}
+    </DataContext.Provider>
+  );
 }
 
 export function useData() {
