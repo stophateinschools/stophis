@@ -37,8 +37,8 @@ class AuditLog(db.Model):
     )
     changes = db.Column(db.Text(), nullable=True)
 
-    # Create an ndex on model_name and record_id to speed up admin filters
-    __table_args__ = (db.Index("ix_model_name_record_id", "model_name", "record_id"),)
+    # Create an index on model_name and record_id to speed up admin filters
+    __table_args__ = (db.Index("ix_audit_logs_record_id", "model_name", "record_id"),)
 
     def __str__(self):
         return f"<AuditLog {self.model_name.value} {self.action} {self.record_id}>"

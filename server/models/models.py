@@ -611,6 +611,9 @@ class SchoolDistrict(db.Model):
         "Union", secondary=union_to_school_districts, back_populates="districts"
     )
 
+    # Create an index on name to speed up searches
+    __table_args__ = (db.Index("ix_school_districts_name", "name"),)
+
     def __str__(self):
         return f"{self.display_name if self.display_name else self.name}"
 
@@ -694,6 +697,9 @@ class School(db.Model):
     incidents = db.relationship(
         "Incident", secondary=incident_schools, back_populates="schools"
     )
+
+    # Create an index on name to speed up searches
+    __table_args__ = (db.Index("ix_schools_name", "name"),)
 
     def __str__(self):
         return self.name
