@@ -9,7 +9,6 @@ import IncidentFormHeader from '@/components/Incident/IncidentFormHeader';
 import IncidentTabs from '@/components/Incident/IncidentTabs';
 import IncidentDiscussionSection from '@/components/Incident/IncidentDiscussionSection';
 import { useIncidentAccess } from '@/utils/incidentUtils';
-import { useData } from '@/contexts/DataContext';
 import { IncidentStatus } from '@/lib/types';
 import { useIncidentData } from '@/contexts/IncidentContext';
 
@@ -29,9 +28,6 @@ const AddEditIncident = () => {
     documents,
     documentNameError,
     activeTab,
-    searchValue,
-    filteredSchools,
-    filteredDistricts,
     uploadingFile,
     addLink,
     setNewLink,
@@ -41,7 +37,6 @@ const AddEditIncident = () => {
     handleUpdateDocument,
     handleFileUpload,
     setActiveTab,
-    setSearchValue,
     onSubmit,
   } = useIncidentForm();
 
@@ -94,10 +89,6 @@ const AddEditIncident = () => {
             handleUpdateDocument={handleUpdateDocument}
             handleFileUpload={handleFileUpload}
             uploadingFile={uploadingFile}
-            searchValue={searchValue}
-            setSearchValue={setSearchValue}
-            filteredSchools={filteredSchools}
-            filteredDistricts={filteredDistricts}
           />
         </form>
       </Form>

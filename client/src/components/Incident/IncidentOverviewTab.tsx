@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,23 +17,23 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import SearchSelect from '@/components/ui/search-select';
 import { USState } from '@/lib/types';
 import { useData } from '@/contexts/DataContext';
+import { useSchools } from '@/hooks/useSchools';
+import { useDistricts } from '@/hooks/useDistricts';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface IncidentOverviewTabProps {
   form: UseFormReturn<FormValues>;
-  searchValue: string;
-  setSearchValue: (value: string) => void;
-  filteredSchools: Array<{ id: string; name: string }>;
-  filteredDistricts: Array<{ id: string; name: string }>;
 }
 
 export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
   form,
-  searchValue,
-  setSearchValue,
-  filteredSchools,
-  filteredDistricts,
 }) => {
   const { incidentTypes } = useData();
+  const selectedState = form.watch("state");
+  const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounce(searchValue, 300);
+  const { data: filteredSchools = [] } = useSchools(debouncedSearch, selectedState);
+  const { data: filteredDistricts = [] } = useDistricts(debouncedSearch, selectedState);
 
   return (
     <div className="space-y-4">
@@ -248,6 +248,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
       
       {form.watch("isSchoolSpecific") ? (
         <SearchSelect
+          disabled={!selectedState}
           key="schools"
           form={form}
           name="schools"
@@ -259,6 +260,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
         />
       ) : (
         <SearchSelect
+          disabled={!selectedState}
           key="districts"
           form={form}
           name="districts"

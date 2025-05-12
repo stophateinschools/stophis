@@ -13,6 +13,7 @@ type SearchSelectProps = {
   options: { id: string; name: string }[];
   searchValue: string;
   setSearchValue: (value: string) => void;
+  disabled?: boolean;
 };
 
 function SearchSelect({
@@ -23,6 +24,7 @@ function SearchSelect({
   options,
   searchValue,
   setSearchValue,
+  disabled,
 }: SearchSelectProps) {
   const filteredOptions = options.filter(option =>
     option.name.toLowerCase().includes(searchValue.toLowerCase())
@@ -37,7 +39,9 @@ function SearchSelect({
           <FormLabel>{label}</FormLabel>
           <div className="flex flex-col space-y-4">
             <div className="relative">
+              {disabled && <p>Please select a state before you can select a school/district</p>}
               <Input
+                disabled={disabled}
                 placeholder={placeholder}
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}

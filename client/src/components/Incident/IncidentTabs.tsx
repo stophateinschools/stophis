@@ -26,10 +26,6 @@ interface IncidentTabsProps {
   handleUpdateDocument: (id: string, field: string, value: string) => void;
   handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>, docId: string) => void;
   uploadingFile: boolean;
-  searchValue: string;
-  setSearchValue: (value: string) => void;
-  filteredSchools: any[];
-  filteredDistricts: any[];
 }
 
 const IncidentTabs: React.FC<IncidentTabsProps> = ({
@@ -48,10 +44,6 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
   handleUpdateDocument,
   handleFileUpload,
   uploadingFile,
-  searchValue,
-  setSearchValue,
-  filteredSchools,
-  filteredDistricts,
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -80,13 +72,7 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
       
       <div className="border rounded-lg p-6">
         <TabsContent value="overview">
-          <IncidentOverviewTab 
-            form={form}
-            searchValue={searchValue}
-            setSearchValue={setSearchValue}
-            filteredSchools={filteredSchools}
-            filteredDistricts={filteredDistricts}
-          />
+          <IncidentOverviewTab form={form} />
         </TabsContent>
         
         <TabsContent value="details">

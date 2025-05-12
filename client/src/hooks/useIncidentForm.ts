@@ -2,16 +2,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
 import { formSchema, FormValues } from '@/lib/incidentFormSchema';
 import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
 import { useIncidentData } from '@/contexts/IncidentContext';
-import { useDebounce } from '@/hooks/useDebounce';
-
-const MAX_SEARCH_RESULTS = 100;
 
 // Use export type for type re-exports when isolatedModules is enabled
 export type { FormValues } from '@/lib/incidentFormSchema';
@@ -22,28 +18,13 @@ export function useIncidentForm() {
   const isEditing = Boolean(id);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { schools, districts, organizations } = useData();
   const { addIncident, updateIncident, getIncidentById} = useIncidentData();
   
   const [activeTab, setActiveTab] = useState("overview");
   const [searchValue, setSearchValue] = useState('');
-  const debouncedSearch = useDebounce(searchValue, 300);
 
   const incident = isEditing && id ? getIncidentById(id) : undefined;
 
-  const filteredSchools = useMemo(() => {
-    if (!debouncedSearch) return [];
-    return schools.filter(school =>
-      school.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-    ).slice(0, MAX_SEARCH_RESULTS);
-  }, [debouncedSearch, schools]);
-
-  const filteredDistricts = useMemo(() => {
-    if (!debouncedSearch) return districts.slice(0, MAX_SEARCH_RESULTS);
-    return districts.filter(district =>
-      district.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-    ).slice(0, MAX_SEARCH_RESULTS);
-  }, [debouncedSearch, districts]);
 
   const initialReportedToList = useMemo(() => {
     if (isEditing && incident && incident.schoolReport.status === true) {
@@ -186,9 +167,6 @@ export function useIncidentForm() {
     documents,
     documentNameError,
     activeTab,
-    searchValue,
-    filteredSchools,
-    filteredDistricts,
     uploadingFile,
     addLink,
     setNewLink,
@@ -198,7 +176,6 @@ export function useIncidentForm() {
     handleUpdateDocument,
     handleFileUpload,
     setActiveTab,
-    setSearchValue,
     onSubmit
   };
 }

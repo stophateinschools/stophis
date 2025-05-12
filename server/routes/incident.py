@@ -71,8 +71,6 @@ def get_incident_metadata():
         districts = SchoolDistrict.query.all()
         incident_types = IncidentType.query.all()
         return jsonify({
-            "schools": [school.jsonable() for school in schools],
-            "districts": [district.jsonable() for district in districts],
             "incidentTypes": [incident_type.__str__() for incident_type in incident_types],
         })
     except Exception as e:

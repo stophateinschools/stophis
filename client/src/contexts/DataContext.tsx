@@ -7,8 +7,6 @@ import Loader from '@/components/ui/loader';
 interface DataContextType {
   users: User[];
   organizations: Organization[];
-  schools: School[];
-  districts: District[];
   incidentTypes: string[];
   addComment: (incidentId: string, comment: Omit<DiscussionComment, "id">) => void;
   updateComment: (incidentId: string, commentId: string, updates: Partial<DiscussionComment>) => void;
@@ -26,13 +24,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [organizations] = useState<Organization[]>([]);
 
   const { data: metadata, isLoading: isMetadataLoading } = useIncidentFormMetadata();
-  // TODO useSchools
-  // TODO useDistricts
-
-  // const schools = [];
-  // const districts = [];
-
-
 
   const addComment = (incidentId: string, comment: Omit<DiscussionComment, "id">) => {
     setIncidents(incidents.map(incident => {
@@ -121,8 +112,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const value = {
     users,
     organizations,
-    schools: metadata?.schools || [],
-    districts: metadata?.districts || [],
     incidentTypes: metadata?.incidentTypes || [],
     addComment,
     updateComment,
