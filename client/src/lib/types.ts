@@ -40,6 +40,18 @@ export enum IncidentStatus {
   FILED = 'Filed',
 }
 
+export enum IncidentSourceType {
+  COMMUNITY_MEMBER = 'Community Member',
+  GOOGLE_SHEET = 'Google Sheet',
+  JEWISH_ORGANIZATION = 'Jewish Organization',
+  NEWS_MEDIA = 'News Media',
+  PARENT = 'Parent',
+  TEACHER = 'Teacher',
+  WEBSITE = 'Website',
+  LAW_ENFORCEMENT = 'Law Enforcement',
+  OTHER = 'Other',
+}
+
 export interface OccurredOnDate {
   year: number;
   month: [number, number?];
@@ -61,6 +73,7 @@ export interface Incident {
   types: string[];
   links: string[];
   documents: IncidentDocument[];
+  source: 'first-person' | 'not-first-person' | 'other';
   sourceTypes: string[];
   attributions?: string[];
   sourcePermissions?: {
@@ -68,7 +81,7 @@ export interface Incident {
     shareOnWebsite: boolean;
   };
   owner: User;
-  reporterInfo?: {
+  reporter?: {
     name: string;
     email: string;
     phone: string;

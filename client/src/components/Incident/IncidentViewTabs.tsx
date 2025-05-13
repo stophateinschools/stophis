@@ -5,7 +5,6 @@ import IncidentTabsContainer from './IncidentViewTabs/IncidentTabsContainer';
 import TabContent from './IncidentViewTabs/TabContent';
 import OverviewTab from './Tabs/OverviewTab';
 import DetailsTab from './Tabs/DetailsTab';
-import SourceTab from './Tabs/SourceTab';
 import ResponseTab from './Tabs/ResponseTab';
 import SharingTab from './Tabs/SharingTab';
 
@@ -24,10 +23,6 @@ const IncidentViewTabs: React.FC<IncidentViewTabsProps> = ({
       
       <TabContent value="details">
         <DetailsTab incident={incident} />
-      </TabContent>
-      
-      <TabContent value="source">
-        <SourceTab incident={incident} />
       </TabContent>
       
       <TabContent value="response">

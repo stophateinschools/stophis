@@ -56,11 +56,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ incident }) => {
         </div>
         <div>
           <h3 className="text-sm font-medium">School</h3>
-          <p>{incident.schools?.map(school => school.name).join(', ') || 'Not specified'}</p>
+          <p>{incident.schools?.map(school => school).join(', ') || 'Not specified'}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium">District</h3>
-          <p>{incident.districts?.map(district => district.name).join(', ') || 'Not specified'}</p>
+          <p>{incident.districts?.map(district => district).join(', ') || 'Not specified'}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium">Type</h3>
@@ -71,6 +71,31 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ incident }) => {
           <p>{incident.owner.organization}</p>
         </div>
       </div>
+      <div>
+        <h3 className="font-medium mb-2">Source Type</h3>
+        <ul>
+          {incident.sourceTypes.map(type => {
+            return <li>{type}</li>
+          })}
+        </ul>
+      </div>
+      
+      {incident.reporter && (
+        <div>
+          <h3 className="font-medium mb-2">Reporter Information</h3>
+          <p>Name: {incident.reporter.name || 'Not provided'}</p>
+          <p>Email: {incident.reporter.email || 'Not provided'}</p>
+          <p>Phone: {incident.reporter.phone || 'Not provided'}</p>
+        </div>
+      )}
+      
+      {incident.sourcePermissions && (
+        <div>
+          <h3 className="font-medium mb-2">Source Permissions</h3>
+          <p>Share with Jewish Orgs: {incident.sourcePermissions.shareWithJewishOrgs ? 'Yes' : 'No'}</p>
+          <p>Share on Website: {incident.sourcePermissions.shareOnWebsite ? 'Yes' : 'No'}</p>
+        </div>
+      )}
     </div>
   );
 };

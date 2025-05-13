@@ -3,9 +3,8 @@ import api from '@/utils/api';
 import { useQuery } from '@tanstack/react-query';
 
 interface IncidentMetadata {
-  schools: School[];
-  districts: District[];
-  incidentTypes: string[];
+  types: string[];
+  sourceTypes: string[];
 }
 
 const fetchMetadata = async (): Promise<IncidentMetadata> => {

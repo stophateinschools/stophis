@@ -19,7 +19,7 @@ const IncidentTabsContainer: React.FC<IncidentTabsContainerProps> = ({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 mb-8">
+        <TabsList className="grid grid-cols-4 mb-8">
           <TabItems />
         </TabsList>
         

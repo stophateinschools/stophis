@@ -39,9 +39,8 @@ const AddEditIncident = () => {
     setActiveTab,
     onSubmit,
   } = useIncidentForm();
-
   const [status, setStatus] = useState<IncidentStatus>(
-    isEditing && incident?.status === IncidentStatus.FILED ? IncidentStatus.FILED : IncidentStatus.ACTIVE
+    isEditing && IncidentStatus[incident?.status] == IncidentStatus.FILED ? IncidentStatus.FILED : IncidentStatus.ACTIVE
   );
 
   const handleSubmitForm = () => {

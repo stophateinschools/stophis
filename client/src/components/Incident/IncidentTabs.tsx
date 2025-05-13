@@ -47,7 +47,7 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-5 mb-8">
+      <TabsList className="grid grid-cols-4 mb-8">
         <TabsTrigger value="overview" className="flex items-center gap-2">
           <Info className="h-4 w-4" />
           <span className="hidden sm:inline">Overview</span>
@@ -55,10 +55,6 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
         <TabsTrigger value="details" className="flex items-center gap-2">
           <FileText className="h-4 w-4" />
           <span className="hidden sm:inline">Details</span>
-        </TabsTrigger>
-        <TabsTrigger value="source" className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          <span className="hidden sm:inline">Source</span>
         </TabsTrigger>
         <TabsTrigger value="response" className="flex items-center gap-2">
           <Clock className="h-4 w-4" />
@@ -91,10 +87,6 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
             handleFileUpload={handleFileUpload}
             uploadingFile={uploadingFile}
           />
-        </TabsContent>
-        
-        <TabsContent value="source">
-          <IncidentSourceTab form={form} />
         </TabsContent>
 
         <TabsContent value="response">

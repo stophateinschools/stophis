@@ -8,6 +8,8 @@ import { formSchema, FormValues } from '@/lib/incidentFormSchema';
 import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
 import { useIncidentData } from '@/contexts/IncidentContext';
+import { Incident, IncidentStatus } from '@/lib/types';
+import { get } from 'http';
 
 // Use export type for type re-exports when isolatedModules is enabled
 export type { FormValues } from '@/lib/incidentFormSchema';
@@ -51,6 +53,15 @@ export function useIncidentForm() {
     return [];
   }, [isEditing, incident]);
 
+  const getSource = (incident: Incident) => {
+    if (incident.attributions.length > 0 && !incident.sourceTypes.length) {
+      return "first-person";
+    } else if (!incident.attributions.length && !incident.sourceTypes.length) {
+      return "not-first-person";
+    }
+    return "other";
+  }
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: isEditing && incident ? {
@@ -70,12 +81,13 @@ export function useIncidentForm() {
       types: incident.types,
       summary: incident.summary,
       details: incident.details,
-      // source: incident.sourceTypes,
+      source: getSource(incident),
+      sourceType: incident.sourceTypes[0],
       // shareWithJewishOrgs: incident.sourcePermissions?.shareWithJewishOrgs || false,
       // shareOnWebsite: incident.sourcePermissions?.shareOnWebsite || false,
-      // reporterName: incident.reporterInfo?.name,
-      // reporterEmail: incident.reporterInfo?.email,
-      // reporterPhone: incident.reporterInfo?.phone,
+      reporterName: incident.reporter.name || undefined,
+      reporterEmail: incident.reporter.email || undefined,
+      reporterPhone: incident.reporter.phone  || undefined,
       // reportedToSchoolStatus: incident.schoolReport.status,
       // reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
       // reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
@@ -91,7 +103,7 @@ export function useIncidentForm() {
       // userSharingLevel: incident.sharing?.region ? "full" : (incident.sharing?.otherRegions ? "summary" : "none"),
       // allowUserEdit: incident.sharing?.allowRegionEdit,
       // publishing: incident.publishing,
-      status: incident.status || "active",
+      status: incident.status,
     } : {
       year: new Date().getFullYear(),
       month: [(new Date().getMonth() + 1).toString()],
@@ -116,7 +128,7 @@ export function useIncidentForm() {
       userSharingLevel: "none" as const,
       allowUserEdit: false,
       publishing: "none" as const,
-      status: "active" as const,
+      status: IncidentStatus.ACTIVE,
     },
   });
   const isSchoolSpecific = form.watch("isSchoolSpecific");

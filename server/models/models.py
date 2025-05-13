@@ -59,6 +59,9 @@ class State(Enum):
     WY = "Wyoming"
     DC = "District of Columbia"
 
+class Status(Enum):
+    ACTIVE = "Active"
+    FILED = "Filed"
 
 class File(db.Model):
     """A file managed by Simple File Upload (S3)."""
@@ -261,6 +264,7 @@ class Incident(db.Model):
     __tablename__ = "incidents"
 
     id = db.Column(db.Integer(), primary_key=True)
+    status = db.Column(db.Enum(Status, name="incident_status"), nullable=False)
     airtable_id = db.Column(db.String(), unique=True)
     airtable_id_number = db.Column(db.String(), unique=True)
     summary = db.Column(db.Text(), nullable=False)
@@ -285,6 +289,9 @@ class Incident(db.Model):
     )
     owner_id = db.Column(db.Integer(), db.ForeignKey("users.id"))
     owner = db.relationship("User", back_populates="incidents")
+    reporter_name = db.Column(db.String())
+    reporter_email = db.Column(db.String())
+    reporter_phone = db.Column(db.String())
     created_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     updated_on = db.Column(DateTime(timezone=True), default=datetime.datetime.now)
     occurred_on_year = db.Column(db.Integer())
@@ -357,8 +364,7 @@ class Incident(db.Model):
             "id": self.id,
             "summary": self.summary,
             "details": self.details,
-            # TODO actually add this
-            "status": "Active",
+            "status": self.status.name,
             "date": {
                 "year": self.occurred_on_year,
                 "month": [
@@ -373,6 +379,11 @@ class Incident(db.Model):
             "discussion": [note.jsonable() for note in self.internal_notes],
             "documents": [document.jsonable() for document in self.documents],
             "owner": self.owner.jsonable() if self.owner else None,
+            "reporter": {
+                "name": self.reporter_name,
+                "email": self.reporter_email,
+                "phone": self.reporter_phone,
+            },
             "links": [link.link for link in self.related_links],
             "types": [type.name for type in self.types],
             "city": self.city,

@@ -21,7 +21,7 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
   setStatus
 }) => {
   const navigate = useNavigate();
-
+  
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between">
@@ -36,7 +36,7 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
             </Label>
             <Switch
               id="status-toggle"
-              checked={status === IncidentStatus.FILED}
+              checked={status == IncidentStatus.FILED}
               onCheckedChange={(checked) => setStatus(checked ? IncidentStatus.FILED : IncidentStatus.ACTIVE)}
             />
             <Label htmlFor="status-toggle" className="text-sm">

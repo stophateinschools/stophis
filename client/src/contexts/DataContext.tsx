@@ -7,14 +7,14 @@ import Loader from '@/components/ui/loader';
 interface DataContextType {
   users: User[];
   organizations: Organization[];
-  incidentTypes: string[];
+  types: string[];
+  sourceTypes: string[];
   addComment: (incidentId: string, comment: Omit<DiscussionComment, "id">) => void;
   updateComment: (incidentId: string, commentId: string, updates: Partial<DiscussionComment>) => void;
   deleteComment: (incidentId: string, commentId: string) => void;
   archiveUser: (userId: string) => void;
   unarchiveUser: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => void;
-  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -112,14 +112,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const value = {
     users,
     organizations,
-    incidentTypes: metadata?.incidentTypes || [],
+    types: metadata?.types || [],
+    sourceTypes: metadata?.sourceTypes || [],
     addComment,
     updateComment,
     deleteComment,
     archiveUser,
     unarchiveUser,
     updateUser,
-    isLoading:  isMetadataLoading,
   };
 
   return (

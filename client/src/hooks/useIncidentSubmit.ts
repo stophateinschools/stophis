@@ -67,20 +67,21 @@ export function useIncidentSubmit({
       types: values.types,
       summary: values.summary,
       details: values.details || "",
-      status: finalStatus as IncidentStatus,
+      status: finalStatus,
       // links,
       // documents,
-      // sourceTypes: values.source,
+      source: values.source,
+      sourceTypes: [values.sourceType],
       // otherSourceType: values.source === "other" ? values.otherSourceType : undefined,
       // sourcePermissions: (values.source === "first-person" || values.source === "not-first-person") ? {
       //   shareWithJewishOrgs: values.shareWithJewishOrgs,
       //   shareOnWebsite: values.shareOnWebsite
       // } : undefined,
-      // reporterInfo: values.reporterName || values.reporterEmail || values.reporterPhone ? {
-      //   name: values.reporterName || '',
-      //   email: values.reporterEmail || '',
-      //   phone: values.reporterPhone || ''
-      // } : undefined,
+      reporter: {
+        name: values.reporterName || '',
+        email: values.reporterEmail || '',
+        phone: values.reporterPhone || ''
+      },
       // reportedToSchool: {
       //   status: values.reportedToSchoolStatus,
       //   date: primaryReport?.date || values.reportedToSchoolDate,
