@@ -8,8 +8,6 @@ import { toast } from "sonner";
 interface UseIncidentSubmitProps {
   isEditing: boolean;
   id?: string;
-  links: string[];
-  documents: IncidentDocument[];
   currentUser: { id: string; name: string; organization: string; } | null;
   incident?: Incident;
 }
@@ -17,8 +15,6 @@ interface UseIncidentSubmitProps {
 export function useIncidentSubmit({
   isEditing,
   id,
-  links,
-  documents,
   currentUser,
   incident
 }: UseIncidentSubmitProps) {
@@ -31,11 +27,11 @@ export function useIncidentSubmit({
 
     const finalStatus = status || values.status;
     
-    const invalidDocuments = documents.filter(doc => !doc.name.trim());
-    if (invalidDocuments.length > 0) {
-      toast.error('Please provide names for all documents');
-      return;
-    }
+    // const invalidDocuments = documents.filter(doc => !doc.name.trim());
+    // if (invalidDocuments.length > 0) {
+    //   toast.error('Please provide names for all documents');
+    //   return;
+    // }
     
     if (!currentUser) {
       toast.error("You must be logged in to submit an incident");
@@ -68,20 +64,15 @@ export function useIncidentSubmit({
       summary: values.summary,
       details: values.details || "",
       status: finalStatus,
-      // links,
       // documents,
-      source: values.source,
-      sourceTypes: [values.sourceType],
+      sourceTypes: values.sourceType,
+      otherSource: values.otherSource,
       // otherSourceType: values.source === "other" ? values.otherSourceType : undefined,
       // sourcePermissions: (values.source === "first-person" || values.source === "not-first-person") ? {
       //   shareWithJewishOrgs: values.shareWithJewishOrgs,
       //   shareOnWebsite: values.shareOnWebsite
       // } : undefined,
-      reporter: {
-        name: values.reporterName || '',
-        email: values.reporterEmail || '',
-        phone: values.reporterPhone || ''
-      },
+      links: values.links,
       // reportedToSchool: {
       //   status: values.reportedToSchoolStatus,
       //   date: primaryReport?.date || values.reportedToSchoolDate,

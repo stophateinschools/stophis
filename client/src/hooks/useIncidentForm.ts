@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useAuth } from '@/contexts/AuthContext';
 import { formSchema, FormValues } from '@/lib/incidentFormSchema';
-import { useIncidentDocuments, useIncidentLinks } from './useIncidentDocuments';
 import { useIncidentSubmit } from './useIncidentSubmit';
 import { useIncidentData } from '@/contexts/IncidentContext';
 import { Incident, IncidentStatus } from '@/lib/types';
@@ -53,15 +52,6 @@ export function useIncidentForm() {
     return [];
   }, [isEditing, incident]);
 
-  const getSource = (incident: Incident) => {
-    if (incident.attributions.length > 0 && !incident.sourceTypes.length) {
-      return "first-person";
-    } else if (!incident.attributions.length && !incident.sourceTypes.length) {
-      return "not-first-person";
-    }
-    return "other";
-  }
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: isEditing && incident ? {
@@ -81,13 +71,10 @@ export function useIncidentForm() {
       types: incident.types,
       summary: incident.summary,
       details: incident.details,
-      source: getSource(incident),
       sourceType: incident.sourceTypes[0],
-      // shareWithJewishOrgs: incident.sourcePermissions?.shareWithJewishOrgs || false,
-      // shareOnWebsite: incident.sourcePermissions?.shareOnWebsite || false,
-      reporterName: incident.reporter.name || undefined,
-      reporterEmail: incident.reporter.email || undefined,
-      reporterPhone: incident.reporter.phone  || undefined,
+      otherSource: incident.otherSource,
+      links: incident.links,
+      documents: incident.documents,
       // reportedToSchoolStatus: incident.schoolReport.status,
       // reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
       // reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
@@ -115,13 +102,12 @@ export function useIncidentForm() {
       types: [],
       summary: "",
       details: "",
-      source: "first-person" as const,
-      shareWithJewishOrgs: false,
-      shareOnWebsite: false,
       reportedToSchoolStatus: "unknown" as const,
       reportedToList: [],
       schoolResponseStatus: "unknown" as const,
       responses: [],
+      links: [],
+      documents: [],
       shareWithOrganizations: [],
       organizationAccessLevel: "view" as const,
       allowOrganizationsEdit: false,
@@ -132,31 +118,10 @@ export function useIncidentForm() {
     },
   });
   const isSchoolSpecific = form.watch("isSchoolSpecific");
-  const {
-    links,
-    newLink,
-    setLinks,
-    setNewLink,
-    addLink,
-    removeLink
-  } = useIncidentLinks(isEditing && incident ? incident.links : []);
-
-  const {
-    documents,
-    documentNameError,
-    uploadingFile,
-    setDocumentNameError,
-    handleAddDocument,
-    handleDeleteDocument,
-    handleUpdateDocument,
-    handleFileUpload
-  } = useIncidentDocuments(isEditing && incident ? incident.documents : []);
 
   const { onSubmit } = useIncidentSubmit({
     isEditing,
     id,
-    links,
-    documents,
     updateIncident,
     addIncident,
     currentUser,
@@ -174,19 +139,7 @@ export function useIncidentForm() {
     isEditing,
     incident,
     id,
-    links,
-    newLink,
-    documents,
-    documentNameError,
     activeTab,
-    uploadingFile,
-    addLink,
-    setNewLink,
-    removeLink,
-    handleAddDocument,
-    handleDeleteDocument,
-    handleUpdateDocument,
-    handleFileUpload,
     setActiveTab,
     onSubmit
   };

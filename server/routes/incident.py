@@ -1,7 +1,7 @@
 import datetime
 from flask import Blueprint, jsonify, request
 from flask_login import current_user
-from server.models.models import Incident, IncidentAttribution, IncidentSourceType, IncidentType, School, SchoolDistrict, Status
+from server.models.models import Incident, IncidentAttribution, IncidentSourceType, IncidentType, RelatedLink, School, SchoolDistrict, Status
 from ..database import db
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -25,9 +25,6 @@ def apply_incident_data(incident, data):
     incident.occurred_on_day_end = days[1] if len(days) > 1 else None
 
     incident.owner_id = data.get("owner", {}).get("id") or current_user.id
-    incident.reporter_name = data.get("reporterName")
-    incident.reporter_email = data.get("reporterEmail")
-    incident.reporter_phone = data.get("reporterPhone")
 
     now = datetime.datetime.now(datetime.timezone.utc)
     if not incident.id:
@@ -35,25 +32,23 @@ def apply_incident_data(incident, data):
     incident.updated_on = now
 
     incident.types = IncidentType.query.filter(IncidentType.name.in_(data.get("types"))).all()
-
-
-    if data.get("source") == "first-person":
-        incident.attributions = [IncidentAttribution(
-            attribution_type_id=current_user.attribution_type_id,
-        )]
-        incident.source_types = []
-    elif data.get("source") == "not-first-person":
-        incident.attributions = []
-        incident.source_types = []
-    elif data.get("source") == "other":
-        incident.source_types = IncidentSourceType.query.filter(
-            IncidentSourceType.name.in_(data.get("sourceType"))
-        ).all()
-        incident.attributions = []
-
+    incident.source_types = IncidentSourceType.query.filter(IncidentSourceType.name.in_([data.get("sourceTypes")])).all()
+    incident.other_source = data.get("otherSource")
     incident.schools = School.query.filter(School.name.in_(data.get("schools"))).all()
-    
     incident.districts = SchoolDistrict.query.filter(SchoolDistrict.name.in_(data.get("districts"))).all()
+
+    links = data.get("links", [])
+    if not links:
+        incident.related_links = []
+    else:
+        for link in data.get("links"):
+            existing_link = RelatedLink.query.filter_by(incident_id=incident.id).filter_by(link=link).first()
+            if existing_link:
+                incident.related_links.append(existing_link)
+            else:
+                new_link = RelatedLink(link=link)
+                db.session.add(new_link)
+                incident.related_links.append(new_link)
 
     return incident
 
@@ -79,13 +74,19 @@ def get_incident(incident_id):
 @incident.route("/metadata", methods=["GET"])
 def get_incident_metadata():
     """Get metadata for incidents."""
-    print("getting metadata ", )
     try:
         types = IncidentType.query.all()
         source_types = IncidentSourceType.query.all()
+        source_types_list = [
+            source_type.__str__() for source_type in source_types
+            if source_type.__str__() not in ["Google Sheet", "Website"]
+        ]
+        source_types_list.sort(key=lambda x: (x == "Other", x))
+
+        # print("Source types: ", source_types_list, sorted(source_types_list, key=lambda x: (x == "Other", x)))
         return jsonify({
             "types": [type.__str__() for type in types],
-            "sourceTypes": [source_type.__str__() for source_type in source_types],
+            "sourceTypes": source_types_list,
         })
     except Exception as e:
         print("Error getting incident metadata: ", e)

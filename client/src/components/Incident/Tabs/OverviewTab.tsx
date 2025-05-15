@@ -80,15 +80,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ incident }) => {
         </ul>
       </div>
       
-      {incident.reporter && (
-        <div>
-          <h3 className="font-medium mb-2">Reporter Information</h3>
-          <p>Name: {incident.reporter.name || 'Not provided'}</p>
-          <p>Email: {incident.reporter.email || 'Not provided'}</p>
-          <p>Phone: {incident.reporter.phone || 'Not provided'}</p>
-        </div>
-      )}
-      
       {incident.sourcePermissions && (
         <div>
           <h3 className="font-medium mb-2">Source Permissions</h3>

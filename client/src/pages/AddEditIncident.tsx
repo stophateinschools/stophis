@@ -23,19 +23,7 @@ const AddEditIncident = () => {
     isEditing,
     incident,
     id: incidentId,
-    links,
-    newLink,
-    documents,
-    documentNameError,
     activeTab,
-    uploadingFile,
-    addLink,
-    setNewLink,
-    removeLink,
-    handleAddDocument,
-    handleDeleteDocument,
-    handleUpdateDocument,
-    handleFileUpload,
     setActiveTab,
     onSubmit,
   } = useIncidentForm();
@@ -76,18 +64,6 @@ const AddEditIncident = () => {
             form={form}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            links={links}
-            newLink={newLink}
-            setNewLink={setNewLink}
-            addLink={addLink}
-            removeLink={removeLink}
-            documents={documents}
-            documentNameError={documentNameError}
-            handleAddDocument={handleAddDocument}
-            handleDeleteDocument={handleDeleteDocument}
-            handleUpdateDocument={handleUpdateDocument}
-            handleFileUpload={handleFileUpload}
-            uploadingFile={uploadingFile}
           />
         </form>
       </Form>

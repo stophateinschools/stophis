@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Info, MapPin, Clock, Share2 } from "lucide-react";
 import IncidentOverviewTab from "./IncidentOverviewTab";
 import IncidentDetailsTab from "./IncidentDetailsTab";
-import IncidentSourceTab from "./IncidentSourceTab";
 import IncidentResponseAndTimelineTab from "./IncidentResponseAndTimelineTab";
 import IncidentSharingTab from "./IncidentSharingTab";
 import { UseFormReturn } from 'react-hook-form';
@@ -14,36 +13,12 @@ interface IncidentTabsProps {
   form: UseFormReturn<FormValues>;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  links: string[];
-  newLink: string;
-  setNewLink: (link: string) => void;
-  addLink: () => void;
-  removeLink: (link: string) => void;
-  documents: any[];
-  documentNameError: string;
-  handleAddDocument: () => void;
-  handleDeleteDocument: (id: string) => void;
-  handleUpdateDocument: (id: string, field: string, value: string) => void;
-  handleFileUpload: (event: React.ChangeEvent<HTMLInputElement>, docId: string) => void;
-  uploadingFile: boolean;
 }
 
 const IncidentTabs: React.FC<IncidentTabsProps> = ({
   form,
   activeTab,
   setActiveTab,
-  links,
-  newLink,
-  setNewLink,
-  addLink,
-  removeLink,
-  documents,
-  documentNameError,
-  handleAddDocument,
-  handleDeleteDocument,
-  handleUpdateDocument,
-  handleFileUpload,
-  uploadingFile,
 }) => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -74,18 +49,6 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
         <TabsContent value="details">
           <IncidentDetailsTab
             form={form}
-            links={links}
-            newLink={newLink}
-            setNewLink={setNewLink}
-            addLink={addLink}
-            removeLink={removeLink}
-            documents={documents}
-            documentNameError={documentNameError}
-            handleAddDocument={handleAddDocument}
-            handleDeleteDocument={handleDeleteDocument}
-            handleUpdateDocument={handleUpdateDocument}
-            handleFileUpload={handleFileUpload}
-            uploadingFile={uploadingFile}
           />
         </TabsContent>
 
