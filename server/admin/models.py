@@ -42,7 +42,7 @@ from ..models.models import (
     File,
     Incident,
     IncidentPrivacyStatus,
-    IncidentPublishDetails,
+    IncidentPublishDetail,
     IncidentAttribution,
     IncidentSourceType,
     IncidentStatus,

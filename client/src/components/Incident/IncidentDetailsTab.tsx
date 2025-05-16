@@ -130,7 +130,7 @@ const IncidentDetailsTab: React.FC<IncidentDetailsTabProps> = ({
                   </div>
                 )}
                 <SimpleFileUpload
-                  // apiKey={import.meta.env.VITE_SIMPLE_FILE_UPLOAD_KEY}
+                  apiKey={import.meta.env.VITE_SIMPLE_FILE_UPLOAD_KEY}
                   onSuccess={(url) => {
                     const currentDocuments = form.getValues("documents") || [];
                     form.setValue("documents", [...currentDocuments, url]);
@@ -145,7 +145,7 @@ const IncidentDetailsTab: React.FC<IncidentDetailsTabProps> = ({
           </FormItem>
         )}
       />
-      
+
       {/* <div className="space-y-4 mt-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">Related Files</h3>

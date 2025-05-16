@@ -100,19 +100,13 @@ export function useIncidentSubmit({
       //   })) as ResponseEntry[],
       //   ratings: incident?.schoolResponse.ratings || []
       // },
-      // sharing: {
-      //   organizations: values.shareWithOrganizations,
-      //   allowOrganizationsEdit: values.organizationAccessLevel === "edit",
-      //   region: regionSharing,
-      //   allowRegionEdit: values.allowUserEdit,
-      //   otherRegions: otherRegionsSharing
-      // },
-      // publishing: values.publishing,
-      // owner: {
-      //   id: currentUser.id,
-      //   name: currentUser.name,
-      //   organization: currentUser.organization
-      // },
+      sharingDetails: {
+        organizations: values.shareOrganizations,
+        status: values.shareStatus,
+      },
+      publishDetails: {
+        privacy: values.publishStatus,
+      },
       // discussion: incident?.discussion || [],
       // isNew: !isEditing
     };

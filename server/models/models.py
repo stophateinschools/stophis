@@ -59,9 +59,11 @@ class State(Enum):
     WY = "Wyoming"
     DC = "District of Columbia"
 
+
 class Status(Enum):
     ACTIVE = "Active"
     FILED = "Filed"
+
 
 class File(db.Model):
     """A file managed by Simple File Upload (S3)."""
@@ -297,10 +299,10 @@ class Incident(db.Model):
     occurred_on_day_start = db.Column(db.Integer())
     occurred_on_day_end = db.Column(db.Integer())
     publish_details = db.relationship(
-        "IncidentPublishDetails", back_populates="incident", uselist=False
+        "IncidentPublishDetail", back_populates="incident", uselist=False
     )
     sharing_details = db.relationship(
-        "IncidentSharingDetails", back_populates="incident", uselist=False
+        "IncidentSharingDetail", back_populates="incident", uselist=False
     )
     types = db.relationship("IncidentType", secondary=incident_to_incident_types)
     source_types = db.relationship(
@@ -358,6 +360,7 @@ class Incident(db.Model):
                 "YYYY-MM-DD",
             ),
         )
+    
 
     def jsonable(self):
         """Return a JSON serializable version of the incident."""
@@ -392,6 +395,7 @@ class Incident(db.Model):
             "publishDetails": (
                 self.publish_details.jsonable() if self.publish_details else None
             ),
+            "sharingDetails": self.sharing_details.jsonable() if self.sharing_details else None,
             "sourceTypes": [s.name for s in self.source_types],
             "otherSource": self.other_source,
             "attributions": [a.attribution_type.name for a in self.attributions],
@@ -417,7 +421,7 @@ class IncidentStatus(db.Model):
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    details = db.relationship("IncidentPublishDetails", back_populates="status")
+    details = db.relationship("IncidentPublishDetail", back_populates="status")
 
     def __str__(self):
         return f"{self.name}"
@@ -432,11 +436,11 @@ class IncidentPrivacyStatus(db.Model):
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    details = db.relationship("IncidentPublishDetails", back_populates="privacy")
+    details = db.relationship("IncidentPublishDetail", back_populates="privacy")
 
     def __str__(self):
         return f"{self.name}"
-    
+
 
 class IncidentSharingStatus(db.Model):
     """Incident sharing status."""
@@ -447,19 +451,18 @@ class IncidentSharingStatus(db.Model):
     name = db.Column(db.String(), nullable=False, unique=True)
     description = db.Column(db.Text())
 
-    details = db.relationship("IncidentSharingDetails", back_populates="sharing")
+    details = db.relationship("IncidentSharingDetail", back_populates="sharing")
 
     def __str__(self):
         return f"{self.name}"
 
 
-class IncidentPublishDetails(db.Model):
+class IncidentPublishDetail(db.Model):
     """Incident Publish Details - publish vs. no & level of privacy if published"""
 
     __tablename__ = "incident_publish_details"
 
     id = db.Column(db.Integer(), primary_key=True)
-    publish = db.Column(db.Boolean(), nullable=False, default=False)
     status_id = db.Column(db.Integer, db.ForeignKey("incident_statuses.id"))
     status = db.relationship("IncidentStatus", back_populates="details", uselist=False)
     privacy_id = db.Column(db.Integer, db.ForeignKey("incident_privacy_statuses.id"))
@@ -476,15 +479,18 @@ class IncidentPublishDetails(db.Model):
         """Return a JSON serializable version of the incident publish details."""
         return {
             "id": self.id,
-            "publish": self.publish,
             "status": self.status.name if self.status else None,
             "privacy": self.privacy.name if self.privacy else None,
         }
-    
+
+
 incident_sharing_details_to_attribution_types = db.Table(
     "incident_sharing_details_to_attribution_types",
     db.Column(
-        "incident_sharing_details_id", db.Integer(), db.ForeignKey("incident_sharing_details.id"), primary_key=True
+        "incident_sharing_details_id",
+        db.Integer(),
+        db.ForeignKey("incident_sharing_details.id"),
+        primary_key=True,
     ),
     db.Column(
         "attribution_type_id",
@@ -493,24 +499,33 @@ incident_sharing_details_to_attribution_types = db.Table(
         primary_key=True,
     ),
 )
-    
-class IncidentSharingDetails(db.Model):
+
+
+class IncidentSharingDetail(db.Model):
     """Incident Sharing Details - who can see the incident"""
 
     __tablename__ = "incident_sharing_details"
 
     id = db.Column(db.Integer(), primary_key=True)
     incident_id = db.Column(db.Integer, db.ForeignKey("incidents.id"))
-    incident = db.relationship("Incident", back_populates="sharing_details", single_parent=True)
-    sharing_id = db.Column(db.Integer, db.ForeignKey("incident_sharing_statuses.id"), nullable=False)
-    sharing = db.relationship("IncidentSharingStatus", back_populates="details", uselist=False)
-    organizations = db.relationship("AttributionType", secondary=incident_sharing_details_to_attribution_types)
+    incident = db.relationship(
+        "Incident", back_populates="sharing_details", single_parent=True
+    )
+    sharing_id = db.Column(
+        db.Integer, db.ForeignKey("incident_sharing_statuses.id"), nullable=False
+    )
+    sharing = db.relationship(
+        "IncidentSharingStatus", back_populates="details", uselist=False
+    )
+    organizations = db.relationship(
+        "AttributionType", secondary=incident_sharing_details_to_attribution_types
+    )
 
     def jsonable(self):
         """Return a JSON serializable version of the incident sharing details."""
         return {
             "id": self.id,
-            "sharing": self.sharing.name,
+            "status": self.sharing.name,
             "organizations": [organization.name for organization in self.organizations],
         }
 

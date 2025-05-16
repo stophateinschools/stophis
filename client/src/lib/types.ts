@@ -74,10 +74,6 @@ export interface Incident {
   sourceTypes: string;
   otherSource?: string;
   attributions?: string[];
-  sourcePermissions?: {
-    shareWithJewishOrgs: boolean;
-    shareOnWebsite: boolean;
-  };
   owner: User;
   schoolReport: {
     status?: boolean;
@@ -90,14 +86,13 @@ export interface Incident {
   };
   status: IncidentStatus;
   discussion: DiscussionComment[];
-  sharing: {
+  sharingDetails?: {
     organizations: string[];
-    allowOrganizationsEdit: boolean;
-    region: boolean;
-    allowRegionEdit: boolean;
-    otherRegions: boolean;
+    status: string;
   };
-  publishing: 'none' | 'limited' | 'expanded';
+  publishDetails: {
+    privacy: string;
+  }
 }
 
 export interface IncidentDocument {

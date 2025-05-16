@@ -1,5 +1,14 @@
 import os
-from flask import Blueprint, current_app, flash, jsonify, redirect, request, url_for, abort
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    request,
+    url_for,
+    abort,
+)
 from functools import wraps
 from flask_login import current_user, login_user, logout_user
 
@@ -43,6 +52,7 @@ def login_required(roles=None):
 
     return decorator
 
+
 @auth.route("/status", methods=["GET"])
 def login_status():
     """Check if user is logged in."""
@@ -51,10 +61,11 @@ def login_status():
     else:
         return jsonify({"logged_in": False}), 200
 
+
 @auth.route("/login", methods=["POST"])
 def login():
     """Store and verify token."""
-    token = request.json.get('token')
+    token = request.json.get("token")
     print("Token ", token)
     try:
         # Verify the token with Google
@@ -62,10 +73,12 @@ def login():
         #     'https://oauth2.googleapis.com/tokeninfo',
         #     params={'id_token': token}
         # ).json()
-        user_info = id_token.verify_oauth2_token(token, google_requests.Request(), os.getenv("GOOGLE_CLIENT_ID"))
+        user_info = id_token.verify_oauth2_token(
+            token, google_requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
+        )
 
         print("User info:", user_info)
-        oauth = OAuth.query.filter_by(provider_user_id=user_info['sub']).first()
+        oauth = OAuth.query.filter_by(provider_user_id=user_info["sub"]).first()
 
         if not oauth:
             user = User.query.filter_by(email=user_info["email"]).first()
@@ -90,17 +103,17 @@ def login():
         else:
             user = oauth.user
             # user.profile_picture = user_info["picture"]
-            
+
         login_user(user)
         # If the user exists, log them in
         return user.jsonable()
 
     except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    
+        return jsonify({"error": str(e)}), 400
+
+
 @auth.route("/logout", methods=["POST"])
 def logout():
     """Logout user."""
     logout_user()
     return jsonify({"message": "Logged out successfully"}), 200
-    

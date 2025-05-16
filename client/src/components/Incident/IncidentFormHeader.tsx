@@ -21,14 +21,13 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
   setStatus
 }) => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">
           {isEditing ? "Edit Incident" : "Report New Incident"}
         </h2>
-        
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 mr-4">
             <Label htmlFor="status-toggle" className="text-sm">

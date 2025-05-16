@@ -329,16 +329,16 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
                   <SelectValue placeholder="Select incident types" />
                 </SelectTrigger>
                 <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  {types.map((type, ind) => (
+                    <SelectItem key={ind} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormControl>
             {field.value && field.value.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
-                {field.value.map((type) => (
-                  <div key={type} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
+                {field.value.map((type, ind) => (
+                  <div key={ind} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
                     <span>{type}</span>
                     <Button 
                       type="button" 

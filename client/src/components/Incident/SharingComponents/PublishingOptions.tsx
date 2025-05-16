@@ -20,7 +20,7 @@ const PublishingOptions: React.FC<PublishingOptionsProps> = ({ form }) => {
       
       <FormField
         control={form.control}
-        name="publishing"
+        name="publishStatus"
         render={({ field }) => (
           <FormItem className="space-y-3">
             <FormControl>
@@ -31,7 +31,7 @@ const PublishingOptions: React.FC<PublishingOptionsProps> = ({ form }) => {
               >
                 <FormItem className="flex items-start space-x-3 space-y-0">
                   <FormControl>
-                    <RadioGroupItem value="none" />
+                    <RadioGroupItem value="Hide Details" />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="font-medium">Do not publish</FormLabel>
@@ -43,7 +43,7 @@ const PublishingOptions: React.FC<PublishingOptionsProps> = ({ form }) => {
                 
                 <FormItem className="flex items-start space-x-3 space-y-0">
                   <FormControl>
-                    <RadioGroupItem value="limited" />
+                    <RadioGroupItem value="Limited Details" />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="font-medium">Limited publishing</FormLabel>
@@ -55,7 +55,7 @@ const PublishingOptions: React.FC<PublishingOptionsProps> = ({ form }) => {
                 
                 <FormItem className="flex items-start space-x-3 space-y-0">
                   <FormControl>
-                    <RadioGroupItem value="expanded" />
+                    <RadioGroupItem value="Full Details" />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="font-medium">Expanded publishing</FormLabel>

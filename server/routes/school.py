@@ -12,6 +12,6 @@ def get_all_schools_by_state():
     print("State: ", state)
     if not state:
         return []
-    
+
     schools = School.query.filter(School.state == state).all()
     return jsonify([school.jsonable() for school in schools]), 200

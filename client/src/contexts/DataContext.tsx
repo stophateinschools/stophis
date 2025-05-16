@@ -1,12 +1,11 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Incident, User, AuditLogEntry, Organization, School, District, DiscussionComment, IncidentDocument } from '@/lib/types';
-import { useIncidents } from '@/hooks/useIncidents';
+import React, { createContext, useState, useContext } from 'react';
+import { User, DiscussionComment } from '@/lib/types';
 import { useIncidentFormMetadata } from '@/hooks/useIncidentFormMetadata';
 import Loader from '@/components/ui/loader';
 
 interface DataContextType {
   users: User[];
-  organizations: Organization[];
+  organizations: string[];
   types: string[];
   sourceTypes: string[];
   addComment: (incidentId: string, comment: Omit<DiscussionComment, "id">) => void;
@@ -21,7 +20,6 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
-  const [organizations] = useState<Organization[]>([]);
 
   const { data: metadata, isLoading: isMetadataLoading } = useIncidentFormMetadata();
 
@@ -111,7 +109,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     users,
-    organizations,
+    organizations: metadata?.organizations || [],
     types: metadata?.types || [],
     sourceTypes: metadata?.sourceTypes || [],
     addComment,

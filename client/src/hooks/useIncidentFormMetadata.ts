@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 interface IncidentMetadata {
   types: string[];
   sourceTypes: string[];
+  organizations: string[];
 }
 
 const fetchMetadata = async (): Promise<IncidentMetadata> => {

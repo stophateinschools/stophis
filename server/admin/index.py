@@ -49,9 +49,8 @@ def get_filters(self):
 
 class AdminView(AdminIndexView):
     def is_accessible(self):
-        return (
-            current_user.is_authenticated
-            and has_role([UserRole.ADMIN, UserRole.EDITOR])
+        return current_user.is_authenticated and has_role(
+            [UserRole.ADMIN, UserRole.EDITOR]
         )
 
     @expose("/")

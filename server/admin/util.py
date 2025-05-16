@@ -14,7 +14,7 @@ from ..models.models import (
     Incident,
     IncidentSourceType,
     IncidentPrivacyStatus,
-    IncidentPublishDetails,
+    IncidentPublishDetail,
     IncidentAttribution,
     IncidentSourceType,
     IncidentStatus,
@@ -405,43 +405,41 @@ def sync_schools(schools):
         return error_msg
 
 
-def get_publish_details(publish_string, privacy_string):
-    publish = None
+def get_publish_status(publish_string):
     status = None
-    privacy = None
-    if publish_string == "YES":
-        publish = True
-    elif publish_string == "NO-Cannot-Validate-Insufficient-Details-or-Not-Anti-Jewish":
-        publish = False
+    if publish_string == "NO-Cannot-Validate-Insufficient-Details-or-Not-Anti-Jewish":
         status = IncidentStatus.query.filter_by(
             name="Cannot Validate/Insufficient Details"
         ).first()
     elif publish_string == "NO-Duplicate":
-        publish = False
         status = IncidentStatus.query.filter_by(name="Duplicate").first()
     elif publish_string == "NO-In-Review":
-        publish = False
         status = IncidentStatus.query.filter_by(name="In Review").first()
     elif publish_string == "NO-No-Permission-Provided":
-        publish = False
         status = IncidentStatus.query.filter_by(name="No Permission Provided").first()
     elif publish_string == "NO-Privacy-Concern":
-        publish = False
         status = IncidentStatus.query.filter_by(name="Privacy Concern").first()
     elif publish_string == "NO-Safety-Concern-Swatting":
-        publish = False
         status = IncidentStatus.query.filter_by(name="Safety Concern").first()
 
-    if privacy_string == "NO-Hide-School-Privacy":
-        privacy = IncidentPrivacyStatus.query.filter_by(
-            name="Hide School Privacy"
-        ).first()
-    elif privacy_string == "NO-No-Details-Available":
-        privacy = IncidentPrivacyStatus.query.filter_by(name="Hide Details").first()
-    elif privacy_string == "YES-Show-Detail-Page":
-        privacy = IncidentPrivacyStatus.query.filter_by(name="Show Details").first()
+    return status
 
-    return IncidentPublishDetails(publish=publish, status=status, privacy=privacy)
+
+def get_publish_details(publish_string, privacy_string):
+    status = None
+    privacy = None
+    if publish_string == "YES" and "YES" in privacy_string:
+        if "YES" in privacy_string:
+            privacy = IncidentPrivacyStatus.query.filter_by(name="Full Details").first()
+        elif "NO" in privacy_string:
+            privacy = IncidentPrivacyStatus.query.filter_by(
+                name="Limited Details"
+            ).first()
+    elif "NO" in publish_string:
+        privacy = IncidentPrivacyStatus.query.filter_by(name="Hide Details").first()
+        status = get_publish_status(publish_string)
+
+    return IncidentPublishDetail(status=status, privacy=privacy)
 
 
 def create_or_sync_incidents(data):
@@ -582,13 +580,12 @@ def create_or_sync_incidents(data):
                     occurred_on_day_start=occurred_on_day_start,
                     publish_details=publish_details,
                     types=[incident_type] if incident_type else [],
-                    source_types=(
-                        [source_type] if source_type else []
-                    ),
+                    source_types=([source_type] if source_type else []),
                     attributions=(
                         [
                             IncidentAttribution(
-                                attribution_type=attribution_type, attribution_id=source_id
+                                attribution_type=attribution_type,
+                                attribution_id=source_id,
                             )
                         ]
                         if attribution_type

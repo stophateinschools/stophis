@@ -11,6 +11,6 @@ def get_all_districts_by_state():
     state = request.args.get("state")
     if not state:
         return []
-    
+
     districts = SchoolDistrict.query.filter(SchoolDistrict.state == state).all()
     return jsonify([district.jsonable() for district in districts]), 200

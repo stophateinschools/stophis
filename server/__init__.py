@@ -47,6 +47,7 @@ admin = Admin(app, index_view=AdminView(), url="/admin")
 from server import app
 from .routes.auth import has_role, auth
 
+
 @login_manager.user_loader
 def load_user(user_id):
     """Gets user upon flask-login login so we can use current_user"""
@@ -61,24 +62,27 @@ def inject_env_vars():
         "ENV": os.getenv("ENV"),
     }
 
-@app.route('/api/data')
-def get_data():
-    return {'message': 'Data from Flask API'}
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route("/api/data")
+def get_data():
+    return {"message": "Data from Flask API"}
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
 def serve_react(path):
     # TODO Specific error handling
     # TODO Check for caching
-    client_dist_path = os.path.join(current_app.root_path, '../client/dist')
+    client_dist_path = os.path.join(current_app.root_path, "../client/dist")
     request_path = os.path.join(client_dist_path, path)
     print("CLIENT ", client_dist_path, "PATH ", path, "REQUEST ", request_path)
     if path and os.path.exists(request_path):
         # If the path exists, serve the file
         return send_from_directory(client_dist_path, path)
-    
+
     # Otherwise, serve the index.html file
-    return send_from_directory(client_dist_path, 'index.html')
+    return send_from_directory(client_dist_path, "index.html")
+
 
 def register_api_blueprint(app, blueprint):
     app.register_blueprint(blueprint, url_prefix="/api" + blueprint.url_prefix)

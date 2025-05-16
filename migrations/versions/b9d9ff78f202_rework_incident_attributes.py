@@ -166,7 +166,9 @@ def upgrade() -> None:
     )
 
     op.alter_column("incidents", column_name="reporter_id", new_column_name="owner_id")
-    op.drop_constraint("fk_incidents_reporter_id_users", "incidents", type_="foreignkey")
+    op.drop_constraint(
+        "fk_incidents_reporter_id_users", "incidents", type_="foreignkey"
+    )
     op.create_foreign_key(
         constraint_name="fk_incidents_owner_id_users",
         source_table="incidents",

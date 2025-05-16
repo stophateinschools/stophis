@@ -60,12 +60,10 @@ export const formSchema = z.object({
   //   note: z.string().optional(),
   //   sentiment: z.coerce.number().min(1).max(5).optional(),
   // })).default([]),
-  // shareWithOrganizations: z.array(z.string()).default([]),
-  // organizationAccessLevel: z.enum(["view", "edit"]).default("view"),
-  // allowOrganizationsEdit: z.boolean().default(false),
-  // userSharingLevel: z.enum(["none", "summary", "full"]).default("none"),
-  // allowUserEdit: z.boolean().default(false),
-  // publishing: z.enum(["none", "limited", "expanded"]).default("none"),
+  shareOrganizationStatus: z.boolean().default(false),
+  shareOrganizations: z.array(z.string()).default([]),
+  shareStatus: z.enum(["Private", "Share"]).default("Private"),
+  publishStatus: z.enum(["Full Details", "Limited Details", "Hide Details"]).default("Hide Details"),
   status: zodEnumFromString(IncidentStatus).default("ACTIVE"),
 });
 
