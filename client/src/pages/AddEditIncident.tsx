@@ -59,25 +59,13 @@ const AddEditIncident = () => {
       />
       
       <Form {...form}>
-      {/* <SimpleFileUpload
-                  apiKey={import.meta.env.VITE_SIMPLE_FILE_UPLOAD_KEY}
-                  onSuccess={(url) => {
-                    const currentDocuments = form.getValues("documents") || [];
-                    form.setValue("documents", [...currentDocuments, url]);
-                  }}
-                  onDrop={(e) => console.log(e)}
-                  multiple={true}
-                  // removeLinks={true}
-                  // buttonText="Upload File"
-                /> */}
-        {/* <form className="space-y-8"> */}
-
+        <form className="space-y-8">
           <IncidentTabs 
             form={form}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
           />
-        {/* </form> */}
+        </form>
       </Form>
       
       {isEditing && incidentId && <IncidentDiscussionSection incident={incident} />}

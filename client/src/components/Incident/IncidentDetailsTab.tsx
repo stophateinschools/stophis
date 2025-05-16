@@ -10,7 +10,7 @@ import { FormValues } from "@/hooks/useIncidentForm";
 import { FileText, Plus, Trash2, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IncidentDocument } from "@/lib/types";
-import SimpleFileUpload from "react-simple-file-upload";
+import SimpleFileUpload from "v2-react-simple-file-upload";
 
 interface IncidentDetailsTabProps {
   form: UseFormReturn<FormValues>;
