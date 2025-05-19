@@ -71,22 +71,17 @@ class File(db.Model):
     __abstract__ = True
 
     id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=True)
     url = db.Column(db.String(), nullable=False)
-
-    @hybrid_property
-    def filename(self):
-        return self.url.rsplit("/", 1)[-1]
-
-    @filename.expression
-    def filename(cls):
-        return func.split_part(cls.url, "/", -1)
+    private = db.Column(db.Boolean(), default=True)
 
     def jsonable(self):
         """Return a JSON serializable version of the file."""
         return {
             "id": self.id,
             "url": self.url,
-            "name": self.filename,
+            "name": self.name,
+            "private": self.private,
         }
 
 
@@ -360,7 +355,6 @@ class Incident(db.Model):
                 "YYYY-MM-DD",
             ),
         )
-    
 
     def jsonable(self):
         """Return a JSON serializable version of the incident."""
@@ -395,7 +389,9 @@ class Incident(db.Model):
             "publishDetails": (
                 self.publish_details.jsonable() if self.publish_details else None
             ),
-            "sharingDetails": self.sharing_details.jsonable() if self.sharing_details else None,
+            "sharingDetails": (
+                self.sharing_details.jsonable() if self.sharing_details else None
+            ),
             "sourceTypes": [s.name for s in self.source_types],
             "otherSource": self.other_source,
             "attributions": [a.attribution_type.name for a in self.attributions],

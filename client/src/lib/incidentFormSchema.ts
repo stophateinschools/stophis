@@ -39,7 +39,7 @@ export const formSchema = z.object({
   sourceType: z.string().optional(),
   otherSource: z.string().optional(),
   links: z.array(z.string()).optional(),
-  documents: z.array(z.string()).optional(),
+  documents: z.array(z.object({name: z.string(), url: z.string()})).optional(),
   // reportedToSchoolStatus: z.enum(["yes", "no", "unknown"]).default("unknown"),
   // reportedToSchoolDate: z.string().optional(),
   // reportedToSchoolNote: z.string().optional(),

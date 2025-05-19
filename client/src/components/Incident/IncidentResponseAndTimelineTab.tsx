@@ -19,20 +19,20 @@ const IncidentResponseAndTimelineTab: React.FC<IncidentResponseAndTimelineTabPro
   return (
     <div className="space-y-6">
       <Tabs value={localTab} onValueChange={setLocalTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-6">
-          <TabsTrigger value="response-form">Log Reports & Responses</TabsTrigger>
-          <TabsTrigger value="timeline-view">Timeline View</TabsTrigger>
-        </TabsList>
+        {/* <TabsList className="w-full grid grid-cols-2 mb-6"> */}
+          {/* <TabsTrigger value="response-form">Log Reports & Responses</TabsTrigger> */}
+          {/* <TabsTrigger value="timeline-view">Timeline View</TabsTrigger> */}
+        {/* </TabsList> */}
 
         {/* Response Form Tab */}
         <div className={localTab === "response-form" ? "block" : "hidden"}>
           <ResponseAndTimelineForm form={form} />
         </div>
         
-        {/* Timeline View Tab */}
-        <div className={localTab === "timeline-view" ? "block" : "hidden"}>
+        {/* DISABLED bc not P1 - Timeline View Tab */}
+        {/* <div className={localTab === "timeline-view" ? "block" : "hidden"}>
           <TimelineView events={events} />
-        </div>
+        </div> */}
       </Tabs>
     </div>
   );

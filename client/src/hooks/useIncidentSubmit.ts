@@ -64,14 +64,9 @@ export function useIncidentSubmit({
       summary: values.summary,
       details: values.details || "",
       status: finalStatus,
-      // documents,
+      documents: values.documents,
       sourceTypes: values.sourceType,
       otherSource: values.otherSource,
-      // otherSourceType: values.source === "other" ? values.otherSourceType : undefined,
-      // sourcePermissions: (values.source === "first-person" || values.source === "not-first-person") ? {
-      //   shareWithJewishOrgs: values.shareWithJewishOrgs,
-      //   shareOnWebsite: values.shareOnWebsite
-      // } : undefined,
       links: values.links,
       // reportedToSchool: {
       //   status: values.reportedToSchoolStatus,

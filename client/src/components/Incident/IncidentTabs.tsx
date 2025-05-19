@@ -33,7 +33,7 @@ const IncidentTabs: React.FC<IncidentTabsProps> = ({
         </TabsTrigger>
         <TabsTrigger value="response" className="flex items-center gap-2">
           <Clock className="h-4 w-4" />
-          <span className="hidden sm:inline">Response & Timeline</span>
+          <span className="hidden sm:inline">Reporting & Responses</span>
         </TabsTrigger>
         <TabsTrigger value="sharing" className="flex items-center gap-2">
           <Share2 className="h-4 w-4" />

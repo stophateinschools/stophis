@@ -70,7 +70,7 @@ export interface Incident {
   state: string;
   types: string[];
   links: string[];
-  documents: IncidentDocument[];
+  documents: Partial<IncidentDocument>[];
   sourceTypes: string;
   otherSource?: string;
   attributions?: string[];
@@ -99,7 +99,7 @@ export interface IncidentDocument {
   id: string;
   name: string;
   url: string;
-  privacy: 'do-not-publish' | 'ok-to-share';
+  private: boolean;
 }
 
 export interface AuditLogEntry {

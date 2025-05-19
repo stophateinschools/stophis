@@ -5,6 +5,7 @@ from server.models.models import (
     AttributionType,
     Incident,
     IncidentAttribution,
+    IncidentDocument,
     IncidentPrivacyStatus,
     IncidentPublishDetail,
     IncidentSharingDetail,
@@ -20,6 +21,88 @@ from ..database import db
 from sqlalchemy.exc import SQLAlchemyError
 
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
+
+
+def update_documents(incident, new_documents):
+    current_documents = incident.documents
+    added_documents = [
+        document
+        for document in new_documents
+        if document["name"] not in [doc["name"] for doc in current_documents]
+    ]
+    removed_documents = [
+        document
+        for document in current_documents
+        if document.name not in [doc["name"] for doc in new_documents]
+    ]
+
+    for document in added_documents:
+        new_document = IncidentDocument(url=document["url"], name=document["name"])
+        db.session.add(new_document)
+        incident.documents.append(new_document)
+
+    for document in removed_documents:
+        remove_document = (
+            IncidentDocument.query.filter_by(incident_id=incident.id)
+            .filter_by(name=document.name)
+            .first()
+        )
+        if remove_document:
+            incident.documents.remove(remove_document)
+            db.session.delete(remove_document)
+
+
+def update_sharing_details(incident, sharing_details):
+    sharing_status = IncidentSharingStatus.query.filter(
+        IncidentSharingStatus.name == sharing_details.get("status")
+    ).first()
+    organizations = AttributionType.query.filter(
+        AttributionType.name.in_(sharing_details.get("organizations"))
+    ).all()
+    if incident.sharing_details:
+        incident.sharing_details.sharing = sharing_status
+        incident.sharing_details.organizations = organizations
+    else:
+        new_sharing_details = IncidentSharingDetail(
+            sharing=sharing_status,
+            organizations=organizations,
+            incident=incident,
+        )
+        db.session.add(new_sharing_details)
+        incident.sharing_details = new_sharing_details
+
+
+def update_publish_details(incident, publish_details):
+    privacy_status = IncidentPrivacyStatus.query.filter_by(
+        name=publish_details.get("privacy")
+    ).first()
+    if incident.publish_details:
+        incident.publish_details.privacy = privacy_status
+    else:
+        new_publish_details = IncidentPublishDetail(
+            privacy=privacy_status,
+            incident=incident,
+        )
+        db.session.add(new_publish_details)
+        incident.publish_details = new_publish_details
+
+
+def update_links(incident, links):
+    if not links:
+        incident.related_links = []
+    else:
+        for link in links:
+            existing_link = (
+                RelatedLink.query.filter_by(incident_id=incident.id)
+                .filter_by(link=link)
+                .first()
+            )
+            if existing_link:
+                incident.related_links.append(existing_link)
+            else:
+                new_link = RelatedLink(link=link)
+                db.session.add(new_link)
+                incident.related_links.append(new_link)
 
 
 def apply_incident_data(incident, data):
@@ -58,56 +141,10 @@ def apply_incident_data(incident, data):
         SchoolDistrict.name.in_(data.get("districts"))
     ).all()
 
-    links = data.get("links", [])
-    if not links:
-        incident.related_links = []
-    else:
-        for link in data.get("links"):
-            existing_link = (
-                RelatedLink.query.filter_by(incident_id=incident.id)
-                .filter_by(link=link)
-                .first()
-            )
-            if existing_link:
-                incident.related_links.append(existing_link)
-            else:
-                new_link = RelatedLink(link=link)
-                db.session.add(new_link)
-                incident.related_links.append(new_link)
-
-    publish_details = data.get("publishDetails")
-    privacy_status = IncidentPrivacyStatus.query.filter_by(
-        name=publish_details.get("privacy")
-    ).first()
-    if incident.publish_details:
-        incident.publish_details.privacy = privacy_status
-    else:
-        new_publish_details = IncidentPublishDetail(
-            privacy=privacy_status,
-            incident=incident,
-        )
-        db.session.add(new_publish_details)
-        incident.publish_details = new_publish_details
-
-    sharing_details = data.get("sharingDetails")
-    sharing_status = IncidentSharingStatus.query.filter(
-        IncidentSharingStatus.name == sharing_details.get("status")
-    ).first()
-    organizations = AttributionType.query.filter(
-        AttributionType.name.in_(sharing_details.get("organizations"))
-    ).all()
-    if incident.sharing_details:
-        incident.sharing_details.sharing = sharing_status
-        incident.sharing_details.organizations = organizations
-    else:
-        print("Creating new sharing details ", sharing_status, organizations)
-        new_sharing_details = IncidentSharingDetail(
-            sharing=sharing_status,
-            organizations=organizations,
-            incident=incident,
-        )
-        db.session.add(new_sharing_details)
-        incident.sharing_details = new_sharing_details
+    update_links(incident, data.get("links", []))
+    update_publish_details(incident, data.get("publishDetails", {}))
+    update_sharing_details(incident, data.get("sharingDetails", {}))
+    update_documents(incident, data.get("documents", []))
 
     return incident
 
@@ -152,7 +189,9 @@ def get_incident_metadata():
                 "types": [type.__str__() for type in types],
                 "sourceTypes": source_types_list,
                 # TODO Only return orgs that have users associateds & remove other
-                "organizations": [organization.__str__() for organization in organizations],
+                "organizations": [
+                    organization.__str__() for organization in organizations
+                ],
             }
         )
     except Exception as e:
