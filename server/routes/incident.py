@@ -151,6 +151,7 @@ def get_incident_metadata():
             {
                 "types": [type.__str__() for type in types],
                 "sourceTypes": source_types_list,
+                # TODO Only return orgs that have users associateds & remove other
                 "organizations": [organization.__str__() for organization in organizations],
             }
         )

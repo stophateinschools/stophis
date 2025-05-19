@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useIncidentForm } from '@/hooks/useIncidentForm';
 import { Form } from "@/components/ui/form";
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Eye } from 'lucide-react';
 import IncidentFormHeader from '@/components/Incident/IncidentFormHeader';
 import IncidentTabs from '@/components/Incident/IncidentTabs';
 import IncidentDiscussionSection from '@/components/Incident/IncidentDiscussionSection';
@@ -50,7 +48,7 @@ const AddEditIncident = () => {
   }, [id, incidents, navigate, canEditIncident]);
 
   return (
-    <div className="container mx-auto py-6 max-w-4xl">
+    <div className="container mx-auto py-6">
       <IncidentFormHeader 
         isEditing={isEditing} 
         handleSave={handleSubmitForm}

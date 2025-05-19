@@ -325,7 +325,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
                   }
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-1/2">
                   <SelectValue placeholder="Select incident types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -370,7 +370,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
               value={field.value}
               onValueChange={field.onChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-1/2">
                 <SelectValue placeholder="Select source type" />
               </SelectTrigger>
               <SelectContent>
