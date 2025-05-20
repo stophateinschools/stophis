@@ -1,6 +1,6 @@
 import pytest
 
-from models.user import UserRole, User, Role
+from server.models.user import UserRole, User, Role
 from server import db
 
 

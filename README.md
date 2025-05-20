@@ -21,10 +21,9 @@ We will use Docker Compose locally to manage and run our dev application. Simila
 - Establish connection to your local postgresql database and run sql queryies by running `docker compose exec db psql -U postgres -d stophis`
 
 ## Run tests
-### TODO Update this with docker vs pipenv
-Run `pipenv run tox` to run entire test suite
+Insidea your docker server container (`docker compose exec server bash`), run `tox` to run entire test suite
 
-Run `pipenv run tox -- tests/_testfile_.py` or `pipenv run tox --tests/_testfile_.py::_testname_` if you would like to run a single test file or test, respectively
+Run `tox -- tests/_testfile_.py` or `tox --tests/_testfile_.py::_testname_` if you would like to run a single test file or test, respectively
 
 # Data management
 The inital version of this application depends on fetching data from the National Center for Education Statistics(NCES)[https://nces.ed.gov] and syncing with existing tables in our Airtable project. NOTE: These steps currently work with public school and district data ONLY.
