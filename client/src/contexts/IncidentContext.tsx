@@ -64,7 +64,6 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
   const getIncidentById = (id: string) => {
     if (!incidents) return null;
     const incident = incidents.find((incident) => incident.id == id);
-    console.log("Getting incident by ID:", incidents, id);
     return incident || null;
   }
 

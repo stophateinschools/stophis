@@ -2,13 +2,13 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import ResponseItem from './ResponseItem';
+import { ResponseEntry } from '@/lib/types';
 
 interface ResponseSectionProps {
-  responses: Array<{ source: string; otherSource?: string; date?: string; note?: string; sentiment?: number }>;
-  onAdd: (item: { source: string; otherSource?: string; date?: string; note?: string; sentiment?: number }) => void;
+  responses: ResponseEntry[];
+  onAdd: (item?: ResponseEntry) => void;
   onRemove: (index: number) => void;
   onUpdate: (index: number, field: string, value: string | number) => void;
-  autoAddItem?: boolean;
 }
 
 const ResponseSection = ({
@@ -16,15 +16,9 @@ const ResponseSection = ({
   onAdd,
   onRemove,
   onUpdate,
-  autoAddItem = false
 }: ResponseSectionProps) => {
   const handleAddItem = () => {
-    onAdd({
-      source: "School Administration",
-      date: "",
-      note: "",
-      otherSource: ""
-    });
+    onAdd();
   };
 
   return (

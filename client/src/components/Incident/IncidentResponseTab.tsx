@@ -4,25 +4,18 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-import { FormValues, ReportToEntry, ResponseFormEntry } from "@/hooks/useIncidentForm";
+import { FormValues } from "@/hooks/useIncidentForm";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SOURCE_OPTIONS } from '@/components/Incident/Response/ResponseAndTimelineForm';
 
 interface IncidentResponseTabProps {
   form: UseFormReturn<FormValues>;
 }
-
-const reportToOptions = [
-  "Classroom Teacher",
-  "Principal or Vice Principal",
-  "School District",
-  "Law Enforcement",
-  "Other"
-];
 
 const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
   return (
@@ -34,7 +27,7 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
         
         <FormField
           control={form.control}
-          name="reportedToSchoolStatus"
+          name="schoolReportStatus"
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center gap-6 mb-2">
@@ -71,11 +64,11 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
           )}
         />
         
-        {form.watch("reportedToSchoolStatus") === "yes" && (
+        {form.watch("schoolReportStatus") === "yes" && (
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="reportedToList"
+              name="reports"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Reported To</FormLabel>
@@ -102,10 +95,10 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
                             
                             <div className="space-y-4">
                               <Select
-                                value={report.recipient}
+                                value={report.recipientType}
                                 onValueChange={(val) => {
                                   const newList = [...field.value];
-                                  newList[index].recipient = val;
+                                  newList[index].recipientType = val;
                                   field.onChange(newList);
                                 }}
                               >
@@ -113,26 +106,11 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
                                   <SelectValue placeholder="Select who the incident was reported to" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {reportToOptions.map(option => (
+                                  {SOURCE_OPTIONS.map(option => (
                                     <SelectItem key={option} value={option}>{option}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
-                              
-                              {report.recipient === "Other" && (
-                                <div className="pt-2">
-                                  <Textarea 
-                                    placeholder="Please specify"
-                                    value={report.otherRecipient || ""}
-                                    onChange={(e) => {
-                                      const newList = [...field.value];
-                                      newList[index].otherRecipient = e.target.value;
-                                      field.onChange(newList);
-                                    }}
-                                    className="resize-none"
-                                  />
-                                </div>
-                              )}
                               
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium mb-1">Date Reported</span>
@@ -195,7 +173,7 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
                       onClick={() => {
                         const currentList = field.value || [];
                         field.onChange([...currentList, { 
-                          recipient: "Classroom Teacher",
+                          recipientType: "Classroom Teacher",
                           date: undefined,
                           note: ""
                         }]);
@@ -286,10 +264,10 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
                             
                             <div className="space-y-4">
                               <Select
-                                value={response.source}
+                                value={response.sourceType}
                                 onValueChange={(val) => {
                                   const newList = [...field.value];
-                                  newList[index].source = val;
+                                  newList[index].sourceType = val;
                                   field.onChange(newList);
                                 }}
                               >
@@ -297,26 +275,11 @@ const IncidentResponseTab: React.FC<IncidentResponseTabProps> = ({ form }) => {
                                   <SelectValue placeholder="Select who responded" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {reportToOptions.map(option => (
+                                  {SOURCE_OPTIONS.map(option => (
                                     <SelectItem key={option} value={option}>{option}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
-                              
-                              {response.source === "Other" && (
-                                <div className="pt-2">
-                                  <Textarea 
-                                    placeholder="Please specify"
-                                    value={response.otherSource || ""}
-                                    onChange={(e) => {
-                                      const newList = [...field.value];
-                                      newList[index].otherSource = e.target.value;
-                                      field.onChange(newList);
-                                    }}
-                                    className="resize-none"
-                                  />
-                                </div>
-                              )}
                               
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium mb-1">Response Date</span>

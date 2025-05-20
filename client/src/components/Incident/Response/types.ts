@@ -1,3 +1,5 @@
+import { ReportEntry, ResponseEntry } from '@/lib/types';
+
 export interface TimelineEvent {
   id: string;
   date: Date | null;
@@ -10,25 +12,14 @@ export interface TimelineEvent {
 
 export interface ReportItemProps {
   index: number;
-  report: {
-    recipient: string;
-    otherRecipient?: string;
-    date?: string;
-    note?: string;
-  };
+  report?: ReportEntry;
   onUpdate: (index: number, field: string, value: any) => void;
   onRemove: (index: number) => void;
 }
 
 export interface ResponseItemProps {
   index: number;
-  response: {
-    source: string;
-    otherSource?: string;
-    date?: string;
-    note?: string;
-    sentiment?: number;
-  };
+  response?: ResponseEntry;
   onUpdate: (index: number, field: string, value: string | number) => void;
   onRemove: (index: number) => void;
 }

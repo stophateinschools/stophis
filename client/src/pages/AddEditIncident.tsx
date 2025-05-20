@@ -30,9 +30,7 @@ const AddEditIncident = () => {
   );
 
   const handleSubmitForm = () => {
-    console.log("in handleSubmitForm: ", status);
     form.handleSubmit((values) => {
-      console.log("in handle sumit form: ", values, status);
       onSubmit(values, status)
     }, (errors) => console.log("ERRORS ", errors))();
   };

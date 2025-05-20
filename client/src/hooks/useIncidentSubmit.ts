@@ -1,7 +1,7 @@
 
 import { useIncidentData } from '@/contexts/IncidentContext';
 import { FormValues } from '@/lib/incidentFormSchema';
-import { Incident, IncidentDocument, IncidentStatus, ReportEntry, ResponseEntry } from '@/lib/types';
+import { Incident, IncidentStatus, ReportEntry, ResponseEntry } from '@/lib/types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 
@@ -26,30 +26,15 @@ export function useIncidentSubmit({
     console.log("In on submit: ", values, status)
 
     const finalStatus = status || values.status;
-    
-    // const invalidDocuments = documents.filter(doc => !doc.name.trim());
-    // if (invalidDocuments.length > 0) {
-    //   toast.error('Please provide names for all documents');
-    //   return;
-    // }
+    const schoolReportStatus = values.schoolReportStatus === "yes" ? true : ( values.schoolReportStatus === "no" ? false : undefined);
+    const schoolResponseStatus = values.schoolResponseStatus === "yes" ? true : ( values.schoolResponseStatus === "no" ? false : undefined);
     
     if (!currentUser) {
       toast.error("You must be logged in to submit an incident");
       return;
     }
 
-    // const primaryReport = values.reportedToList && values.reportedToList.length > 0 
-    //   ? values.reportedToList[0] 
-    //   : null;
-      
-    // const primaryResponse = values.responses && values.responses.length > 0 
-    //   ? values.responses[0] 
-    //   : null;
-
-    // const regionSharing = values.userSharingLevel === "full";
-    // const otherRegionsSharing = values.userSharingLevel !== "none";
-
-    const incidentData: Omit<Incident, "id" | "lastUpdated"> = {
+    const incidentData: Omit<Incident, "id" | "lastUpdated" | "createdOn" | "updatedOn" | "owner"> = {
       date: {
         year: values.year,
         month: values.month.map(Number).filter(month => month !== 0) as [number, number?],
@@ -68,33 +53,25 @@ export function useIncidentSubmit({
       sourceTypes: values.sourceType,
       otherSource: values.otherSource,
       links: values.links,
-      // reportedToSchool: {
-      //   status: values.reportedToSchoolStatus,
-      //   date: primaryReport?.date || values.reportedToSchoolDate,
-      //   note: primaryReport?.note || values.reportedToSchoolNote,
-      //   recipientType: primaryReport?.recipient || undefined,
-      //   reports: values.reportedToList.map(report => ({
-      //     recipient: report.recipient || "Other",
-      //     otherRecipient: report.otherRecipient,
-      //     date: report.date,
-      //     note: report.note
-      //   })) as ReportEntry[]
-      // },
-      // schoolResponse: {
-      //   status: values.schoolResponseStatus,
-      //   date: primaryResponse?.date || values.schoolResponseDate,
-      //   note: primaryResponse?.note || values.schoolResponseNote,
-      //   sentiment: primaryResponse?.sentiment || values.schoolResponseSentiment,
-      //   sourceType: primaryResponse?.source || undefined,
-      //   responses: values.responses.map(response => ({
-      //     source: response.source || "Other",
-      //     otherSource: response.otherSource,
-      //     date: response.date,
-      //     note: response.note,
-      //     sentiment: response.sentiment
-      //   })) as ResponseEntry[],
-      //   ratings: incident?.schoolResponse.ratings || []
-      // },
+      schoolReport: {
+        status: schoolReportStatus,
+        reports: values.reports.map(report => ({
+          id: report.id || undefined,
+          recipientType: report.recipientType || "Other",
+          date: report.date,
+          note: report.note
+        })) as ReportEntry[]
+      },
+      schoolResponse: {
+        status: schoolResponseStatus,
+        responses: values.responses.map(response => ({
+          id: response.id || undefined,
+          sourceType: response.sourceType || "Other",
+          date: response.date,
+          note: response.note,
+          sentiment: response.sentiment
+        })) as ResponseEntry[],
+      },
       sharingDetails: {
         organizations: values.shareOrganizations,
         status: values.shareStatus,
@@ -102,8 +79,7 @@ export function useIncidentSubmit({
       publishDetails: {
         privacy: values.publishStatus,
       },
-      // discussion: incident?.discussion || [],
-      // isNew: !isEditing
+      discussion: incident?.discussion || [],
     };
 
     try {

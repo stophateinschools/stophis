@@ -28,13 +28,8 @@ const IncidentDiscussion: React.FC<IncidentDiscussionProps> = ({ incident }) => 
     handleConfirmDelete,
     canUserModifyComment
   } = useDiscussion(incident);
-
-  console.log("in disccusion ",  incident
-  )
   
   if (!incident) return null;
-
-  console.log("discussion ", incident.discussion);
 
   return (
     <div className="space-y-4">

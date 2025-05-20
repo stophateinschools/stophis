@@ -4,7 +4,6 @@ from flask_login import current_user
 from server.models.models import (
     AttributionType,
     Incident,
-    IncidentAttribution,
     IncidentDocument,
     IncidentPrivacyStatus,
     IncidentPublishDetail,
@@ -15,25 +14,27 @@ from server.models.models import (
     RelatedLink,
     School,
     SchoolDistrict,
+    SchoolReport,
+    SchoolResponse,
     Status,
 )
 from ..database import db
-from sqlalchemy.exc import SQLAlchemyError
+from dateutil.parser import parse
 
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
 
 
-def update_documents(incident, new_documents):
+def update_documents(incident, documents):
     current_documents = incident.documents
     added_documents = [
         document
-        for document in new_documents
-        if document["name"] not in [doc["name"] for doc in current_documents]
+        for document in documents
+        if document["name"] not in [doc.name for doc in current_documents]
     ]
     removed_documents = [
         document
         for document in current_documents
-        if document.name not in [doc["name"] for doc in new_documents]
+        if document.name not in [doc["name"] for doc in documents]
     ]
 
     for document in added_documents:
@@ -104,6 +105,67 @@ def update_links(incident, links):
                 db.session.add(new_link)
                 incident.related_links.append(new_link)
 
+def update_school_reports(incident, status, reports):
+    incident.reported_to_school = status
+    for report in reports:
+        recipient_type = report.get("recipientType") # Required
+        date = report.get("date", None)
+        note = report.get("note", None)
+
+        existing_report = (
+            SchoolReport.query.filter_by(id=report["id"])
+            .first()
+        ) if report.get("id") else None
+        if existing_report:
+            existing_date = existing_report.occurred_on.date() if existing_report.occurred_on else None
+            new_date = parse(date).date() if date else None
+            if existing_date != new_date or existing_report.report != note or existing_report.recipient_type != recipient_type:
+                existing_report.updated_on = datetime.datetime.now(datetime.timezone.utc)
+            existing_report.occurred_on = date
+            existing_report.report = note
+            existing_report.recipient_type = recipient_type
+        else:
+            new_report = SchoolReport(
+                occurred_on=date,
+                report=note,
+                recipient_type=recipient_type,
+                incident_id=incident.id,
+            )
+            db.session.add(new_report)
+            incident.school_reports.append(new_report)
+
+def update_school_responses(incident, status, responses):
+    incident.school_responded = status
+    for response in responses:
+        source_type = response.get("sourceType") # Required
+        date = response.get("date", None)
+        sentiment = response.get("sentiment", None)
+        note = response.get("note", None)
+
+        existing_response = (
+            SchoolResponse.query.filter_by(id=response["id"])
+            .first()
+        ) if response.get("id") else None
+        if existing_response:
+            existing_date = existing_response.occurred_on.date() if existing_response.occurred_on else None
+            new_date = parse(date).date() if date else None
+            if existing_date != new_date or existing_response.response != note or existing_response.source_type != source_type or existing_response.sentiment != sentiment:
+                existing_response.updated_on = datetime.datetime.now(datetime.timezone.utc)
+            existing_response.occurred_on = date
+            existing_response.response = note
+            existing_response.source_type = source_type
+            existing_response.sentiment = sentiment
+        else:
+            new_response = SchoolResponse(
+                occurred_on=date,
+                response=note,
+                source_type=source_type,
+                sentiment=sentiment,
+                incident_id=incident.id,
+            )
+            db.session.add(new_response)
+            incident.school_responses.append(new_response)
+
 
 def apply_incident_data(incident, data):
     """Apply data to an incident object."""
@@ -145,6 +207,8 @@ def apply_incident_data(incident, data):
     update_publish_details(incident, data.get("publishDetails", {}))
     update_sharing_details(incident, data.get("sharingDetails", {}))
     update_documents(incident, data.get("documents", []))
+    update_school_reports(incident, data.get("schoolReport").get("status"), data.get("schoolReport").get("reports"))
+    update_school_responses(incident, data.get("schoolResponse").get("status"), data.get("schoolResponse").get("responses"))
 
     return incident
 
@@ -183,7 +247,6 @@ def get_incident_metadata():
 
         organizations = AttributionType.query.all()
 
-        # print("Source types: ", source_types_list, sorted(source_types_list, key=lambda x: (x == "Other", x)))
         return jsonify(
             {
                 "types": [type.__str__() for type in types],
@@ -200,10 +263,7 @@ def get_incident_metadata():
 
 @incident.route("", methods=["POST"])
 def create_incident():
-    print("Headers:", request.headers)
-    print("Data:", request.data)
     data = request.get_json()
-    print("create incident ", data, request.get_json())
     incident = Incident()
     apply_incident_data(incident, data)
     db.session.add(incident)
@@ -216,7 +276,7 @@ def create_incident():
 def update_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     data = request.get_json()
-    print("update incident ", data)
     apply_incident_data(incident, data)
     db.session.commit()
+
     return jsonify({"message": "Incident updated"}), 200

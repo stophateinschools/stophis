@@ -51,8 +51,8 @@ export function useTimelineEvents(formValues: FormValues): TimelineEvent[] {
     });
     
     // Add report dates
-    if (formValues.reportedToSchoolStatus === 'yes' && formValues.reportedToList) {
-      formValues.reportedToList.forEach((report, index) => {
+    if (formValues.schoolReportStatus === 'yes' && formValues.reports) {
+      formValues.reports.forEach((report, index) => {
         if (report.date) {
           timelineEvents.push({
             id: `report-${index}`,
@@ -60,7 +60,7 @@ export function useTimelineEvents(formValues: FormValues): TimelineEvent[] {
             type: 'report',
             title: `Reported to ${report.recipient}`,
             description: report.note,
-            source: report.recipient !== 'Other' ? report.recipient : report.otherRecipient
+            source: report.recipient,
           });
         }
       });
@@ -76,7 +76,7 @@ export function useTimelineEvents(formValues: FormValues): TimelineEvent[] {
             type: 'response',
             title: `Response from ${response.source}`,
             description: response.note,
-            source: response.source !== 'Other' ? response.source : response.otherSource,
+            source: response.source,
             sentiment: response.sentiment
           });
         }

@@ -2,10 +2,8 @@
 import React, { useState } from 'react';
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "@/hooks/useIncidentForm";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
 import ResponseAndTimelineForm from './Response/ResponseAndTimelineForm';
-import TimelineView from './Response/TimelineView';
-import { useTimelineEvents } from './Response/useTimelineEvents';
 
 interface IncidentResponseAndTimelineTabProps {
   form: UseFormReturn<FormValues>;
@@ -13,8 +11,6 @@ interface IncidentResponseAndTimelineTabProps {
 
 const IncidentResponseAndTimelineTab: React.FC<IncidentResponseAndTimelineTabProps> = ({ form }) => {
   const [localTab, setLocalTab] = useState("response-form");
-  const formValues = form.getValues();
-  const events = useTimelineEvents(formValues);
   
   return (
     <div className="space-y-6">

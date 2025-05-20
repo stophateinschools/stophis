@@ -17,7 +17,6 @@ export type { ReportToEntry, ResponseFormEntry } from '@/lib/incidentFormSchema'
 export function useIncidentForm() {
   const { id } = useParams();
   const isEditing = Boolean(id);
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { addIncident, updateIncident, getIncidentById} = useIncidentData();
   
@@ -25,32 +24,6 @@ export function useIncidentForm() {
   const [searchValue, setSearchValue] = useState('');
 
   const incident = isEditing && id ? getIncidentById(id) : undefined;
-
-
-  const initialReportedToList = useMemo(() => {
-    if (isEditing && incident && incident.schoolReport.status === true) {
-      return [{
-        recipient: incident.schoolReport.reports[0].recipientType || "School Administration",
-        otherRecipient: incident.schoolReport.reports[0].recipientType ? undefined : "School Administration",
-        date: incident.schoolReport[0].date,
-        note: incident.schoolReport[0].note,
-      }];
-    }
-    return [];
-  }, [isEditing, incident]);
-
-  const initialResponses = useMemo(() => {
-    if (isEditing && incident && incident.schoolResponse.status === true) {
-      return [{
-        source: incident.schoolResponse.responses[0].sourceType || "School",
-        otherSource: incident.schoolResponse.responses[0].sourceType ? undefined : "School",
-        date: incident.schoolResponse.responses[0].date,
-        note: incident.schoolResponse.responses[0].note,
-        sentiment: incident.schoolResponse.responses[0].sentiment,
-      }];
-    }
-    return [];
-  }, [isEditing, incident]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -79,15 +52,10 @@ export function useIncidentForm() {
       shareOrganizations: incident.sharingDetails?.organizations,
       shareStatus: incident.sharingDetails?.status,
       publishStatus: incident.publishDetails.privacy,
-      // reportedToSchoolStatus: incident.schoolReport.status,
-      // reportedToSchoolDate: incident.schoolReport.reports[0]?.date,
-      // reportedToSchoolNote: incident.schoolReport.reports[0]?.note,
-      // reportedToList: initialReportedToList,
-      // schoolResponseStatus: incident.schoolResponse.status,
-      // schoolResponseDate: incident.schoolResponse.responses[0]?.date,
-      // schoolResponseNote: incident.schoolResponse.responses[0]?.note,
-      // schoolResponseSentiment: incident.schoolResponse.responses[0]?.sentiment,
-      // responses: initialResponses,
+      schoolReportStatus: incident.schoolReport.status ? "yes" : (incident.schoolReport.status === false ? "no" : "unknown"),
+      reports: incident.schoolReport.reports,
+      schoolResponseStatus: incident.schoolResponse.status ? "yes" : (incident.schoolResponse.status === false ? "no" : "unknown"),
+      responses: incident.schoolResponse.responses,
       status: incident.status,
     } : {
       year: new Date().getFullYear(),
@@ -100,7 +68,7 @@ export function useIncidentForm() {
       types: [],
       summary: "",
       details: "",
-      reportedToSchoolStatus: "unknown" as const,
+      schoolReportStatus: "unknown" as const,
       reportedToList: [],
       schoolResponseStatus: "unknown" as const,
       responses: [],

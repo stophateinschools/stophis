@@ -21,15 +21,13 @@ export interface DiscussionComment {
 }
 
 export interface ReportEntry {
-  recipient: string;
-  recipientType?: string;
+  recipientType: string;
   date?: string;
   note?: string;
 }
 
 export interface ResponseEntry {
-  source: string;
-  sourceType?: string;
+  sourceType: string;
   date?: string;
   note?: string;
   sentiment?: number;
@@ -82,7 +80,6 @@ export interface Incident {
   schoolResponse: {
     status?: boolean;
     responses?: ResponseEntry[];
-    // ratings?: { userId: string; rating: number }[];
   };
   status: IncidentStatus;
   discussion: DiscussionComment[];

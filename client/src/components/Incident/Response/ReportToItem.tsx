@@ -9,21 +9,18 @@ import { CalendarIcon, Trash2 } from "lucide-react";
 import { FormControl, FormLabel } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ReportEntry } from '@/lib/types';
+import { SOURCE_OPTIONS } from '@/components/Incident/Response/ResponseAndTimelineForm';
 
 interface ReportToItemProps {
   index: number;
-  report: {
-    recipient: string;
-    otherRecipient?: string;
-    date?: string;
-    note?: string;
-  };
+  report: ReportEntry;
   onUpdate: (index: number, field: string, value: string) => void;
   onRemove: (index: number) => void;
-  options: string[];
 }
 
-const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, onRemove, options }) => {
+const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, onRemove }) => {
+  console.log("REPORT ", report)
   return (
     <div className="flex flex-col p-3 border rounded-md">
       <div className="flex justify-between items-center mb-2">
@@ -40,29 +37,18 @@ const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, on
       
       <div className="space-y-4">
         <Select
-          value={report.recipient}
-          onValueChange={(val) => onUpdate(index, 'recipient', val)}
+          value={report?.recipientType}
+          onValueChange={(val) => onUpdate(index, 'recipientType', val)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select who the incident was reported to" />
           </SelectTrigger>
           <SelectContent>
-            {options.map(option => (
+            {SOURCE_OPTIONS.map(option => (
               <SelectItem key={option} value={option}>{option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        
-        {report.recipient === "Other" && (
-          <div className="pt-2">
-            <Textarea 
-              placeholder="Please specify"
-              value={report.otherRecipient || ""}
-              onChange={(e) => onUpdate(index, 'otherRecipient', e.target.value)}
-              className="resize-none"
-            />
-          </div>
-        )}
         
         <div className="flex flex-col">
           <span className="text-sm font-medium mb-1">Date Reported</span>
@@ -73,10 +59,10 @@ const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, on
                   variant={"outline"}
                   className={cn(
                     "pl-3 text-left font-normal",
-                    !report.date && "text-muted-foreground"
+                    !report?.date && "text-muted-foreground"
                   )}
                 >
-                  {report.date ? format(new Date(report.date), "PPP") : "Select date"}
+                  {report?.date ? format(new Date(report.date), "PPP") : "Select date"}
                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
               </FormControl>
@@ -84,7 +70,7 @@ const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, on
             <PopoverContent className="w-auto p-0" align="start">
               <CalendarComponent
                 mode="single"
-                selected={report.date ? new Date(report.date) : undefined}
+                selected={report?.date ? new Date(report.date) : undefined}
                 onSelect={(date) => onUpdate(index, 'date', date ? format(date, "yyyy-MM-dd") : undefined)}
                 initialFocus
               />
@@ -97,7 +83,7 @@ const ReportToItem: React.FC<ReportToItemProps> = ({ index, report, onUpdate, on
           <Textarea
             placeholder="Any additional details about reporting to this person/entity..."
             className="resize-none"
-            value={report.note || ""}
+            value={report?.note || ""}
             onChange={(e) => onUpdate(index, 'note', e.target.value)}
           />
         </div>
