@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install system dependencies
 # Install dependencies for pyppeteer/Chromium
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y postgresql postgresql-client \
     libpq-dev gcc build-essential \
     wget gnupg ca-certificates curl unzip fonts-liberation \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libcups2 \
@@ -31,6 +31,10 @@ COPY . .
 
 # Expose port
 EXPOSE 5000
+
+# Create a user and switch to it (needed for tox to run pg_ctl)
+RUN useradd -ms /bin/bash appuser
+USER appuser
 
 # Run using gunicorn
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
