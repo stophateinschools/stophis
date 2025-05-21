@@ -92,8 +92,8 @@ def create_app():
     # Create the Flask app instance
     app.secret_key = os.getenv("SECRET_KEY")
 
-    # Get the HEROKU_POSTGRESQL_YELLOW_URL from environment variables (Heroku provides this for staging/prod)
-    database_url = os.getenv("HEROKU_POSTGRESQL_YELLOW_URL")
+    # Get the DATABASE_URL from environment variables (Heroku provides this for staging/prod)
+    database_url = os.getenv("DATABASE_URL")
     if database_url and database_url.startswith("postgres://"):
         # Replace 'postgres://' with 'postgresql://'
         database_url = database_url.replace("postgres://", "postgresql://", 1)
