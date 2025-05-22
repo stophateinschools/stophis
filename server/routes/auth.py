@@ -91,7 +91,7 @@ def login():
                 db.session.add(user)
                 db.session.commit()
 
-            # user.profile_picture = user_info["picture"]
+            user.profile_picture = user_info["picture"]
             oauth = OAuth(
                 provider="Google",
                 provider_user_id=user_info["sub"],
@@ -102,7 +102,7 @@ def login():
             db.session.commit()
         else:
             user = oauth.user
-            # user.profile_picture = user_info["picture"]
+            user.profile_picture = user_info["picture"]
 
         login_user(user)
         # If the user exists, log them in

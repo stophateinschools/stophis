@@ -122,6 +122,9 @@ def create_school_district(data):
     nces_id = data["NCES District ID"].strip()
     state = data["State"]
 
+    if "college" in district_name.lower():
+        return
+
     existing_district = SchoolDistrict.query.filter_by(nces_id=nces_id).first()
     if existing_district:
         # Maybe at some point do a merge here if we want to update any data
@@ -627,9 +630,6 @@ async def fetch_pages(urls):
 
     for url in urls:
         try:
-            print("Opening browser for ", url)
-            # executablePath: string = await new Promise(resolve => locateChrome((arg: any) => resolve(arg))) || '';
-
             browser = await launch(args=["--no-sandbox"])
             page = await browser.newPage()
 
