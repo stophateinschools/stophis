@@ -90,13 +90,13 @@ def create_user(user):
     existing_user = User.query.filter_by(email=user["email"]).first()
     if existing_user:
         print(user)
-        # existing_user.profile_picture = user["picture"]
+        existing_user.profile_picture = user["picture"]
     else:
         new_user = User(
             first_name=user["given_name"],
             last_name=user["family_name"],
             email=user["email"],
-            # profile_picture=user["picture"],
+            profile_picture=user["picture"],
         )
         db.session.add(new_user)
 
