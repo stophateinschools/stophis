@@ -33,8 +33,15 @@ if __name__ == "__main__":
 
     app = create_app()
     with app.app_context():
-        queues = [Queue(name, connection=conn) for name in listen]
-        worker = Worker(queues)
+        try:
+            queues = [Queue(name, connection=conn) for name in listen]
+            worker = Worker(queues)
 
-        print("Starting RQ worker...")
-        worker.work()
+            print("Starting RQ worker...")
+            worker.work()
+        except TimeoutError:
+            print("Redis read timed out")
+            raise RuntimeError("Redis read timed out")
+        except ConnectionError:
+            print("Could not connect to Redis")
+            raise RuntimeError("Could not connec to Redis")

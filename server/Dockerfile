@@ -34,6 +34,7 @@ EXPOSE 5000
 
 # Create a user and switch to it (needed for tox to run pg_ctl)
 RUN useradd -ms /bin/bash appuser
+RUN chown -R appuser:appuser /app/.pyppeteer
 USER appuser
 
 # Run using gunicorn
