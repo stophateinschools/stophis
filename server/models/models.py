@@ -75,12 +75,20 @@ class File(db.Model):
     url = db.Column(db.String(), nullable=False)
     private = db.Column(db.Boolean(), default=True)
 
+    @hybrid_property
+    def filename(self):
+        return self.url.rsplit("/", 1)[-1]
+
+    @filename.expression
+    def filename(cls):
+        return func.split_part(cls.url, "/", -1)
+
     def jsonable(self):
         """Return a JSON serializable version of the file."""
         return {
             "id": self.id,
             "url": self.url,
-            "name": self.name,
+            "name": self.name if self.name else self.filename,
             "private": self.private,
         }
 

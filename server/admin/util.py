@@ -206,12 +206,13 @@ def sync_school_districts(districts):
                 filename = logo["filename"]
                 if (
                     existing_district.logo
-                    and existing_district.logo.filename != filename
+                    and existing_district.logo.jsonable()["name"] != filename
                 ) or (not existing_district.logo):
                     # This would have created a S3 file everytime we sync - so if
                     # the file already exists, don't create a new one.
                     new_url = simple_file_upload_from_url(airtable_url, filename)
-                    existing_district.logo = SchoolDistrictLogo(url=new_url)
+                    print("newurl and filename ", new_url, filename)
+                    existing_district.logo = SchoolDistrictLogo(url=new_url, name=filename)
 
             airtable_name = district["fields"].get("District-Name")
             existing_district.display_name = (
@@ -559,7 +560,7 @@ def create_or_sync_incidents(data):
                     airtable_url = document["url"]
                     filename = document["filename"]
                     new_url = simple_file_upload_from_url(airtable_url, filename)
-                    new_documents.append(IncidentDocument(url=new_url))
+                    new_documents.append(IncidentDocument(url=new_url, name=filename))
 
                 new_incident = Incident(
                     airtable_id=airtable_id,
