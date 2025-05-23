@@ -29,6 +29,7 @@ from ..models.models import (
     SchoolType,
     SchoolTypes,
     IncidentDocument,
+    Status,
 )
 from bs4 import BeautifulSoup, Tag
 from io import StringIO
@@ -212,7 +213,9 @@ def sync_school_districts(districts):
                     # the file already exists, don't create a new one.
                     new_url = simple_file_upload_from_url(airtable_url, filename)
                     print("newurl and filename ", new_url, filename)
-                    existing_district.logo = SchoolDistrictLogo(url=new_url, name=filename)
+                    existing_district.logo = SchoolDistrictLogo(
+                        url=new_url, name=filename
+                    )
 
             airtable_name = district["fields"].get("District-Name")
             existing_district.display_name = (
@@ -432,14 +435,14 @@ def get_publish_status(publish_string):
 def get_publish_details(publish_string, privacy_string):
     status = None
     privacy = None
-    if publish_string == "YES" and "YES" in privacy_string:
+    if publish_string == "YES" and (privacy_string and "YES" in privacy_string):
         if "YES" in privacy_string:
             privacy = IncidentPrivacyStatus.query.filter_by(name="Full Details").first()
         elif "NO" in privacy_string:
             privacy = IncidentPrivacyStatus.query.filter_by(
                 name="Limited Details"
             ).first()
-    elif "NO" in publish_string:
+    elif publish_string and "NO" in publish_string:
         privacy = IncidentPrivacyStatus.query.filter_by(name="Hide Details").first()
         status = get_publish_status(publish_string)
 
@@ -450,7 +453,6 @@ def create_or_sync_incidents(data):
     """
     Get incident data from Airtable and create or sync records.
     """
-    print("In create or sync incidents ", data)
     try:
         created_count = 0
         updated_count = 0
@@ -541,15 +543,16 @@ def create_or_sync_incidents(data):
             school_responded = fields.get("School-Responded") == "Yes"
             city = fields.get("School-City")
             state = fields.get("School-State")
+            publish_string = fields.get("Publish")
+            privacy_string = fields.get("Privacy")
+            publish_details = get_publish_details(publish_string, privacy_string)
+            status = Status.FILED if publish_string == "YES" else Status.ACTIVE
 
             # For now, things that require new object creation lets keep to only new incidents
             if existing_incident == None:
                 admin_user = User.query.filter_by(
                     email="admin@stophateinschools.org"
                 ).first()
-                publish_string = fields.get("Publish")
-                privacy_string = fields.get("Privacy")
-                publish_details = get_publish_details(publish_string, privacy_string)
                 internal_notes = (
                     [InternalNote(note=internal_note_0, author_id=admin_user.id)]
                     if internal_note_0
@@ -563,6 +566,7 @@ def create_or_sync_incidents(data):
                     new_documents.append(IncidentDocument(url=new_url, name=filename))
 
                 new_incident = Incident(
+                    status=status,
                     airtable_id=airtable_id,
                     airtable_id_number=airtable_id_number,
                     summary=summary,
@@ -603,6 +607,7 @@ def create_or_sync_incidents(data):
                 db.session.add(new_incident)
                 created_count += 1
             else:
+                existing_incident.status = status
                 existing_incident.summary = summary
                 existing_incident.details = details
                 existing_incident.schools = [school] if school else []

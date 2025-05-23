@@ -105,22 +105,34 @@ def update_links(incident, links):
                 db.session.add(new_link)
                 incident.related_links.append(new_link)
 
+
 def update_school_reports(incident, status, reports):
     incident.reported_to_school = status
     for report in reports:
-        recipient_type = report.get("recipientType") # Required
+        recipient_type = report.get("recipientType")  # Required
         date = report.get("date", None)
         note = report.get("note", None)
 
         existing_report = (
-            SchoolReport.query.filter_by(id=report["id"])
-            .first()
-        ) if report.get("id") else None
+            (SchoolReport.query.filter_by(id=report["id"]).first())
+            if report.get("id")
+            else None
+        )
         if existing_report:
-            existing_date = existing_report.occurred_on.date() if existing_report.occurred_on else None
+            existing_date = (
+                existing_report.occurred_on.date()
+                if existing_report.occurred_on
+                else None
+            )
             new_date = parse(date).date() if date else None
-            if existing_date != new_date or existing_report.report != note or existing_report.recipient_type != recipient_type:
-                existing_report.updated_on = datetime.datetime.now(datetime.timezone.utc)
+            if (
+                existing_date != new_date
+                or existing_report.report != note
+                or existing_report.recipient_type != recipient_type
+            ):
+                existing_report.updated_on = datetime.datetime.now(
+                    datetime.timezone.utc
+                )
             existing_report.occurred_on = date
             existing_report.report = note
             existing_report.recipient_type = recipient_type
@@ -134,23 +146,36 @@ def update_school_reports(incident, status, reports):
             db.session.add(new_report)
             incident.school_reports.append(new_report)
 
+
 def update_school_responses(incident, status, responses):
     incident.school_responded = status
     for response in responses:
-        source_type = response.get("sourceType") # Required
+        source_type = response.get("sourceType")  # Required
         date = response.get("date", None)
         sentiment = response.get("sentiment", None)
         note = response.get("note", None)
 
         existing_response = (
-            SchoolResponse.query.filter_by(id=response["id"])
-            .first()
-        ) if response.get("id") else None
+            (SchoolResponse.query.filter_by(id=response["id"]).first())
+            if response.get("id")
+            else None
+        )
         if existing_response:
-            existing_date = existing_response.occurred_on.date() if existing_response.occurred_on else None
+            existing_date = (
+                existing_response.occurred_on.date()
+                if existing_response.occurred_on
+                else None
+            )
             new_date = parse(date).date() if date else None
-            if existing_date != new_date or existing_response.response != note or existing_response.source_type != source_type or existing_response.sentiment != sentiment:
-                existing_response.updated_on = datetime.datetime.now(datetime.timezone.utc)
+            if (
+                existing_date != new_date
+                or existing_response.response != note
+                or existing_response.source_type != source_type
+                or existing_response.sentiment != sentiment
+            ):
+                existing_response.updated_on = datetime.datetime.now(
+                    datetime.timezone.utc
+                )
             existing_response.occurred_on = date
             existing_response.response = note
             existing_response.source_type = source_type
@@ -207,8 +232,16 @@ def apply_incident_data(incident, data):
     update_publish_details(incident, data.get("publishDetails", {}))
     update_sharing_details(incident, data.get("sharingDetails", {}))
     update_documents(incident, data.get("documents", []))
-    update_school_reports(incident, data.get("schoolReport").get("status"), data.get("schoolReport").get("reports"))
-    update_school_responses(incident, data.get("schoolResponse").get("status"), data.get("schoolResponse").get("responses"))
+    update_school_reports(
+        incident,
+        data.get("schoolReport").get("status"),
+        data.get("schoolReport").get("reports"),
+    )
+    update_school_responses(
+        incident,
+        data.get("schoolResponse").get("status"),
+        data.get("schoolResponse").get("responses"),
+    )
 
     return incident
 
