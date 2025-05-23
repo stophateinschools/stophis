@@ -28,7 +28,6 @@ export default function Dashboard() {
     filedIncidents
   } = useIncidentDashboard(incidents);
 
-  // Use sample incidents if none are found
   const displayActiveIncidents: Incident[] = activeIncidents;
     
   const displayFiledIncidents: Incident[] = filedIncidents;

@@ -91,27 +91,16 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
     <TableRow key={incident.id} className={isRecentlyUpdated() ? "incident-updated bg-gray-50" : ""}>
       <TableCell>{getFormattedDate(incident)}</TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
-          {formatUpdatedDate(incident.updatedOn)}
-          {isRecentlyUpdated() && (
-            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 ml-1 text-xs">
-              <Clock className="mr-1 h-3 w-3" />
-              Updated
-            </Badge>
-          )}
-        </div>
-      </TableCell>
-      <TableCell>
         {incident.city}, {incident.state}
       </TableCell>
       <TableCell>
-        {incident.schools?.map((school: School, idx: number) => (
-          <div key={idx}>{school.name}</div>
+        {incident.schools?.map((school: string, idx: number) => (
+          <div key={idx}>{school}</div>
         ))}
       </TableCell>
       <TableCell>
-        {incident.districts?.map((district: District, idx: number) => (
-          <div key={idx}>{district.name}</div>
+        {incident.districts?.map((district: string, idx: number) => (
+          <div key={idx}>{district}</div>
         ))}
       </TableCell>
       <TableCell>
@@ -134,7 +123,20 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
         {incident.summary}
       </TableCell>
       <TableCell>
-        <span className="text-sm">{incident.owner.firstName} {incident.owner.lastName}</span>
+        <span className="text-sm">
+            {incident.owner.firstName} {incident.owner.lastName}
+          </span>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          {formatUpdatedDate(incident.updatedOn)}
+          {isRecentlyUpdated() && (
+            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200 ml-1 text-xs">
+              <Clock className="mr-1 h-3 w-3" />
+              Updated
+            </Badge>
+          )}
+        </div>
       </TableCell>
       <TableCell>
         {accessLevel() === 'restricted' ? (

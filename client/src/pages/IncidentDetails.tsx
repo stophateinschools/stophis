@@ -19,8 +19,6 @@ export default function IncidentDetails() {
   const [isViewOnly, setIsViewOnly] = useState(false);
   const incident = getIncidentById(id);
 
-  console.log("Incident Details", incident);
-
   // Check if user has access to this incident
   const hasAccess = canViewIncident(incident);
 

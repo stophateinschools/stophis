@@ -1,18 +1,15 @@
 import React from 'react';
-import { useData } from '@/contexts/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import IncidentSearchFilters from '@/components/AllIncidents/IncidentSearchFilters';
 import IncidentAdvancedFilters from '@/components/AllIncidents/IncidentAdvancedFilters';
 import IncidentTable from '@/components/AllIncidents/IncidentTable';
 import IncidentPagination from '@/components/AllIncidents/IncidentPagination';
 import { useAllIncidents } from '@/hooks/useAllIncidents';
-import { getSampleRestrictedIncident, getSampleViewOnlyIncident } from '@/components/Dashboard/SampleIncidentData';
 import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function AllIncidents() {
   const { incidents } = useIncidentData();
 
-  
   const { 
     search, 
     setSearch, 

@@ -34,14 +34,14 @@ const IncidentsTable = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHeader column="date" label="Date" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
-                <SortableHeader column="updated" label="Last Updated" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <SortableHeader column="date" label="Incident Date" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader column="location" label="Location" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader column="schools" label="School" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader column="districts" label="District" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader column="types" label="Type" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <TableHead>Summary</TableHead>
                 <SortableHeader column="owner" label="Owner" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
+                <SortableHeader column="updated" label="Last Updated" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <TableHead>View</TableHead>
                 <TableHead>Edit</TableHead>
               </TableRow>

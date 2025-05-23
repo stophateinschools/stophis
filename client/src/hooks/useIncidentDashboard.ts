@@ -29,16 +29,15 @@ export function useIncidentDashboard(incidents: Incident[]) {
         types: displayTypes.length > 0 ? displayTypes : ["Other"]
       };
       
-      const inWashingtonState = modifiedIncident.state === "Washington";
       const matchesSearch = search === '' || 
         modifiedIncident.summary.toLowerCase().includes(search.toLowerCase()) ||
-        modifiedIncident.schools?.some(s => s.name.toLowerCase().includes(search.toLowerCase())) ||
-        modifiedIncident.districts?.some(d => d.name.toLowerCase().includes(search.toLowerCase())) ||
+        modifiedIncident.schools?.some(s => s.toLowerCase().includes(search.toLowerCase())) ||
+        modifiedIncident.districts?.some(d => d.toLowerCase().includes(search.toLowerCase())) ||
         modifiedIncident.city.toLowerCase().includes(search.toLowerCase()) ||
         modifiedIncident.state.toLowerCase().includes(search.toLowerCase()) ||
         modifiedIncident.types.some(t => t.toLowerCase().includes(search.toLowerCase()));
 
-      return inWashingtonState && matchesSearch;
+      return matchesSearch;
     });
   }, [incidents, search]);
 
@@ -59,10 +58,10 @@ export function useIncidentDashboard(incidents: Incident[]) {
           comparison = a.owner.firstName.localeCompare(b.owner.firstName);
           break;
         case 'school':
-          comparison = (a.schools?.[0].name || '').localeCompare(b.schools?.[0].name || '');
+          comparison = (a.schools?.[0] || '').localeCompare(b.schools?.[0] || '');
           break;
         case 'district':
-          comparison = (a.districts?.[0].name || '').localeCompare(b.districts?.[0].name || '');
+          comparison = (a.districts?.[0] || '').localeCompare(b.districts?.[0] || '');
           break;
         case 'location':
           comparison = a.city.localeCompare(b.city) || a.state.localeCompare(b.state);
@@ -80,11 +79,11 @@ export function useIncidentDashboard(incidents: Incident[]) {
 
   // Group by status
   const activeIncidents = useMemo(() => 
-    sortedIncidents.filter(incident => incident.status === IncidentStatus.ACTIVE),
+    sortedIncidents.filter(incident => IncidentStatus[incident.status] == IncidentStatus.ACTIVE),
   [sortedIncidents]);
   
   const filedIncidents = useMemo(() => 
-    sortedIncidents.filter(incident => incident.status === IncidentStatus.FILED),
+    sortedIncidents.filter(incident => IncidentStatus[incident.status] == IncidentStatus.FILED),
   [sortedIncidents]);
 
   return {

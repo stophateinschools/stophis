@@ -48,7 +48,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ dateRange, set
           mode="range"
           selected={dateRange}
           onSelect={setDateRange}
-          initialFocus
+          autoFocus
           className={cn("p-3 pointer-events-auto")}
         />
       </PopoverContent>

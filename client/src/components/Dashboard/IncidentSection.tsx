@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import IncidentsTable from '@/components/Dashboard/IncidentsTable';
 import { formatIncidentDate } from '@/utils/dateFormatters';
 import { Incident } from '@/lib/types';
+import IncidentPagination from '@/components/AllIncidents/IncidentPagination';
+import { useIncidentPagination } from '@/hooks/incidents/useIncidentPagination';
 
 interface IncidentSectionProps {
   title: string;
@@ -22,6 +24,7 @@ const IncidentSection = ({
   sortDirection,
   handleSort
 }: IncidentSectionProps) => {
+  const pagination = useIncidentPagination(incidents);
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -30,12 +33,17 @@ const IncidentSection = ({
       <CardContent>
         <IncidentsTable
           title={title}
-          incidents={incidents}
+          incidents={pagination.paginatedIncidents}
           sortBy={sortBy}
           sortDirection={sortDirection}
           handleSort={handleSort}
           getFormattedDate={formatIncidentDate}
           emptyMessage={emptyMessage}
+        />
+        <IncidentPagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setCurrentPage}
         />
       </CardContent>
     </Card>

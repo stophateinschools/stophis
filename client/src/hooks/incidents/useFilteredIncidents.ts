@@ -47,7 +47,7 @@ export const useFilteredIncidents = (
       const searchMatch = search === '' || 
         incident.summary.toLowerCase().includes(search.toLowerCase()) ||
         incident.details.toLowerCase().includes(search.toLowerCase()) ||
-        (incident.schools && incident.schools.some(s => s.name.toLowerCase().includes(search.toLowerCase()))) ||
+        (incident.schools && incident.schools.some(s => s.toLowerCase().includes(search.toLowerCase()))) ||
         (incident.city && incident.city.toLowerCase().includes(search.toLowerCase()));
       
       // Region filter

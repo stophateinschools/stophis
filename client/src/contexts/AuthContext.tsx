@@ -60,7 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(response.data["user"]);
       setLoading(false);
     };
-
     checkAuth();
   }, []);
 
