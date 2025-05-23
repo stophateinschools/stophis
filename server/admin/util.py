@@ -173,6 +173,7 @@ def simple_file_upload_from_url(url, filename):
             500,
         )
 
+    print(response.status_code, response.json())
     if response.status_code == 200:
         try:
             data = response.json()["data"]
@@ -563,6 +564,7 @@ def create_or_sync_incidents(data):
                     airtable_url = document["url"]
                     filename = document["filename"]
                     new_url = simple_file_upload_from_url(airtable_url, filename)
+                    print("Incident doc ", airtable_url, filename, new_url)
                     new_documents.append(IncidentDocument(url=new_url, name=filename))
 
                 new_incident = Incident(
