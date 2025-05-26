@@ -12,11 +12,11 @@ import { useIncidentData } from '@/contexts/IncidentContext';
 export default function Dashboard() {
   const { currentUser } = useAuth();
   
-  // Display Washington as the default region
-  const userRegions = currentUser?.regions || ["Washington State"];
-  const userOrganization = currentUser?.organization || "Stop Hate in Schools";
+  const userRegions = currentUser?.regions;
+  const userOrganization = currentUser?.organization;
 
   const { incidents } = useIncidentData();
+  const filteredIncidents = incidents.filter(incident => incident.owner.organization == userOrganization || userRegions.includes(incident.state));
 
   const {
     search,
@@ -26,7 +26,7 @@ export default function Dashboard() {
     handleSort,
     activeIncidents,
     filedIncidents
-  } = useIncidentDashboard(incidents);
+  } = useIncidentDashboard(filteredIncidents);
 
   const displayActiveIncidents: Incident[] = activeIncidents;
     

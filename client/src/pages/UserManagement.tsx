@@ -98,7 +98,7 @@ export default function UserManagement() {
       user.name.toLowerCase().includes(search.toLowerCase()) ||
       user.email.toLowerCase().includes(search.toLowerCase()) ||
       user.organization.toLowerCase().includes(search.toLowerCase()) ||
-      user.regions.some(r => r.toLowerCase().includes(search.toLowerCase()));
+      user.region.some(r => r.toLowerCase().includes(search.toLowerCase()));
   });
 
   // Sort users with enhanced multi-column support
@@ -112,8 +112,8 @@ export default function UserManagement() {
         return a.organization.localeCompare(b.organization) * direction;
       case 'regions':
         // Sort by first region
-        const regionA = a.regions.length > 0 ? a.regions[0] : '';
-        const regionB = b.regions.length > 0 ? b.regions[0] : '';
+        const regionA = a.region.length > 0 ? a.region[0] : '';
+        const regionB = b.region.length > 0 ? b.region[0] : '';
         return regionA.localeCompare(regionB) * direction;
       case 'role':
         const roleA = a.isAdmin ? 'Admin' : 'Collaborator';
@@ -305,7 +305,7 @@ export default function UserManagement() {
                       <TableCell>{user.organization}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {user.regions.map(region => (
+                          {user.region.map(region => (
                             <Badge key={region} variant="outline">
                               {region}
                             </Badge>

@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { District, Incident, School } from '@/lib/types';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIncidentAccess } from '@/utils/incidentUtils';
 
 interface IncidentRowProps {
   incident: Incident;
@@ -15,7 +16,7 @@ interface IncidentRowProps {
 }
 
 const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
-  const { currentUser } = useAuth();
+  const { canEditIncident, canViewIncident } = useIncidentAccess();
   
   const formatUpdatedDate = (dateString: string) => {
     try {
@@ -25,57 +26,9 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
     }
   };
 
-  const canViewIncident = () => {
-    if (!currentUser) return false;
-    if (currentUser.isAdmin) return true;
-    if (incident.owner.id === currentUser.id) return true;
-    if (incident.owner.organization === currentUser.organization) return true;
-    
-    if (currentUser.organization && incident.sharing.organizations.includes(currentUser.organization)) {
-      return true;
-    }
-    
-    if (currentUser.regions.includes(incident.state) && incident.sharing.region) {
-      return true;
-    }
-    
-    if (incident.sharing.otherRegions) {
-      return true;
-    }
-    
-    return false;
-  };
-
-  const canEditIncident = () => {
-    if (!currentUser) return false;
-    if (currentUser.isAdmin) return true;
-    if (incident.owner.id === currentUser.id) return true;
-    
-    // Check if user is from same organization and has edit rights
-    if (incident.owner.organization === currentUser.organization) {
-      return true;
-    }
-    
-    // Check if user's organization has edit rights
-    if (currentUser.organization && 
-        incident.sharing.organizations.includes(currentUser.organization) && 
-        incident.sharing.allowOrganizationsEdit) {
-      return true;
-    }
-    
-    // Check if user's region has edit rights
-    if (currentUser.regions.includes(incident.state) && 
-        incident.sharing.region && 
-        incident.sharing.allowRegionEdit) {
-      return true;
-    }
-    
-    return false;
-  };
-
   const accessLevel = () => {
-    if (!canViewIncident()) return 'restricted';
-    if (!canEditIncident()) return 'view-only';
+    if (!canViewIncident(incident)) return 'restricted';
+    if (!canEditIncident(incident)) return 'view-only';
     return 'full-access';
   };
 

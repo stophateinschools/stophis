@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Badge } from '@/components/ui/badge';
 import { DateRange } from './DateRangeFilter';
 import { X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ActiveFilterBadgesProps {
   dateRange: DateRange | undefined;
@@ -22,6 +23,7 @@ export const ActiveFilterBadges: React.FC<ActiveFilterBadgesProps> = ({
   selectedStates,
   onClearFilter,
 }) => {
+  const { currentUser } = useAuth();
   return (
     <div className="flex flex-wrap gap-2 ml-auto">
       {dateRange?.from && (
@@ -38,7 +40,7 @@ export const ActiveFilterBadges: React.FC<ActiveFilterBadgesProps> = ({
       )}
       {myOrganizationOnly && (
         <Badge variant="secondary" className="flex items-center gap-1">
-          My Organization Only
+          {currentUser.organization ? currentUser.organization : 'No Associated Organization'}
           {onClearFilter && (
             <X 
               className="h-3 w-3 ml-1 cursor-pointer" 
@@ -49,7 +51,7 @@ export const ActiveFilterBadges: React.FC<ActiveFilterBadgesProps> = ({
       )}
       {filterByRegion === 'my-regions' && (
         <Badge variant="secondary" className="flex items-center gap-1">
-          My Regions Only
+          {currentUser.regions.length > 0 ? `${currentUser.regions[0]}` : 'No Associated Regions'}
           {onClearFilter && (
             <X 
               className="h-3 w-3 ml-1 cursor-pointer" 

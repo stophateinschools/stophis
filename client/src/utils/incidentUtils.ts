@@ -19,20 +19,7 @@ export const useIncidentAccess = () => {
     if (incident.owner.organization == currentUser.organization) return true;
     
     // Check sharing settings
-    if (currentUser.organization && incident.sharing.organizations.includes(currentUser.organization)) {
-      return true;
-    }
-    
-    if (currentUser.regions?.includes(incident.state) && incident.sharing.region) {
-      return true;
-    }
-    
-    if (incident.sharing.otherRegions) {
-      return true;
-    }
-    
-    // Special case for sample view-only incident
-    if (incident.id === 'sample-view-only-1') {
+    if (currentUser.organization && incident.sharingDetails?.organizations?.includes(currentUser.organization)) {
       return true;
     }
     
@@ -52,21 +39,8 @@ export const useIncidentAccess = () => {
     
     // Check if user's organization has edit permission
     if (currentUser.organization && 
-        incident.sharing.organizations.includes(currentUser.organization) && 
-        incident.sharing.allowOrganizationsEdit) {
+        incident.sharingDetails?.organizations?.includes(currentUser.organization)) {
       return true;
-    }
-    
-    // Check if user's region has edit permission
-    if (currentUser.regions.includes(incident.state) && 
-        incident.sharing.region && 
-        incident.sharing.allowRegionEdit) {
-      return true;
-    }
-    
-    // Sample view-only incident is explicitly not editable
-    if (incident.id === 'sample-view-only-1') {
-      return false;
     }
     
     return false;

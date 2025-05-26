@@ -79,9 +79,14 @@ class UserView(AuditModelView):
         "last_name",
         "email",
         "roles",
+        "attribution_type",
+        "region",
         *AuditModelView.column_list,
     ]
-    form_columns = ["first_name", "last_name", "email", "roles"]
+    column_labels = {
+        "attribution_type": "Organization"
+    }
+    form_columns = ["first_name", "last_name", "email", "roles", "attribution_type", "region"]
     named_filter_urls = True
 
     def _all_audit_log_link(view, context, model, name):

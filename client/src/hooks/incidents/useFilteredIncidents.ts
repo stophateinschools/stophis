@@ -45,14 +45,18 @@ export const useFilteredIncidents = (
     return incidents.filter(incident => {
       // Text search filter
       const searchMatch = search === '' || 
-        incident.summary.toLowerCase().includes(search.toLowerCase()) ||
-        incident.details.toLowerCase().includes(search.toLowerCase()) ||
+        incident.summary?.toLowerCase().includes(search.toLowerCase()) ||
+        incident.details?.toLowerCase().includes(search.toLowerCase()) ||
         (incident.schools && incident.schools.some(s => s.toLowerCase().includes(search.toLowerCase()))) ||
+        (incident.districts && incident.districts.some(d => d.toLowerCase().includes(search.toLowerCase()))) || 
         (incident.city && incident.city.toLowerCase().includes(search.toLowerCase()));
       
       // Region filter
       let regionMatch = true;
       if (filterByRegion === 'my-regions' && currentUser) {
+        if (currentUser.regions && currentUser.regions.length == 0) {
+          return false;
+        }
         regionMatch = currentUser.regions.includes(incident.state);
       }
       

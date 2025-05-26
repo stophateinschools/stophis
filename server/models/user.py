@@ -35,6 +35,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
     profile_picture = db.Column(db.String())
+    # TODO support multiple regions
     region = db.Column(db.Enum(State, name="state"))
     attribution_type_id = db.Column(
         db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
@@ -59,7 +60,7 @@ class User(UserMixin, db.Model):
             "lastName": self.last_name,
             "email": self.email,
             "profilePicture": self.profile_picture,
-            "region": self.region,
+            "regions": [self.region.name] if self.region else [],
             "organization": (
                 self.attribution_type.name if self.attribution_type else None
             ),
