@@ -1,6 +1,8 @@
+import datetime
 from enum import Enum
 from flask_login import UserMixin
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
+from sqlalchemy import DateTime
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .models import State
@@ -45,6 +47,16 @@ class User(UserMixin, db.Model):
     roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="owner")
     notes = db.relationship("InternalNote", back_populates="author")
+    terms_acceptances = db.relationship("UserTermsAcceptance", back_populates="user")
+
+    @property
+    def most_recent_terms_accepted(self):
+        """Get the most recent terms acceptance for this user."""
+        if self.terms_acceptances:
+            return max(
+                self.terms_acceptances, key=lambda acceptance: acceptance.accepted_on
+            )
+        return None
 
     @hybrid_property
     def name(self):
@@ -85,6 +97,28 @@ class OAuth(OAuthConsumerMixin, db.Model):
     provider_user_id = db.Column(db.String(256), nullable=True, unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id))
     user = db.relationship(User)
+
+
+class UserTermsAcceptance(db.Model):
+    __tablename__ = "user_terms_acceptances"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey("users.id"), nullable=False)
+    # Eventually could be a foreign key to a Terms model
+    version = db.Column(db.String(), nullable=False)
+    accepted_on = db.Column(
+        DateTime(timezone=True), default=datetime.datetime.now, nullable=False
+    )
+
+    user = db.relationship("User", back_populates="terms_acceptances")
+
+    def jsonable(self):
+        return {
+            "id": self.id,
+            "userId": self.user_id,
+            "version": self.version,
+            "acceptedOn": self.accepted_on.isoformat(),
+        }
 
 
 def create_user(user):

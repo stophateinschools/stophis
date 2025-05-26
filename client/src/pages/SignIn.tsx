@@ -5,7 +5,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 
 export default function SignIn() {
-  const { currentUser, loading, signIn } = useAuth();
+  const { currentUser, termsAccepted, signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSignIn = async (token: string) => {
@@ -18,9 +18,13 @@ export default function SignIn() {
 
   useEffect(() => {
     if (currentUser) {
-      navigate('/dashboard', { replace: true });
+      if (termsAccepted) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        navigate('/terms', { replace: true });
+      }
     }
-  }, [currentUser]);
+  }, [currentUser, termsAccepted]);
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-gradient-to-b from-white to-blue-50">

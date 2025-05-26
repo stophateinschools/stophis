@@ -1,8 +1,6 @@
 import os
 from flask import (
     Blueprint,
-    current_app,
-    flash,
     jsonify,
     redirect,
     request,
@@ -12,7 +10,7 @@ from flask import (
 from functools import wraps
 from flask_login import current_user, login_user, logout_user
 
-from ..models.user import OAuth, User, UserRole
+from ..models.user import OAuth, User, UserTermsAcceptance
 from ..database import db
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -57,27 +55,56 @@ def login_required(roles=None):
 def login_status():
     """Check if user is logged in."""
     if current_user.is_authenticated:
-        return jsonify({"logged_in": True, "user": current_user.jsonable()}), 200
+        return (
+            jsonify(
+                {
+                    "logged_in": True,
+                    "user": current_user.jsonable(),
+                    "termsAccepted": (
+                        current_user.most_recent_terms_accepted.jsonable()
+                        if current_user.most_recent_terms_accepted
+                        else None
+                    ),
+                }
+            ),
+            200,
+        )
     else:
         return jsonify({"logged_in": False}), 200
+
+
+@auth.route("/accept-terms", methods=["POST"])
+def accept_terms_of_service():
+    """Accept terms of service."""
+    if not current_user.is_authenticated:
+        return jsonify({"error": "User not authenticated"}), 401
+
+    version = request.json.get("version")
+    print(current_user.most_recent_terms_accepted)
+    most_recent_acceptance = current_user.most_recent_terms_accepted
+    if most_recent_acceptance and most_recent_acceptance.version == version:
+        return jsonify({"message": "Terms of service already accepted"}), 200
+
+    accepted_terms = UserTermsAcceptance(
+        user=current_user,
+        version=version,
+    )
+
+    db.session.add(accepted_terms)
+    db.session.commit()
+
+    return jsonify({"message": "Terms of service accepted"}), 200
 
 
 @auth.route("/login", methods=["POST"])
 def login():
     """Store and verify token."""
     token = request.json.get("token")
-    print("Token ", token)
     try:
-        # Verify the token with Google
-        # idinfo = google_bp.session.get(
-        #     'https://oauth2.googleapis.com/tokeninfo',
-        #     params={'id_token': token}
-        # ).json()
         user_info = id_token.verify_oauth2_token(
             token, google_requests.Request(), os.getenv("GOOGLE_CLIENT_ID")
         )
 
-        print("User info:", user_info)
         oauth = OAuth.query.filter_by(provider_user_id=user_info["sub"]).first()
 
         if not oauth:
@@ -106,7 +133,14 @@ def login():
 
         login_user(user)
         # If the user exists, log them in
-        return user.jsonable()
+        return {
+            "user": user.jsonable(),
+            "termsAccepted": (
+                user.most_recent_terms_accepted.jsonable()
+                if user.most_recent_terms_accepted
+                else None
+            ),
+        }
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

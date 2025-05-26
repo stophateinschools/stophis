@@ -1,7 +1,8 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, TermsOfService } from '@/lib/types';
+import { User } from '@/lib/types';
 import api from '@/utils/api';
+import { TERMS_VERSION } from '@/pages/TermsOfService';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -17,21 +18,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const signIn = async (token: string) => {
     const response = await api.post(`/auth/login`, { token });
     console.log("Response from login server:", response.data);
-    setCurrentUser(response.data);
+    setCurrentUser(response.data["user"]);
 
-    // Check if user has accepted terms
-    // const terms: TermsOfService = {
-    //   accepted: false,
-    //   version: "1.0",
-    //   acceptedDate: "",
-    // };
+    if (response.data["termsAccepted"] && response.data["termsAccepted"].version == TERMS_VERSION) {
+      setTermsAccepted(true);
+    }
     
-    // setTermsAccepted(terms.accepted);
     setLoading(false);
   };
 
@@ -39,16 +36,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("Signing out...");
     // In a real implementation, this would sign out from Google OAuth
     const response = await api.post(`/auth/logout`);
-    console.log("Response from logout server:", response.data);
     setCurrentUser(null);
     setLoading(false);
   };
 
-  const acceptTerms = () => {
-    console.log("Terms accepted");
+  const acceptTerms = async  () => {
+    await api.post(`/auth/accept-terms`, { version: TERMS_VERSION });
     setTermsAccepted(true);
-    
-    // In a real implementation, this would save the acceptance to the backend
   };
 
   // Auto-login for development purposes
@@ -58,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // For now, we'll simulate a logged-in state
       const response = await api.get(`/auth/status`);
       setCurrentUser(response.data["user"]);
+      setTermsAccepted(response.data["termsAccepted"] && response.data["termsAccepted"].version === TERMS_VERSION);
       setLoading(false);
     };
     checkAuth();

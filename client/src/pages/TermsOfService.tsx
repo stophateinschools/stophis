@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 
+export const TERMS_VERSION = '1.0';
+
 export default function TermsOfService() {
   const { acceptTerms } = useAuth();
   const navigate = useNavigate();
