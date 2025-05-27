@@ -93,7 +93,7 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
       </TableCell>
       <TableCell>
         {accessLevel() === 'restricted' ? (
-          <a href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`}>
+          <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}>
             <Button variant="ghost" size="sm">
               <Mail className="h-4 w-4" />
             </Button>
