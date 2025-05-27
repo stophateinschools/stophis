@@ -1,6 +1,6 @@
 import datetime
 from flask import Blueprint, jsonify, request
-from flask_login import current_user
+from flask_login import current_user, login_required
 from server.models.models import (
     AttributionType,
     Incident,
@@ -20,9 +20,12 @@ from server.models.models import (
 )
 from ..database import db
 from dateutil.parser import parse
+from rq import Queue
+from worker import conn
+from sqlalchemy.orm import selectinload, joinedload
 
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
-
+q = Queue(connection=conn)
 
 def update_documents(incident, documents):
     current_documents = incident.documents
@@ -250,7 +253,25 @@ def apply_incident_data(incident, data):
 def get_all_incidents():
     """Get all incidents."""
     try:
-        incidents = Incident.query.all()
+        incidents = (
+            Incident.query
+            .options(
+                joinedload(Incident.owner),
+                selectinload(Incident.schools),
+                selectinload(Incident.districts),
+                selectinload(Incident.unions),
+                selectinload(Incident.internal_notes),
+                selectinload(Incident.documents),
+                selectinload(Incident.related_links),
+                selectinload(Incident.types),
+                selectinload(Incident.source_types),
+                selectinload(Incident.attributions),
+                selectinload(Incident.school_reports),
+                selectinload(Incident.school_responses),
+                joinedload(Incident.publish_details),
+                joinedload(Incident.sharing_details),
+            ).all()
+        )
         return jsonify([incident.jsonable() for incident in incidents]), 200
     except Exception as e:
         print("Error getting incidents: ", e)
