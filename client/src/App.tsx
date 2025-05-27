@@ -49,10 +49,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (currentUser && termsAccepted && location.pathname !== '/dashboard') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   return <>{children}</>;
 };
 

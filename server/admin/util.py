@@ -509,11 +509,19 @@ def create_or_sync_incidents(data):
                 if fields.get("Month") and fields.get("Month") != "null"
                 else None
             )
+            occurred_on_month_end = None
+            if occurred_on_month_start and "-" in occurred_on_month_start:
+                # If the month is in a format like "09-10", we need to set month_start and month_end
+                arr = occurred_on_month_start.split("-")
+                occurred_on_month_start = arr[0].strip()
+                occurred_on_month_end = arr[1].strip() if len(arr) > 1 else None
             occurred_on_day_start = (
                 fields.get("Day")
                 if fields.get("Day") and fields.get("Day") != "null"
                 else None
             )
+            if occurred_on_day_start and occurred_on_day_start == "multiple dates":
+                occurred_on_day_start = None
 
             incident_type_name = (
                 fields.get("Incident-Type")[0] if fields.get("Incident-Type") else None
@@ -587,6 +595,7 @@ def create_or_sync_incidents(data):
                     updated_on=updated_on,
                     occurred_on_year=occurred_on_year,
                     occurred_on_month_start=occurred_on_month_start,
+                    occurred_on_month_end=occurred_on_month_end,
                     occurred_on_day_start=occurred_on_day_start,
                     publish_details=publish_details,
                     types=[incident_type] if incident_type else [],
@@ -616,6 +625,7 @@ def create_or_sync_incidents(data):
                 existing_incident.districts = [district] if district else []
                 existing_incident.occurred_on_year = occurred_on_year
                 existing_incident.occurred_on_month_start = occurred_on_month_start
+                existing_incident.occurred_on_month_end = occurred_on_month_end
                 existing_incident.occurred_on_day_start = occurred_on_day_start
                 existing_incident.city = city
                 existing_incident.state = state
