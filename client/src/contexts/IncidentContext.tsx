@@ -11,6 +11,9 @@ type IncidentContextType = {
   incidents: Incident[] | undefined;
   addIncident: (incident: IncidentInput) => Promise<void>;
   updateIncident: (id: string, updates: Partial<Incident>) => Promise<void>;
+  addComment: (incidentId: string, note: string) => Promise<void>;
+  updateComment: (incidentId: string, noteId: string, note: string) => Promise<void>;
+  deleteComment: (incidentId: string, noteId: string) => Promise<void>;
   getIncidentById: (id: string) => Incident | null;
   isLoadingIncidents: boolean;
 };
@@ -56,6 +59,34 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
     },
   });
 
+  // Add comment
+  const addCommentMutation = useMutation({
+    mutationFn: async ({ incidentId, note }: { incidentId: string; note: string }) => {
+      await api.post(`/incidents/${incidentId}/notes`, { note });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: async ({ incidentId, noteId, note }: { incidentId: string; noteId: string; note: string }) => {
+      await api.patch(`/incidents/${incidentId}/notes/${noteId}`, { note });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: async ({ incidentId, noteId }: { incidentId: string; noteId: string }) => {
+      await api.delete(`/incidents/${incidentId}/notes/${noteId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+    },
+  });
+
   const addIncident = async (incident: IncidentInput) => {
     await createMutation.mutateAsync(incident);
   };
@@ -63,6 +94,18 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
   const updateIncident = async (id: string, updates: Partial<Incident>) => {
     await updateMutation.mutateAsync({ id, updates });
   };
+
+  const addComment = async (incidentId: string, note: string) => {
+    await addCommentMutation.mutateAsync({ incidentId, note });
+  }
+
+  const updateComment = async (incidentId: string, noteId: string, note: string) => {
+    await updateCommentMutation.mutateAsync({ incidentId, noteId, note });
+  }
+
+  const deleteComment = async (incidentId: string, noteId: string) => {
+    await deleteCommentMutation.mutateAsync({ incidentId, noteId });
+  }
 
   const getIncidentById = (id: string) => {
     if (!incidents) return null;
@@ -76,6 +119,9 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
         incidents,
         addIncident,
         updateIncident,
+        addComment,
+        updateComment,
+        deleteComment,
         getIncidentById,
         isLoadingIncidents,
         // refetchIncidents,

@@ -37,6 +37,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   editValue,
   setEditValue
 }) => {
+  const dateDisplayValue = comment.updatedOn ? comment.updatedOn : comment.createdOn;
   return (
     <div className="flex space-x-3">
       <Avatar>
@@ -48,7 +49,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
           <div className="font-medium">{comment.author.firstName}</div>
           <div className="flex items-center">
             <div className="text-xs text-muted-foreground mr-2">
-              {formatDistanceToNow(new Date(comment.createdOn), { addSuffix: true })}
+              {formatDistanceToNow(new Date(dateDisplayValue), { addSuffix: true })}
               {comment.updatedOn && <span className="ml-1">(edited)</span>}
             </div>
             

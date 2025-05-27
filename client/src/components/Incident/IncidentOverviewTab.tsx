@@ -20,7 +20,6 @@ import { useData } from '@/contexts/DataContext';
 import { useSchools } from '@/hooks/useSchools';
 import { useDistricts } from '@/hooks/useDistricts';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface IncidentOverviewTabProps {
   form: UseFormReturn<FormValues>;

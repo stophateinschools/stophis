@@ -1,31 +1,24 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useData } from '@/contexts/DataContext';
 import { useToast } from "@/hooks/use-toast";
 import { Incident } from '@/lib/types';
+import { useIncidentData } from '@/contexts/IncidentContext';
 
 export const useDiscussion = (incident: Incident) => {
   const { currentUser } = useAuth();
-  const { addComment, updateComment, deleteComment } = useData();
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentValue, setEditCommentValue] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState<string | null>(null);
+  const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { addComment, updateComment, deleteComment } = useIncidentData();
   
   const handleSubmitComment = () => {
     if (!currentUser || !newComment.trim()) return;
     
-    addComment(incident.id, {
-      userId: currentUser.id,
-      userName: currentUser.firstName + ' ' + currentUser.lastName,
-      userPhotoURL: currentUser.profilePicture,
-      timestamp: new Date().toISOString(),
-      content: newComment
-    });
-    
+    addComment(incident.id, newComment.trim());
     setNewComment('');
   };
 
@@ -37,11 +30,7 @@ export const useDiscussion = (incident: Incident) => {
   const handleSaveEdit = () => {
     if (!editingCommentId || !editCommentValue.trim()) return;
     
-    updateComment(incident.id, editingCommentId, {
-      content: editCommentValue,
-      edited: true,
-      editTimestamp: new Date().toISOString()
-    });
+    updateComment(incident.id, editingCommentId, editCommentValue);
     
     toast({
       title: "Comment updated",
@@ -58,14 +47,14 @@ export const useDiscussion = (incident: Incident) => {
   };
   
   const handleDeleteClick = (commentId: string) => {
-    setCommentToDelete(commentId);
+    setDeleteCommentId(commentId);
     setDeleteDialogOpen(true);
   };
   
   const handleConfirmDelete = () => {
-    if (!commentToDelete) return;
+    if (!deleteCommentId) return;
     
-    deleteComment(incident.id, commentToDelete);
+    deleteComment(incident.id, deleteCommentId);
     
     toast({
       title: "Comment deleted",
@@ -73,7 +62,7 @@ export const useDiscussion = (incident: Incident) => {
     });
     
     setDeleteDialogOpen(false);
-    setCommentToDelete(null);
+    setDeleteCommentId(null);
   };
   
   const canUserModifyComment = (userId: string) => {

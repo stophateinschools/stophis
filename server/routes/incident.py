@@ -11,6 +11,7 @@ from server.models.models import (
     IncidentSharingStatus,
     IncidentSourceType,
     IncidentType,
+    InternalNote,
     RelatedLink,
     School,
     SchoolDistrict,
@@ -334,3 +335,48 @@ def update_incident(incident_id):
     db.session.commit()
 
     return jsonify({"message": "Incident updated"}), 200
+
+
+@incident.route("<int:incident_id>/notes", methods=["POST"])
+def add_incident_comment(incident_id):
+    incident = Incident.query.get_or_404(incident_id)
+    note = request.json.get("note")
+    new_note = InternalNote(
+        note=note,
+        incident_id=incident.id,
+        author_id=current_user.id,
+        created_on=datetime.datetime.now(datetime.timezone.utc),
+    )
+    db.session.add(new_note)
+    db.session.commit()
+
+    return jsonify({"message": "Comment added"}), 200
+
+
+@incident.route("<int:incident_id>/notes/<int:note_id>", methods=["PATCH"])
+def update_incident_comment(incident_id, note_id):
+    incident = Incident.query.get_or_404(incident_id)
+    note = request.json.get("note")
+
+    existing_note = InternalNote.query.filter_by(id=note_id, incident_id=incident.id).first()
+    if not existing_note:
+        return jsonify({"error": "Note not found"}), 404
+
+    existing_note.note = note
+    existing_note.updated_on = datetime.datetime.now(datetime.timezone.utc)
+    db.session.commit()
+
+    return jsonify({"message": "Comment updated"}), 200
+
+
+@incident.route("<int:incident_id>/notes/<int:note_id>", methods=["DELETE"])
+def delete_incident_comment(incident_id, note_id):
+    incident = Incident.query.get_or_404(incident_id)
+    note = InternalNote.query.filter_by(id=note_id, incident_id=incident.id).first()
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    db.session.delete(note)
+    db.session.commit()
+
+    return jsonify({"message": "Comment deleted"}), 200
