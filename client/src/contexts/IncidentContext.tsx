@@ -1,4 +1,5 @@
 import Loader from '@/components/ui/loader';
+import { useAuth } from '@/contexts/AuthContext';
 import { Incident } from '@/lib/types';
 import api from '@/utils/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ const IncidentContext = createContext<IncidentContextType | undefined>(undefined
 
 export const IncidentProvider = ({ children }: { children: React.ReactNode }) => {
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
 
   // Fetch incidents
   const {
@@ -30,6 +32,7 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
       const res = await api.get("/incidents");
       return res.data;
     },
+    enabled: !!currentUser,
   });
 
   // Create incident
