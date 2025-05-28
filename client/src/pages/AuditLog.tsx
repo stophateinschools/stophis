@@ -29,6 +29,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { userIsAdmin } from '@/utils/incidentUtils';
 
 const AuditLog = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const AuditLog = () => {
   const { auditLog, incidents, users, organizations } = useData();
   
   // Redirect non-admin users
-  if (!currentUser?.isAdmin) {
+  if (!userIsAdmin(currentUser)) {
     navigate('/dashboard');
     return null;
   }

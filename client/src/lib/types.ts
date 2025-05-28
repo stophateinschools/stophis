@@ -7,9 +7,7 @@ export interface User {
   profilePicture: string;
   organization: string;
   regions: string[] | undefined;
-  isAdmin: boolean;
-  isArchived: boolean;
-  incidentCount: number;
+  roles: string[];
 }
 
 export interface DiscussionComment {

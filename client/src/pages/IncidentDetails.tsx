@@ -1,7 +1,6 @@
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useData } from '@/contexts/DataContext';
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -12,11 +11,9 @@ import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function IncidentDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { getIncidentById } = useIncidentData();;
   const { canViewIncident } = useIncidentAccess();
   
-  const [isViewOnly, setIsViewOnly] = useState(false);
   const incident = getIncidentById(id);
 
   // Check if user has access to this incident
@@ -73,7 +70,7 @@ export default function IncidentDetails() {
 
   return (
     <div className="container mx-auto py-4">
-      {isViewOnly && (
+      {canViewIncident && (
         <Alert className="mb-4 bg-blue-50 border-blue-200">
           <Eye className="h-4 w-4 text-blue-600" />
           <div className="flex items-center justify-between w-full">

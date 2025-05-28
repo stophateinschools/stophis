@@ -112,6 +112,21 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
           </Link>
         )}
       </TableCell>
+      <TableCell>
+        {accessLevel() !== 'full-access' ? (
+          <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}>
+            <Button variant="ghost" size="sm">
+              <Mail className="h-4 w-4" />
+            </Button>
+          </a>
+        ) : (
+          <Link to={`/incidents/edit/${incident.id}`}>
+            <Button variant="ghost" size="sm">
+              <Edit className="h-4 w-4" />
+            </Button>
+          </Link>
+        )}
+      </TableCell>
     </TableRow>
   );
 };

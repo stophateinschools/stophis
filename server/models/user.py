@@ -69,6 +69,7 @@ class User(UserMixin, db.Model):
             "firstName": self.first_name,
             "lastName": self.last_name,
             "email": self.email,
+            "roles": [role.name.value for role in self.roles] if self.roles else [],
             "profilePicture": self.profile_picture,
             "regions": [region.name for region in self.regions] if self.regions else [],
             "organization": (

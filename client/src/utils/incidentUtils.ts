@@ -1,5 +1,5 @@
 
-import { Incident } from '@/lib/types';
+import { Incident, User } from '@/lib/types';
 import { formatIncidentDate } from '@/utils/dateFormatters';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,13 +8,17 @@ export const getFormattedDate = (incident: Incident) => {
   return formatIncidentDate(incident);
 };
 
+export const userIsAdmin = (currentUser: User) => {
+  return currentUser?.roles?.includes("Admin");
+}
+
 // Determine if current user can view incident details
 export const useIncidentAccess = () => {
   const { currentUser } = useAuth();
   
   const canViewIncident = (incident: Incident) => {
     if (!currentUser) return false;
-    if (currentUser.isAdmin) return true;
+    if (userIsAdmin(currentUser)) return true;
     if (incident.owner.id == currentUser.id) return true;
     if (incident.owner.organization == currentUser.organization) return true;
     
@@ -29,7 +33,7 @@ export const useIncidentAccess = () => {
   // New function to determine if current user can edit incident
   const canEditIncident = (incident: Incident) => {
     if (!currentUser) return false;
-    if (currentUser.isAdmin) return true;
+    if (userIsAdmin(currentUser)) return true;
     if (incident.owner.id === currentUser.id) return true;
     
     // Users from same organization as owner can edit

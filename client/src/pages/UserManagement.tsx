@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { userIsAdmin } from '@/utils/incidentUtils';
 
 export default function UserManagement() {
   const { users, organizations, archiveUser, unarchiveUser } = useData();
@@ -59,7 +60,7 @@ export default function UserManagement() {
   const availableRegions = ["Oregon", "Washington", "California", "New York"];
   
   // Check if user is admin
-  if (!currentUser?.isAdmin) {
+  if (!userIsAdmin(currentUser)) {
     return (
       <div className="text-center py-10">
         <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />

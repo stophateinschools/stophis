@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserRound } from 'lucide-react';
+import { userIsAdmin } from '@/utils/incidentUtils';
 
 export default function Header() {
   const { currentUser, signOut } = useAuth();
@@ -59,14 +60,14 @@ export default function Header() {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {currentUser.isAdmin && (
+                {userIsAdmin(currentUser) && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin/users" className="w-full">
                       User Management
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {currentUser.isAdmin && (
+                {userIsAdmin(currentUser) && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin/audit-log" className="w-full">
                       Audit Log

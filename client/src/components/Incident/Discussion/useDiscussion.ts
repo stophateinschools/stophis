@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import { Incident } from '@/lib/types';
 import { useIncidentData } from '@/contexts/IncidentContext';
+import { userIsAdmin } from '@/utils/incidentUtils';
 
 export const useDiscussion = (incident: Incident) => {
   const { currentUser } = useAuth();
@@ -67,7 +68,7 @@ export const useDiscussion = (incident: Incident) => {
   
   const canUserModifyComment = (userId: string) => {
     if (!currentUser) return false;
-    return currentUser.id === userId || currentUser.isAdmin;
+    return currentUser.id === userId || userIsAdmin(currentUser);
   };
 
   return {
