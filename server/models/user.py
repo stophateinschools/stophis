@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 from flask_login import UserMixin
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
-from sqlalchemy import DateTime
+from sqlalchemy import ARRAY, DateTime
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .models import State
@@ -26,7 +26,6 @@ user_roles = db.Table(
     db.Column("role_id", db.Integer, db.ForeignKey("roles.id"), primary_key=True),
 )
 
-
 class User(UserMixin, db.Model):
     """A user."""
 
@@ -37,8 +36,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(), nullable=False)
     email = db.Column(db.String(), nullable=False, unique=True)
     profile_picture = db.Column(db.String())
-    # TODO support multiple regions
-    region = db.Column(db.Enum(State, name="state"))
+    regions = db.Column(ARRAY(db.Enum(State, name="state")), nullable=True)
     attribution_type_id = db.Column(
         db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
     )
@@ -72,7 +70,7 @@ class User(UserMixin, db.Model):
             "lastName": self.last_name,
             "email": self.email,
             "profilePicture": self.profile_picture,
-            "regions": [self.region.name] if self.region else [],
+            "regions": [region.name for region in self.regions] if self.regions else [],
             "organization": (
                 self.attribution_type.name if self.attribution_type else None
             ),

@@ -49,7 +49,7 @@ export default function IncidentDetails() {
 
               <div className="flex flex-col gap-4 sm:flex-row">
                 <a 
-                  href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`}
+                  href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}
                   className="w-full sm:w-auto"
                 >
                   <Button className="w-full flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function IncidentDetails() {
               </AlertDescription>
             </div>
             <a 
-              href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`}
+              href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}
             >
               <Button variant="outline" className="flex items-center gap-2 bg-white">
                 <Mail className="h-4 w-4" />

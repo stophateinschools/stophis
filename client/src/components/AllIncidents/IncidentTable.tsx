@@ -88,7 +88,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                       </Button>
                     </Link>
                   ) : (
-                    <a href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
+                    <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
                       <Button variant="ghost" size="sm">
                         <Mail className="h-4 w-4" />
                       </Button>
@@ -103,7 +103,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                       </Button>
                     </Link>
                   ) : (
-                    <a href={`mailto:${incident.owner.id}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
+                    <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
                       <Button variant="ghost" size="sm">
                         <Mail className="h-4 w-4" />
                       </Button>
