@@ -6,7 +6,6 @@ import SearchBox from '@/components/Dashboard/SearchBox';
 import IncidentSection from '@/components/Dashboard/IncidentSection';
 import { useIncidentDashboard } from '@/hooks/useIncidentDashboard';
 import { Incident } from '@/lib/types';
-import { useData } from '@/contexts/DataContext';
 import { useIncidentData } from '@/contexts/IncidentContext';
 
 export default function Dashboard() {

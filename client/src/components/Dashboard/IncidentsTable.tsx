@@ -43,7 +43,6 @@ const IncidentsTable = ({
                 <SortableHeader column="owner" label="Owner" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <SortableHeader column="updated" label="Last Updated" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort} />
                 <TableHead>View</TableHead>
-                <TableHead>Edit</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

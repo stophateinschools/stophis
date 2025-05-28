@@ -1,13 +1,13 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
 } from "@/components/ui/table";
-import { ExternalLink, Mail, EditIcon } from 'lucide-react';
+import { Eye, Mail } from 'lucide-react';
 import { Incident } from '@/lib/types';
 import { getFormattedDate, useIncidentAccess } from '@/utils/incidentUtils';
 import SortableHeader from '@/components/Dashboard/SortableHeader';
@@ -26,6 +26,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
   onSort
 }) => {
   const { canViewIncident } = useIncidentAccess();
+  const navigate = useNavigate();
 
   return (
     <div className="overflow-x-auto">
@@ -39,7 +40,6 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
             <SortableHeader column="types" label="Type" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <TableHead>Summary</TableHead>
             <TableHead>View</TableHead>
-            <TableHead>Edit</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -50,7 +50,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
             const hasAccess = canViewIncident(incident);
 
             return (
-              <TableRow key={incident.id}>
+              <TableRow key={incident.id} onClick={hasAccess ? () => navigate(`/incidents/${incident.id}`) : undefined} className={hasAccess ? "cursor-pointer hover:bg-gray-50" : ""}>
                 <TableCell>{getFormattedDate(incident)}</TableCell>
                 <TableCell>
                   {incident.city}, {incident.state}
@@ -84,22 +84,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                   {hasAccess ? (
                     <Link to={`/incidents/${incident.id}`}>
                       <Button variant="ghost" size="sm">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`} title="Request access to this incident">
-                      <Button variant="ghost" size="sm">
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                    </a>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {hasAccess ? (
-                    <Link to={`/incidents/edit/${incident.id}`}>
-                      <Button variant="ghost" size="sm">
-                        <EditIcon className="h-4 w-4" />
+                        <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
                   ) : (

@@ -12,13 +12,12 @@ import { useIncidentData } from '@/contexts/IncidentContext';
 export default function IncidentDetails() {
   const { id } = useParams();
   const { getIncidentById } = useIncidentData();;
-  const { canViewIncident } = useIncidentAccess();
+  const { canViewIncident, canEditIncident } = useIncidentAccess();
   
   const incident = getIncidentById(id);
 
   // Check if user has access to this incident
   const hasAccess = canViewIncident(incident);
-
 
   if (!hasAccess) {
     return (
@@ -69,28 +68,35 @@ export default function IncidentDetails() {
   }
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="container flex flex-col mx-auto py-4">
       {canViewIncident && (
-        <Alert className="mb-4 bg-blue-50 border-blue-200">
-          <Eye className="h-4 w-4 text-blue-600" />
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <AlertTitle className="text-blue-800">View Incident Summary Only</AlertTitle>
-              <AlertDescription className="text-blue-700">
-                Contact the incident owner to request full details.
-              </AlertDescription>
+        canEditIncident ? (
+          <Link to={`/incidents/edit/${incident.id}`} className='ml-auto mb-4'>
+            <Button variant="default" size="sm">
+              Edits
+            </Button>
+          </Link>
+        ) : (
+          <Alert className="mb-4 bg-blue-50 border-blue-200">
+            <Eye className="h-4 w-4 text-blue-600" />
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <AlertTitle className="text-blue-800">View Incident Summary Only</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  Contact the incident owner to request full details.
+                </AlertDescription>
+              </div>
+              <a 
+                href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}
+              >
+                <Button variant="outline" className="flex items-center gap-2 bg-white">
+                  <Mail className="h-4 w-4" />
+                  Contact Owner
+                </Button>
+              </a>
             </div>
-            <a 
-              href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}
-            >
-              <Button variant="outline" className="flex items-center gap-2 bg-white">
-                <Mail className="h-4 w-4" />
-                Contact Owner
-              </Button>
-            </a>
-          </div>
-        </Alert>
-      )}
+          </Alert>
+        ))}
       <IncidentViewTabs incident={incident} />
     </div>
   );

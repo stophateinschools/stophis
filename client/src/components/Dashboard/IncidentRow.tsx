@@ -4,7 +4,7 @@ import { TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, ExternalLink, Mail, Eye, Edit } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { District, Incident, School } from '@/lib/types';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ interface IncidentRowProps {
 
 const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
   const { canEditIncident, canViewIncident } = useIncidentAccess();
+  const navigate = useNavigate();
   
   const formatUpdatedDate = (dateString: string) => {
     try {
@@ -32,6 +33,8 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
     return 'full-access';
   };
 
+  const hasAccess = canViewIncident(incident);
+
   const isRecentlyUpdated = () => {
     const updatedDate = new Date(incident.updatedOn);
     const currentDate = new Date();
@@ -41,7 +44,14 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
   }
 
   return (
-    <TableRow key={incident.id} className={isRecentlyUpdated() ? "incident-updated bg-gray-50" : ""}>
+    <TableRow
+      key={incident.id}
+      onClick={hasAccess ? () => navigate(`/incidents/${incident.id}`) : undefined}
+      className={[
+        isRecentlyUpdated() && "bg-gray-50 incident-updated",
+        hasAccess && "hover:bg-gray-50 cursor-pointer",
+      ].filter(Boolean).join(" ")}
+    >
       <TableCell>{getFormattedDate(incident)}</TableCell>
       <TableCell>
         {incident.city}, {incident.state}
@@ -98,31 +108,10 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
               <Mail className="h-4 w-4" />
             </Button>
           </a>
-        ) : accessLevel() === 'view-only' ? (
+        ) : (
           <Link to={`/incidents/${incident.id}`}>
             <Button variant="ghost" size="sm">
               <Eye className="h-4 w-4" />
-            </Button>
-          </Link>
-        ) : (
-          <Link to={`/incidents/${incident.id}`}>
-            <Button variant="ghost" size="sm">
-              <Edit className="h-4 w-4" />
-            </Button>
-          </Link>
-        )}
-      </TableCell>
-      <TableCell>
-        {accessLevel() !== 'full-access' ? (
-          <a href={`mailto:${incident.owner.email}?subject=Request access to incident: ${incident.summary}`}>
-            <Button variant="ghost" size="sm">
-              <Mail className="h-4 w-4" />
-            </Button>
-          </a>
-        ) : (
-          <Link to={`/incidents/edit/${incident.id}`}>
-            <Button variant="ghost" size="sm">
-              <Edit className="h-4 w-4" />
             </Button>
           </Link>
         )}
