@@ -8,7 +8,7 @@ from flask import (
     abort,
 )
 from functools import wraps
-from flask_login import current_user, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user
 
 from ..models.user import OAuth, User, UserTermsAcceptance
 from ..database import db
@@ -35,20 +35,20 @@ def has_role(roles_required):
     return False
 
 
-def login_required(roles=None):
-    def decorator(function):
-        @wraps(function)
-        def wrapper(*args, **kwargs):
-            if not current_user.is_authenticated:
-                return redirect(url_for("main.index"))
+# def login_required(roles=None):
+#     def decorator(function):
+#         @wraps(function)
+#         def wrapper(*args, **kwargs):
+#             if not current_user.is_authenticated:
+#                 return redirect(url_for("main.index"))
 
-            if not has_role(roles):
-                return abort(403)
-            return function(*args, **kwargs)
+#             if not has_role(roles):
+#                 return abort(403)
+#             return function(*args, **kwargs)
 
-        return wrapper
+#         return wrapper
 
-    return decorator
+#     return decorator
 
 
 @auth.route("/status", methods=["GET"])
@@ -74,6 +74,7 @@ def login_status():
 
 
 @auth.route("/accept-terms", methods=["POST"])
+@login_required
 def accept_terms_of_service():
     """Accept terms of service."""
     if not current_user.is_authenticated:
@@ -147,6 +148,7 @@ def login():
 
 
 @auth.route("/logout", methods=["POST"])
+@login_required
 def logout():
     """Logout user."""
     logout_user()

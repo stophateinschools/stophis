@@ -251,6 +251,7 @@ def apply_incident_data(incident, data):
 
 
 @incident.route("", methods=["GET"])
+@login_required
 def get_all_incidents():
     """Get all incidents."""
     try:
@@ -280,6 +281,7 @@ def get_all_incidents():
 
 
 @incident.route("/<int:incident_id>", methods=["GET"])
+@login_required
 def get_incident(incident_id):
     """Get a specific incident by ID."""
     incident = Incident.query.get_or_404(incident_id)
@@ -287,6 +289,7 @@ def get_incident(incident_id):
 
 
 @incident.route("/metadata", methods=["GET"])
+@login_required
 def get_incident_metadata():
     """Get metadata for incidents."""
     try:
@@ -317,6 +320,7 @@ def get_incident_metadata():
 
 
 @incident.route("", methods=["POST"])
+@login_required
 def create_incident():
     data = request.get_json()
     incident = Incident()
@@ -328,6 +332,7 @@ def create_incident():
 
 
 @incident.route("/<int:incident_id>", methods=["PATCH"])
+@login_required
 def update_incident(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     data = request.get_json()
@@ -338,6 +343,7 @@ def update_incident(incident_id):
 
 
 @incident.route("<int:incident_id>/notes", methods=["POST"])
+@login_required
 def add_incident_comment(incident_id):
     incident = Incident.query.get_or_404(incident_id)
     note = request.json.get("note")
@@ -354,11 +360,14 @@ def add_incident_comment(incident_id):
 
 
 @incident.route("<int:incident_id>/notes/<int:note_id>", methods=["PATCH"])
+@login_required
 def update_incident_comment(incident_id, note_id):
     incident = Incident.query.get_or_404(incident_id)
     note = request.json.get("note")
 
     existing_note = InternalNote.query.filter_by(id=note_id, incident_id=incident.id).first()
+    if current_user.id != existing_note.author_id:
+        return jsonify({"error": "Unauthorized to delete this comment"}), 403
     if not existing_note:
         return jsonify({"error": "Note not found"}), 404
 
@@ -370,9 +379,12 @@ def update_incident_comment(incident_id, note_id):
 
 
 @incident.route("<int:incident_id>/notes/<int:note_id>", methods=["DELETE"])
+@login_required
 def delete_incident_comment(incident_id, note_id):
     incident = Incident.query.get_or_404(incident_id)
     note = InternalNote.query.filter_by(id=note_id, incident_id=incident.id).first()
+    if current_user.id != note.author_id:
+        return jsonify({"error": "Unauthorized to delete this comment"}), 403
     if not note:
         return jsonify({"error": "Note not found"}), 404
 

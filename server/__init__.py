@@ -41,7 +41,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 login_manager = LoginManager()
-login_manager.login_view = "google.login"
+login_manager.login_view = "auth.login"
 admin = Admin(app, index_view=AdminView(), url="/admin")
 
 from server import app
@@ -75,7 +75,6 @@ def serve_react(path):
     # TODO Check for caching
     client_dist_path = os.path.join(current_app.root_path, "../client/dist")
     request_path = os.path.join(client_dist_path, path)
-    print("CLIENT ", client_dist_path, "PATH ", path, "REQUEST ", request_path)
     if path and os.path.exists(request_path):
         # If the path exists, serve the file
         return send_from_directory(client_dist_path, path)
