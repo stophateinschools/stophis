@@ -11,6 +11,7 @@ from functools import wraps
 from flask_login import current_user, login_required, login_user, logout_user
 
 from ..models.user import OAuth, User, UserTermsAcceptance
+from ..models.models import AttributionType
 from ..database import db
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -115,6 +116,7 @@ def login():
                     email=user_info["email"],
                     first_name=user_info["given_name"],
                     last_name=user_info["family_name"],
+                    attribution_type=AttributionType.query.filter_by(name="Other").first(),
                 )
                 db.session.add(user)
                 db.session.commit()
