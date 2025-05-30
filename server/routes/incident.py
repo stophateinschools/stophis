@@ -221,15 +221,15 @@ def apply_incident_data(incident, data):
     incident.updated_on = now
 
     incident.types = IncidentType.query.filter(
-        IncidentType.name.in_(data.get("types"))
+        IncidentType.name.in_(data.get("types", []))
     ).all()
     incident.source_types = IncidentSourceType.query.filter(
-        IncidentSourceType.name.in_([data.get("sourceTypes")])
+        IncidentSourceType.name.in_([data.get("sourceTypes", [])])
     ).all()
-    incident.other_source = data.get("otherSource")
-    incident.schools = School.query.filter(School.name.in_(data.get("schools"))).all()
+    incident.other_source = data.get("otherSource", None)
+    incident.schools = School.query.filter(School.name.in_(data.get("schools", []))).all()
     incident.districts = SchoolDistrict.query.filter(
-        SchoolDistrict.name.in_(data.get("districts"))
+        SchoolDistrict.name.in_(data.get("districts", []))
     ).all()
 
     update_links(incident, data.get("links", []))

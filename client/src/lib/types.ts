@@ -67,7 +67,7 @@ export interface Incident {
   types: string[];
   links: string[];
   documents: Partial<IncidentDocument>[];
-  sourceTypes: string;
+  sourceTypes: string[];
   otherSource?: string;
   attributions?: string[];
   owner: User;

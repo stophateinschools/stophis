@@ -11,7 +11,6 @@ school = Blueprint("schools", __name__, url_prefix="/schools")
 def get_all_schools_by_state():
     """Get all schools."""
     state = request.args.get("state")
-    print("State: ", state)
     if not state:
         return []
 

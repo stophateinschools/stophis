@@ -23,8 +23,6 @@ export function useIncidentSubmit({
   const { addIncident, updateIncident } = useIncidentData();
   
   const onSubmit = (values: FormValues, status?: IncidentStatus) => {
-    console.log("In on submit: ", values, status)
-
     const finalStatus = status || values.status;
     const schoolReportStatus = values.schoolReportStatus === "yes" ? true : ( values.schoolReportStatus === "no" ? false : undefined);
     const schoolResponseStatus = values.schoolResponseStatus === "yes" ? true : ( values.schoolResponseStatus === "no" ? false : undefined);

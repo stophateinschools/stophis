@@ -73,7 +73,7 @@ export default function IncidentDetails() {
         canEditIncident ? (
           <Link to={`/incidents/edit/${incident.id}`} className='ml-auto mb-4'>
             <Button variant="default" size="sm">
-              Edits
+              Edit
             </Button>
           </Link>
         ) : (

@@ -74,19 +74,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ incident }) => {
       <div>
         <h3 className="font-medium mb-2">Source Type</h3>
         <ul>
-          {incident.sourceTypes.map(type => {
-            return <li>{type}</li>
+          {incident.sourceTypes.map((type, ind) => {
+            return <li key={ind}>{type}</li>
           })}
         </ul>
       </div>
-      
-      {incident.sourcePermissions && (
-        <div>
-          <h3 className="font-medium mb-2">Source Permissions</h3>
-          <p>Share with Jewish Orgs: {incident.sourcePermissions.shareWithJewishOrgs ? 'Yes' : 'No'}</p>
-          <p>Share on Website: {incident.sourcePermissions.shareOnWebsite ? 'Yes' : 'No'}</p>
-        </div>
-      )}
     </div>
   );
 };
