@@ -28,6 +28,7 @@ from sqlalchemy.orm import selectinload, joinedload
 incident = Blueprint("incidents", __name__, url_prefix="/incidents")
 q = Queue(connection=conn)
 
+
 def update_documents(incident, documents):
     current_documents = incident.documents
     added_documents = [
@@ -227,7 +228,9 @@ def apply_incident_data(incident, data):
         IncidentSourceType.name.in_(data.get("sourceTypes", []))
     ).all()
     incident.other_source = data.get("otherSource", None)
-    incident.schools = School.query.filter(School.name.in_(data.get("schools", []))).all()
+    incident.schools = School.query.filter(
+        School.name.in_(data.get("schools", []))
+    ).all()
     incident.districts = SchoolDistrict.query.filter(
         SchoolDistrict.name.in_(data.get("districts", []))
     ).all()
@@ -255,25 +258,22 @@ def apply_incident_data(incident, data):
 def get_all_incidents():
     """Get all incidents."""
     try:
-        incidents = (
-            Incident.query
-            .options(
-                joinedload(Incident.owner),
-                selectinload(Incident.schools),
-                selectinload(Incident.districts),
-                selectinload(Incident.unions),
-                selectinload(Incident.internal_notes),
-                selectinload(Incident.documents),
-                selectinload(Incident.related_links),
-                selectinload(Incident.types),
-                selectinload(Incident.source_types),
-                selectinload(Incident.attributions),
-                selectinload(Incident.school_reports),
-                selectinload(Incident.school_responses),
-                joinedload(Incident.publish_details),
-                joinedload(Incident.sharing_details),
-            ).all()
-        )
+        incidents = Incident.query.options(
+            joinedload(Incident.owner),
+            selectinload(Incident.schools),
+            selectinload(Incident.districts),
+            selectinload(Incident.unions),
+            selectinload(Incident.internal_notes),
+            selectinload(Incident.documents),
+            selectinload(Incident.related_links),
+            selectinload(Incident.types),
+            selectinload(Incident.source_types),
+            selectinload(Incident.attributions),
+            selectinload(Incident.school_reports),
+            selectinload(Incident.school_responses),
+            joinedload(Incident.publish_details),
+            joinedload(Incident.sharing_details),
+        ).all()
         return jsonify([incident.jsonable() for incident in incidents]), 200
     except Exception as e:
         print("Error getting incidents: ", e)
@@ -365,7 +365,9 @@ def update_incident_comment(incident_id, note_id):
     incident = Incident.query.get_or_404(incident_id)
     note = request.json.get("note")
 
-    existing_note = InternalNote.query.filter_by(id=note_id, incident_id=incident.id).first()
+    existing_note = InternalNote.query.filter_by(
+        id=note_id, incident_id=incident.id
+    ).first()
     if current_user.id != existing_note.author_id:
         return jsonify({"error": "Unauthorized to delete this comment"}), 403
     if not existing_note:

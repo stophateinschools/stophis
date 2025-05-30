@@ -79,33 +79,30 @@ class UserView(AuditModelView):
         "last_name",
         "email",
         "roles",
-        "attribution_type",
+        "organization",
         "regions",
         *AuditModelView.column_list,
     ]
-    column_labels = {"attribution_type": "Organization"}
     form_columns = [
         "first_name",
         "last_name",
         "email",
         "roles",
-        "attribution_type",
+        "organization",
         "regions",
     ]
-    form_overrides = {
-        "regions": SelectMultipleField
-    }
+    form_overrides = {"regions": SelectMultipleField}
     form_args = {
-        'regions': {
-            'choices': [(state.name, state.value) for state in State],
-            'widget': Select2Widget(multiple=True),
+        "regions": {
+            "choices": [(state.name, state.value) for state in State],
+            "widget": Select2Widget(multiple=True),
         }
     }
     named_filter_urls = True
 
     def on_form_prefill(self, form, id):
         if form.regions.data:
-            form.regions.data = [region.split('.')[-1] for region in form.regions.data]
+            form.regions.data = [region.split(".")[-1] for region in form.regions.data]
 
     def _all_audit_log_link(view, context, model, name):
         """For users, lets link to all audit activity and not just audits on the user model."""

@@ -17,7 +17,7 @@ from .admin.models import (
     SchoolView,
 )
 
-from .models.user import Role, User, UserRole
+from .models.user import Organization, Role, User, UserRole
 from .models.models import (
     AttributionType,
     Incident,
@@ -148,6 +148,14 @@ def create_app():
             roles_required=[UserRole.ADMIN],
         )
     )
+    admin.add_view(
+        BaseModelView(
+            AttributionType,
+            db.session,
+            category="Incidents",
+            roles_required=[UserRole.ADMIN],
+        )
+    )
 
     # Users
     admin.add_view(
@@ -158,7 +166,7 @@ def create_app():
     )
     admin.add_view(
         BaseModelView(
-            AttributionType,
+            Organization,
             db.session,
             category="Users",
             roles_required=[UserRole.ADMIN],
