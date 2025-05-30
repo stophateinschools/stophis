@@ -18,6 +18,19 @@ class UserRole(Enum):
         return self.value
 
 
+class Organization(db.Model):
+    """An incident report attribution type."""
+
+    __tablename__ = "organizations"
+
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=True)
+    description = db.Column(db.Text())
+
+    def __str__(self):
+        return f"{self.name}"
+
+
 # Association table for the many-to-many relationship
 user_roles = db.Table(
     "user_roles",
@@ -25,6 +38,7 @@ user_roles = db.Table(
     db.Column("user_id", db.Integer, db.ForeignKey("users.id"), primary_key=True),
     db.Column("role_id", db.Integer, db.ForeignKey("roles.id"), primary_key=True),
 )
+
 
 class User(UserMixin, db.Model):
     """A user."""
@@ -37,10 +51,10 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(), nullable=False, unique=True)
     profile_picture = db.Column(db.String())
     regions = db.Column(ARRAY(db.Enum(State, name="state")), nullable=True)
-    attribution_type_id = db.Column(
-        db.Integer, db.ForeignKey("attribution_types.id"), nullable=False
+    organization_id = db.Column(
+        db.Integer, db.ForeignKey("organizations.id"), nullable=True
     )
-    attribution_type = db.relationship("AttributionType")
+    organization = db.relationship("Organization")
 
     roles = db.relationship("Role", secondary=user_roles, back_populates="users")
     incidents = db.relationship("Incident", back_populates="owner")
