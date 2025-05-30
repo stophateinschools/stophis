@@ -13,13 +13,13 @@ import { CalendarIcon, X, Info, Search, HelpCircle } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues, months } from "@/hooks/useIncidentForm";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import SearchSelect from '@/components/ui/search-select';
-import { IncidentSourceType, USState } from '@/lib/types';
+import { USState } from '@/lib/types';
 import { useData } from '@/contexts/DataContext';
 import { useSchools } from '@/hooks/useSchools';
 import { useDistricts } from '@/hooks/useDistricts';
 import { useDebounce } from '@/hooks/useDebounce';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface IncidentOverviewTabProps {
   form: UseFormReturn<FormValues>;
@@ -238,14 +238,13 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
               <FormLabel>Incident Level</FormLabel>
             </div>
             <div className="flex items-center space-x-2">
-              <FormLabel>District</FormLabel>
+              <FormLabel>Is School Specific?</FormLabel>
               <FormControl>
-                <Switch 
+                <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormLabel>School</FormLabel>
             </div>
           </FormItem>
         )}

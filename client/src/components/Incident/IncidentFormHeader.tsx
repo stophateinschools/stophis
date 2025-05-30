@@ -31,15 +31,15 @@ const IncidentFormHeader: React.FC<IncidentFormHeaderProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 mr-4">
             <Label htmlFor="status-toggle" className="text-sm">
-              Active
+              Filed
             </Label>
             <Switch
               id="status-toggle"
-              checked={status == IncidentStatus.FILED}
-              onCheckedChange={(checked) => setStatus(checked ? IncidentStatus.FILED : IncidentStatus.ACTIVE)}
+              checked={status == IncidentStatus.ACTIVE}
+              onCheckedChange={(checked) => setStatus(checked ? IncidentStatus.ACTIVE : IncidentStatus.FILED)}
             />
             <Label htmlFor="status-toggle" className="text-sm">
-              Filed
+              Active
             </Label>
           </div>
           

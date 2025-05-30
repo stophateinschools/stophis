@@ -19,6 +19,7 @@ from .admin.models import (
 
 from .models.user import Role, User, UserRole
 from .models.models import (
+    AttributionType,
     Incident,
     IncidentType,
     InternalNote,
@@ -154,6 +155,14 @@ def create_app():
     )
     admin.add_view(
         RoleView(Role, db.session, category="Users", roles_required=[UserRole.ADMIN])
+    )
+    admin.add_view(
+        BaseModelView(
+            AttributionType,
+            db.session,
+            category="Users",
+            roles_required=[UserRole.ADMIN],
+        )
     )
 
     # Data Management
