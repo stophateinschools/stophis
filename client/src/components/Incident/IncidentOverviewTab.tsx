@@ -319,7 +319,7 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
             <FormControl>
               <Select
                 onValueChange={(value) => {
-                  if (!field.value.includes(value)) {
+                  if (field.value && !field.value.includes(value)) {
                     field.onChange([...field.value, value]);
                   }
                 }}

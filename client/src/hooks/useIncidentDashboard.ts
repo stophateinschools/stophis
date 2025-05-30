@@ -1,6 +1,7 @@
 
 import { useState, useMemo } from 'react';
 import { Incident, IncidentStatus } from '@/lib/types';
+import { useSortedIncidents } from '@/hooks/incidents/useSortedIncidents';
 
 export function useIncidentDashboard(incidents: Incident[]) {
   const [search, setSearch] = useState('');
@@ -42,40 +43,10 @@ export function useIncidentDashboard(incidents: Incident[]) {
   }, [incidents, search]);
 
   // Sort incidents based on sortBy and sortDirection
-  const sortedIncidents = useMemo(() => {
-    return [...filteredIncidents].sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(b.date.year, b.date.month[0], b.date.day ? b.date.day[0] : 1).getTime() -
-                      new Date(a.date.year, a.date.month[0], a.date.day ? a.date.day[0] : 1).getTime();
-          break;
-        case 'updated':
-          comparison = new Date(b.updatedOn).getTime() - new Date(a.updatedOn).getTime();
-          break;
-        case 'owner':
-          comparison = a.owner.firstName.localeCompare(b.owner.firstName);
-          break;
-        case 'school':
-          comparison = (a.schools?.[0] || '').localeCompare(b.schools?.[0] || '');
-          break;
-        case 'district':
-          comparison = (a.districts?.[0] || '').localeCompare(b.districts?.[0] || '');
-          break;
-        case 'location':
-          comparison = a.city.localeCompare(b.city) || a.state.localeCompare(b.state);
-          break;
-        case 'type':
-          comparison = a.types[0].localeCompare(b.types[0]);
-          break;
-        default:
-          comparison = 0;
-      }
-
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-  }, [filteredIncidents, sortBy, sortDirection]);
+  const { sortedIncidents } = useSortedIncidents(filteredIncidents, {
+    sortBy: sortBy,
+    sortDirection: sortDirection
+  });
 
   // Group by status
   const activeIncidents = useMemo(() => 

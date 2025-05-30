@@ -1,7 +1,7 @@
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { UseFormReturn, useWatch } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "@/hooks/useIncidentForm";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useData } from '@/contexts/DataContext';
@@ -21,16 +21,6 @@ interface OrganizationSharingProps {
 
 const OrganizationSharing: React.FC<OrganizationSharingProps> = ({ form }) => {
   const { organizations } = useData();
-  const selectedOrganizations = useWatch({
-    control: form.control,
-    name: "shareOrganizations",
-  });
-  
-  // Memoize the organizations count text to prevent unnecessary re-renders
-  const organizationsCountText = useMemo(() => {
-    if (!selectedOrganizations?.length) return "Select organizations";
-    return `${selectedOrganizations.length} organization${selectedOrganizations.length > 1 ? 's' : ''} selected`;
-  }, [selectedOrganizations?.length]);
   
   return (
     <div className="space-y-5 border rounded-md p-4">
@@ -63,7 +53,7 @@ const OrganizationSharing: React.FC<OrganizationSharingProps> = ({ form }) => {
             <FormControl>
               <Select
                   onValueChange={(value) => {
-                    if (!field.value.includes(value)) {
+                    if (field.value && !field.value.includes(value)) {
                       field.onChange([...field.value, value]);
                     }
                   }}
