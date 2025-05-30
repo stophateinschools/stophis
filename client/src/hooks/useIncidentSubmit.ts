@@ -32,7 +32,7 @@ export function useIncidentSubmit({
       return;
     }
 
-    const incidentData: Omit<Incident, "id" | "lastUpdated" | "createdOn" | "updatedOn" | "owner"> = {
+    const incidentData: Omit<Incident, "id" | "createdOn" | "updatedOn" | "owner"> = {
       date: {
         year: values.year,
         month: values.month.map(Number).filter(month => month !== 0) as [number, number?],
@@ -48,7 +48,7 @@ export function useIncidentSubmit({
       details: values.details || "",
       status: finalStatus,
       documents: values.documents,
-      sourceTypes: values.sourceType,
+      sourceTypes: [values.sourceType],
       otherSource: values.otherSource,
       links: values.links,
       schoolReport: {

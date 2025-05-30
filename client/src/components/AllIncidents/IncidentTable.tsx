@@ -33,7 +33,7 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <SortableHeader column="date" label="Date" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
+            <SortableHeader column="date" label="Incident Date" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <SortableHeader column="location" label="Location" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <SortableHeader column="schools" label="School" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />
             <SortableHeader column="districts" label="District" sortBy={sortBy} sortDirection={sortDirection} onSort={onSort} />

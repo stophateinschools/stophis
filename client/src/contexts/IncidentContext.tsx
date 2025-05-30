@@ -5,7 +5,7 @@ import api from '@/utils/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext } from 'react';
 
-type IncidentInput = Omit<Incident, "id">;
+type IncidentInput = Omit<Incident, "id" | "owner" | "createdOn" | "updatedOn" | "owner">;
 
 type IncidentContextType = {
   incidents: Incident[] | undefined;

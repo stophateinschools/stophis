@@ -4,7 +4,7 @@ import { SortDirection } from './types';
 
 export const useIncidentSorting = () => {
   const [sortBy, setSortBy] = useState<string>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   const handleSort = useCallback((column: string) => {
     if (sortBy === column) {

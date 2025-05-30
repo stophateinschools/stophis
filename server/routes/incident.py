@@ -224,7 +224,7 @@ def apply_incident_data(incident, data):
         IncidentType.name.in_(data.get("types", []))
     ).all()
     incident.source_types = IncidentSourceType.query.filter(
-        IncidentSourceType.name.in_([data.get("sourceTypes", [])])
+        IncidentSourceType.name.in_(data.get("sourceTypes", []))
     ).all()
     incident.other_source = data.get("otherSource", None)
     incident.schools = School.query.filter(School.name.in_(data.get("schools", []))).all()

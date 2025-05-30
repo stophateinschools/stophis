@@ -218,7 +218,6 @@ export const IncidentOverviewTab: React.FC<IncidentOverviewTabProps> = ({
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* TODO Extract to enum or get data from server */}
                     {Object.entries(USState).map(([key, value]) => <SelectItem value={key}>{value}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -124,9 +124,8 @@ export enum SchoolLevel {
 export interface School {
   id: string;
   name: string;
-  district: District;
   level: SchoolLevel;
-  address: string;
+  street: string;
   city: string;
   state: string;
   latitude?: number;

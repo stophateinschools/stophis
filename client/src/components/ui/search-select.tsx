@@ -10,7 +10,7 @@ type SearchSelectProps = {
   name: string;
   label: string;
   placeholder: string;
-  options: { id: string; name: string }[];
+  options: { id: string; name: string; city?: string; postal_code?: string  }[];
   searchValue: string;
   setSearchValue: (value: string) => void;
   disabled?: boolean;
@@ -61,7 +61,7 @@ function SearchSelect({
                           setSearchValue('');
                         }}
                       >
-                        {option.name}
+                        {option.name}{option.city && option.postal_code ? ` (${option.city}, ${option.postal_code})` : ''}
                       </div>
                     ))
                   ) : (
