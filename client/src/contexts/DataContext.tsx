@@ -12,13 +12,10 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [users, setUsers] = useState<User[]>([]);
-
   const { data: metadata, isLoading: isMetadataLoading } = useIncidentFormMetadata();
 
 
   const value = {
-    users,
     organizations: metadata?.organizations || [],
     types: metadata?.types || [],
     sourceTypes: metadata?.sourceTypes || [],

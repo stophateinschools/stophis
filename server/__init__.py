@@ -8,7 +8,6 @@ from .models.audit import AuditLog, AuditLogView
 
 from .admin.index import AdminView, BaseModelView
 from .admin.models import (
-    # IncidentView,
     InternalNoteView,
     UnionView,
     UserView,
@@ -20,7 +19,7 @@ from .admin.models import (
 from .models.user import Organization, Role, User, UserRole
 from .models.models import (
     AttributionType,
-    Incident,
+    IncidentSourceType,
     IncidentType,
     InternalNote,
     School,
@@ -127,6 +126,14 @@ def create_app():
     admin.add_view(
         BaseModelView(
             IncidentType,
+            db.session,
+            category="Incidents",
+            roles_required=[UserRole.ADMIN],
+        )
+    )
+    admin.add_view(
+        BaseModelView(
+            IncidentSourceType,
             db.session,
             category="Incidents",
             roles_required=[UserRole.ADMIN],
