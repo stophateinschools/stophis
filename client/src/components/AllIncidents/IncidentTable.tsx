@@ -57,12 +57,12 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                 </TableCell>
                 <TableCell>
                   {incident.schools?.map((school, index) => (
-                    <div key={index}>{school}</div>
+                    <div key={index}>{school.name}</div>
                   ))}
                 </TableCell>
                 <TableCell>
                   {incident.districts?.map((district, index) => (
-                    <div key={index}>{district}</div>
+                    <div key={index}>{district.name}</div>
                   ))}
                 </TableCell>
                 <TableCell>

@@ -59,8 +59,14 @@ export interface Incident {
   date: OccurredOnDate;
   createdOn: string;
   updatedOn: string;
-  schools?: string[];
-  districts?: string[];
+  schools?: {
+    id: string;
+    name: string;
+  }[];
+  districts?:{
+    id: string;
+    name: string;
+  }[];
   unions?: Union
   city: string;
   state: string;

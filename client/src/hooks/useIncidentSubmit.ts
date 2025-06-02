@@ -39,8 +39,8 @@ export function useIncidentSubmit({
         day: [values.startDay ? parseInt(values.startDay) : 0, 
            values.endDay ? parseInt(values.endDay) : 0].filter(day => day !== 0) as [number, number?]
       },
-      schools: values.schools,
-      districts: !values.isSchoolSpecific ? values.districts : undefined,
+      schools: values.schools.map(s => s.id),
+      districts: !values.isSchoolSpecific ? values.districts.map(s => s.id) : undefined,
       city: values.city,
       state: values.state,
       types: values.types,

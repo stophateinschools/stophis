@@ -56,11 +56,11 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ incident }) => {
         </div>
         <div>
           <h3 className="text-sm font-medium">School</h3>
-          <p>{incident.schools?.map(school => school).join(', ') || 'Not specified'}</p>
+          <p>{incident.schools?.map(school => school.name).join(', ') || 'Not specified'}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium">District</h3>
-          <p>{incident.districts?.map(district => district).join(', ') || 'Not specified'}</p>
+          <p>{incident.districts?.map(district => district.name).join(', ') || 'Not specified'}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium">Type</h3>

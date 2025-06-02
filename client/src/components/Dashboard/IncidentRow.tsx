@@ -57,13 +57,13 @@ const IncidentRow = ({ incident, getFormattedDate }: IncidentRowProps) => {
         {incident.city}, {incident.state}
       </TableCell>
       <TableCell>
-        {incident.schools?.map((school: string, idx: number) => (
-          <div key={idx}>{school}</div>
+        {incident.schools?.map((school: { id: string, name: string }, idx: number) => (
+          <div key={idx}>{school.name}</div>
         ))}
       </TableCell>
       <TableCell>
-        {incident.districts?.map((district: string, idx: number) => (
-          <div key={idx}>{district}</div>
+        {incident.districts?.map((district: { id: string, name: string }, idx: number) => (
+          <div key={idx}>{district.name}</div>
         ))}
       </TableCell>
       <TableCell>

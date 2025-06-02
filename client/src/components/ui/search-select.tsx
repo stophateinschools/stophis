@@ -55,8 +55,8 @@ function SearchSelect({
                         key={option.id}
                         className="p-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() => {
-                          if (!field.value?.includes(option.name)) {
-                            field.onChange(field.value ? [...field.value, option.name] : [option.name]);
+                          if (!field.value?.some((v: any) => v.id === option.id)) {
+                            field.onChange(field.value ? [...field.value, option] : [option]);
                           }
                           setSearchValue('');
                         }}
@@ -73,16 +73,16 @@ function SearchSelect({
 
             {field.value && field.value.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {field.value.map((val: string) => (
-                  <div key={val} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
-                    <span>{val}</span>
+                {field.value.map((val) => (
+                  <div key={val.id} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md flex items-center">
+                    <span>{val.name}</span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="h-auto p-0 ml-1"
                       onClick={() => {
-                        field.onChange(field.value?.filter((s: string) => s !== val));
+                        field.onChange(field.value?.filter((s: any) => s.id !== val.id));
                       }}
                     >
                       <X className="h-3 w-3" />
