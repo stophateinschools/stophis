@@ -43,17 +43,28 @@ class AuditLog(db.Model):
     def __str__(self):
         return f"<AuditLog {self.model_name.value} {self.action} {self.record_id}>"
 
+def serialize_for_json(value):
+    if isinstance(value, Enum):
+        return value.name
+    return value
 
 def create_audit_log(action, instance, changes=None):
     """Helper function to create and add an audit log entry."""
     # Access current_user from g, set during the request context
-    print(current_user)
+    serializable_changes = {
+        key: {
+            "old": serialize_for_json(change["old"]),
+            "new": serialize_for_json(change["new"]),
+        }
+        for key, change in (changes or {}).items()
+    }
+
     audit_log = AuditLog(
         model_name=AuditModel(instance.__class__.__name__),
         action=action,
         record_id=instance.id,
         user_id=current_user.id if current_user.is_authenticated else None,
-        changes=json.dumps(changes) if changes else None,
+        changes=json.dumps(serializable_changes) if serializable_changes else None,
     )
     db.session.add(audit_log)
 
@@ -64,33 +75,38 @@ def is_audit_model(instance):
 
 
 # The SQLAlchemy event listeners to track changes
-def log_audit(session):
-    for instance in session.deleted:
-        if isinstance(instance, db.Model) and is_audit_model(instance):
-            print(instance)
-            # create_audit_log(AuditAction.DELETE, instance)
+def log_audit(session, flush_context, instances):
+    for instance in session.dirty.union(session.new).union(session.deleted):
+        if not isinstance(instance, db.Model):
+            continue
+        if not is_audit_model(instance):
+            continue
 
-    for instance in session.dirty:
-        if isinstance(instance, db.Model) and is_audit_model(instance):
+        if not hasattr(instance, "__table__"):
+            continue
+
+        if instance in session.deleted:
+            create_audit_log(AuditAction.DELETE, instance)
+        elif instance in session.dirty:
             changes = {}
             for column in instance.__table__.columns:
                 history = get_history(instance, column.name)
                 if not history.has_changes():
                     continue
 
-                original_value = history.deleted[0] if history.deleted else None
-                current_value = history.added[0] if history.added else None
-                changes[column.name] = {
-                    "old": original_value,
-                    "new": current_value,
-                }
+                original_value = serialize_for_json(history.deleted[0]) if history.deleted else None
+                current_value = serialize_for_json(history.added[0]) if history.added else None
+                if original_value != current_value:
+                    changes[column.name] = {
+                        "old": original_value,
+                        "new": current_value,
+                    }
 
-            # if changes:
-            #     create_audit_log(AuditAction.UPDATE, instance, changes)
-
+            if changes:
+                create_audit_log(AuditAction.UPDATE, instance, changes)
 
 # Listen for the update and delete events
-event.listen(db.session, "before_commit", log_audit)
+event.listen(db.session, "before_flush", log_audit)
 
 
 class AuditModelView(BaseModelView):

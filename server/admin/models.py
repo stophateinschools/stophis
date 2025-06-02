@@ -288,6 +288,8 @@ class InternalNoteView(BaseModelView):
         return self.get_url("incident.details_view", id=model.incident.id)
 
 
+class IncidentView(AuditModelView):
+    pass
 # class IncidentView(AuditModelView):
 #     def get_query(self):
 #         """Modify the default query to filter by the user's states."""

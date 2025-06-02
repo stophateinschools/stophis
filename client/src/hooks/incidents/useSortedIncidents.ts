@@ -25,10 +25,10 @@ export const useSortedIncidents = (
           comparison = a.owner.firstName.localeCompare(b.owner.firstName);
           break;
         case 'schools':
-          comparison = (a.schools?.[0] || '').localeCompare(b.schools?.[0].name || '');
+          comparison = (a.schools?.[0] || '').localeCompare(b.schools?.[0] || '');
           break;
         case 'districts':
-          comparison = (a.districts?.[0] || '').localeCompare(b.districts?.[0].name || '');
+          comparison = (a.districts?.[0] || '').localeCompare(b.districts?.[0] || '');
           break;
         case 'location':
           comparison = a.city.localeCompare(b.city) || a.state.localeCompare(b.state);

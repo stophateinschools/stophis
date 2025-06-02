@@ -9,6 +9,7 @@ from .models.audit import AuditLog, AuditLogView
 from .admin.index import AdminView, BaseModelView
 from .admin.models import (
     InternalNoteView,
+    IncidentView,
     UnionView,
     UserView,
     RoleView,
@@ -19,6 +20,7 @@ from .admin.models import (
 from .models.user import Organization, Role, User, UserRole
 from .models.models import (
     AttributionType,
+    Incident,
     IncidentSourceType,
     IncidentType,
     InternalNote,
@@ -115,6 +117,7 @@ def create_app():
     # All admin registered views below - if a view requires a certain role to be visible AND
     # accessible, pass in a roles_required param.
     # Incidents
+    # NOTE: Disabled for now since incidents are handled in react client
     # admin.add_view(
     #     IncidentView(Incident, db.session, category="Incidents", endpoint="incident")
     # )

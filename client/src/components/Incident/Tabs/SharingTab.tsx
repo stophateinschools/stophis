@@ -11,7 +11,7 @@ const SharingTab: React.FC<SharingTabProps> = ({ incident }) => {
     <div className="space-y-4">
       <div>
         <h3 className="font-medium mb-2">Sharing and Collaborating</h3>
-        <p>Sharing Status: {incident.sharingDetails.status}</p>
+        <p>Sharing Status: {incident.sharingDetails ? incident.sharingDetails.status : "None"}</p>
         <p>Collaborate with Organizations:</p>
         {incident.sharingDetails?.organizations?.length > 0 ? (
           <ul className="list-disc pl-5">
