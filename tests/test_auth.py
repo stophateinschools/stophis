@@ -1,9 +1,6 @@
 import pytest
 
-from server.models.models import AttributionType
-from server.models.user import UserRole, User, Role
-from server import db
-
+from server.models.user import Organization, UserRole, User, Role
 
 @pytest.fixture
 def admin_role(db_session):
@@ -14,11 +11,11 @@ def admin_role(db_session):
 
 
 @pytest.fixture
-def stop_hate_attribution(db_session):
-    stop_hate_attribution = AttributionType(name="Stop Hate in Schools")
-    db_session.add(stop_hate_attribution)
+def stop_hate_organization(db_session):
+    stop_hate_organization = Organization(name="Stop Hate in Schools")
+    db_session.add(stop_hate_organization)
     db_session.commit()
-    return stop_hate_attribution
+    return stop_hate_organization
 
 
 @pytest.fixture
@@ -30,12 +27,12 @@ def editor_role(db_session):
 
 
 @pytest.fixture
-def user_admin(db_session, admin_role, stop_hate_attribution):
+def user_admin(db_session, admin_role, stop_hate_organization):
     user = User(
         first_name="Test",
         last_name="User",
         email="user@test.com",
-        attribution_type=stop_hate_attribution,
+        organization=stop_hate_organization,
     )
 
     user.roles.append(admin_role)
