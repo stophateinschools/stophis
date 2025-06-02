@@ -41,7 +41,6 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
   // Create incident
   const createMutation = useMutation({
     mutationFn: async (incident: IncidentInput) => {
-      console.log("Creating incident:", incident);
       await api.post("/incidents", incident);
     },
     onSuccess: () => {

@@ -370,7 +370,7 @@ class Incident(db.Model):
             "id": self.id,
             "summary": self.summary,
             "details": self.details,
-            "status": self.status.name,
+            "status": self.status.value,
             "date": {
                 "year": self.occurred_on_year,
                 "month": [

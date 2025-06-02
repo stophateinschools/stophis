@@ -44,6 +44,8 @@ class AuditLog(db.Model):
         return f"<AuditLog {self.model_name.value} {self.action} {self.record_id}>"
 
 def serialize_for_json(value):
+    if isinstance(value, list):
+        return [serialize_for_json(v) for v in value]
     if isinstance(value, Enum):
         return value.name
     return value
@@ -58,7 +60,6 @@ def create_audit_log(action, instance, changes=None):
         }
         for key, change in (changes or {}).items()
     }
-
     audit_log = AuditLog(
         model_name=AuditModel(instance.__class__.__name__),
         action=action,

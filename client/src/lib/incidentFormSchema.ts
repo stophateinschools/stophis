@@ -56,7 +56,7 @@ export const formSchema = z.object({
   shareOrganizations: z.array(z.string()).default([]),
   shareStatus: z.enum(["Private", "Share"]).default("Private"),
   publishStatus: z.enum(["Full Details", "Limited Details", "Hide Details"]).default("Hide Details"),
-  status: zodEnumFromString(IncidentStatus).default("ACTIVE"),
+  status: z.enum(["Filed", "Active"]).default("Active"),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
