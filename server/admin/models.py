@@ -834,7 +834,7 @@ class SchoolView(BaseModelView):
         ),
     }
 
-    column_filters = ["state", "city"]
+    column_filters = ["state", "city", "name"]
 
     # Keep empty details so we show name AND display name in details view
     column_formatters_detail = {}
@@ -851,7 +851,7 @@ class SchoolDistrictView(BaseModelView):
         "name",
     ]
 
-    column_filters = ["state"]
+    column_filters = ["state", "name"]
 
     column_details_list = [
         "nces_id",
