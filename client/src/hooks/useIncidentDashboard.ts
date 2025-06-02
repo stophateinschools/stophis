@@ -32,8 +32,8 @@ export function useIncidentDashboard(incidents: Incident[]) {
       
       const matchesSearch = search === '' || 
         modifiedIncident.summary.toLowerCase().includes(search.toLowerCase()) ||
-        modifiedIncident.schools?.some(s => s.toLowerCase().includes(search.toLowerCase())) ||
-        modifiedIncident.districts?.some(d => d.toLowerCase().includes(search.toLowerCase())) ||
+        modifiedIncident.schools?.some(s => s.name.toLowerCase().includes(search.toLowerCase())) ||
+        modifiedIncident.districts?.some(d => d.name.toLowerCase().includes(search.toLowerCase())) ||
         modifiedIncident.city.toLowerCase().includes(search.toLowerCase()) ||
         modifiedIncident.state.toLowerCase().includes(search.toLowerCase()) ||
         modifiedIncident.types.some(t => t.toLowerCase().includes(search.toLowerCase()));
@@ -50,11 +50,11 @@ export function useIncidentDashboard(incidents: Incident[]) {
 
   // Group by status
   const activeIncidents = useMemo(() => 
-    sortedIncidents.filter(incident => IncidentStatus[incident.status] == IncidentStatus.ACTIVE),
+    sortedIncidents.filter(incident => incident.status == IncidentStatus.ACTIVE),
   [sortedIncidents]);
   
   const filedIncidents = useMemo(() => 
-    sortedIncidents.filter(incident => IncidentStatus[incident.status] == IncidentStatus.FILED),
+    sortedIncidents.filter(incident => incident.status == IncidentStatus.FILED),
   [sortedIncidents]);
 
   return {
